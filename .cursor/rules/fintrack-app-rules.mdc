@@ -1,0 +1,13 @@
+---
+description: 
+alwaysApply: true
+---
+
+- Always explain before writing code
+- Never generate full files without explanation
+- Follow feature-based folder structure
+- Use TanStack Start patterns
+- Keep components small and reusable
+- Use mock API services for now
+- Prefer simple solutions over complex ones
+- Ask for clarification if requirements are unclear
