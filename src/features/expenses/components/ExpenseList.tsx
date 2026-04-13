@@ -3,12 +3,14 @@ import type { Expense } from "../api/mockExpenses";
 export type ExpenseListProps = {
 	expenses: Expense[];
 	isLoading?: boolean;
+	title?: string;
+	currency?: string;
 };
 
-function formatCurrency(amount: number) {
+function formatCurrency(amount: number, currency: string) {
 	return new Intl.NumberFormat(undefined, {
 		style: "currency",
-		currency: "USD",
+		currency,
 	}).format(amount);
 }
 
@@ -18,10 +20,18 @@ function formatDate(isoDate: string) {
 	});
 }
 
-export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
+export function ExpenseList({
+	expenses,
+	isLoading,
+	title = "Expenses",
+	currency = "USD",
+}: ExpenseListProps) {
 	if (isLoading) {
 		return (
-			<p className="text-sm text-[var(--sea-ink-soft)]">Loading expenses…</p>
+			<section className="island-shell rounded-2xl p-6">
+				<p className="island-kicker mb-4">{title}</p>
+				<p className="m-0 text-sm text-[var(--sea-ink-soft)]">Loading…</p>
+			</section>
 		);
 	}
 
@@ -29,7 +39,12 @@ export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
 
 	if (sorted.length === 0) {
 		return (
-			<p className="text-sm text-[var(--sea-ink-soft)]">No expenses yet.</p>
+			<section className="island-shell rounded-2xl p-6">
+				<p className="island-kicker mb-4">{title}</p>
+				<p className="m-0 text-sm text-[var(--sea-ink-soft)]">
+					No expenses yet.
+				</p>
+			</section>
 		);
 	}
 
@@ -39,7 +54,7 @@ export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
 			aria-labelledby="expense-list-heading"
 		>
 			<h2 id="expense-list-heading" className="island-kicker mb-4">
-				Expenses
+				{title}
 			</h2>
 			<ul className="m-0 list-none space-y-3 p-0">
 				{sorted.map((expense) => (
@@ -56,7 +71,7 @@ export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
 							</p>
 						</div>
 						<span className="shrink-0 font-medium tabular-nums text-[var(--sea-ink)]">
-							{formatCurrency(expense.amount)}
+							{formatCurrency(expense.amount, currency)}
 						</span>
 					</li>
 				))}

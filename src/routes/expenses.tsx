@@ -35,7 +35,18 @@ function ExpensesPage() {
 	}, []);
 
 	return (
-		<main className="page-wrap px-4 py-12">
+		<main className="page-wrap px-4 pb-14 pt-10 sm:pt-12">
+			<header className="mb-6">
+				<p className="island-kicker mb-2">Expenses</p>
+				<h1 className="display-title m-0 text-3xl font-semibold text-[var(--sea-ink)] sm:text-5xl">
+					Expense list
+				</h1>
+				<p className="m-0 mt-2 max-w-2xl text-sm leading-6 text-[var(--sea-ink-soft)] sm:text-base">
+					Review recent spending by category and date. We’ll add filtering and
+					exports next.
+				</p>
+			</header>
+
 			{error ? (
 				<p className="text-sm text-[var(--sea-ink-soft)]" role="alert">
 					{error}
