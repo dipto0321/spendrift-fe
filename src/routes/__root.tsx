@@ -1,3 +1,4 @@
+import { getLocale } from "#/paraglide/runtime";
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import type { QueryClient } from "@tanstack/react-query";
 import {
@@ -6,9 +7,7 @@ import {
 	Scripts,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
-import { getLocale } from "#/paraglide/runtime";
-import Footer from "../components/Footer";
-import Header from "../components/Header";
+import AppSidebar from "../components/AppSidebar";
 
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import TanStackQueryProvider from "../integrations/tanstack-query/root-provider";
@@ -59,9 +58,14 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			</head>
 			<body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-[rgba(79,184,178,0.24)]">
 				<TanStackQueryProvider>
-					<Header />
-					{children}
-					<Footer />
+					<div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(81,153,255,0.16),transparent_28%),radial-gradient(circle_at_85%_18%,rgba(79,184,178,0.12),transparent_24%),linear-gradient(180deg,color-mix(in_oklab,var(--background)_96%,white_4%),var(--background))] ">
+						<div className="flex min-h-[calc(100vh-1.5rem)] w-full max-w-[1560px] flex-col gap-3 lg:flex-row">
+							<AppSidebar />
+							<main className="min-w-0 h-auto flex-1 overflow-hidden  backdrop-blur-sm">
+								{children}
+							</main>
+						</div>
+					</div>
 					{import.meta.env.DEV ? (
 						<TanStackDevtools
 							config={{
