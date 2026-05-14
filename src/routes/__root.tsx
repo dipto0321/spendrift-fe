@@ -56,12 +56,12 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				<script src="/theme-init.js" />
 				<HeadContent />
 			</head>
-			<body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-[rgba(79,184,178,0.24)]">
+			<body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-primary/20">
 				<TanStackQueryProvider>
-					<div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(81,153,255,0.16),transparent_28%),radial-gradient(circle_at_85%_18%,rgba(79,184,178,0.12),transparent_24%),linear-gradient(180deg,color-mix(in_oklab,var(--background)_96%,white_4%),var(--background))] ">
-						<div className="flex min-h-[calc(100vh-1.5rem)] w-full max-w-[1560px] flex-col gap-3 lg:flex-row">
+					<div className="min-h-screen bg-background">
+						<div className="flex min-h-[calc(100vh-1.5rem)] w-full max-w-[1560px] flex-col gap-3 p-3 lg:flex-row lg:gap-4 lg:p-4">
 							<AppSidebar />
-							<main className="min-w-0 h-auto flex-1 overflow-hidden  backdrop-blur-sm">
+							<main className="min-w-0 h-auto flex-1 overflow-hidden rounded-2xl border border-border/60 bg-card/30 backdrop-blur-sm">
 								{children}
 							</main>
 						</div>
