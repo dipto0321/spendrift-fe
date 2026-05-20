@@ -33,7 +33,7 @@ export function ExpenseRow({
 	currency,
 	onEdit,
 	onDelete,
-}: ExpenseRowProps) {
+}: Readonly<ExpenseRowProps>) {
 	const categoryName = category?.name ?? "Uncategorized";
 	const categoryColor = category?.color ?? "#78716C";
 
@@ -48,7 +48,7 @@ export function ExpenseRow({
 			<TableCell className="px-4 py-3">
 				<CategoryChip name={categoryName} color={categoryColor} />
 			</TableCell>
-			<TableCell className="max-w-[200px] truncate px-4 py-3 text-sm text-foreground">
+			<TableCell className="max-w-50 truncate px-4 py-3 text-sm text-foreground">
 				{expense.description || "—"}
 			</TableCell>
 			<TableCell className="whitespace-nowrap px-4 py-3 text-sm">

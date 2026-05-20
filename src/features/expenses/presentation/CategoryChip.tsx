@@ -1,3 +1,4 @@
+import { Badge } from "#/components/ui/badge";
 import type { CategoryColor } from "../domain/types";
 
 type CategoryChipProps = {
@@ -10,13 +11,12 @@ export function CategoryChip({
 	name,
 	color,
 	size = "md",
-}: CategoryChipProps) {
+}: Readonly<CategoryChipProps>) {
 	return (
-		<span
-			className={`inline-flex items-center gap-1.5 rounded-full border font-medium ${
-				size === "sm"
-					? "px-2 py-0.5 text-[10px]"
-					: "px-2.5 py-1 text-xs"
+		<Badge
+			variant="outline"
+			className={`gap-1.5 font-medium ${
+				size === "sm" ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-xs"
 			}`}
 			style={{
 				color: color,
@@ -29,6 +29,6 @@ export function CategoryChip({
 				style={{ backgroundColor: color }}
 			/>
 			{name}
-		</span>
+		</Badge>
 	);
 }

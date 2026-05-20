@@ -77,7 +77,7 @@ export function ExpenseToolbar({
 						size="sm"
 						aria-pressed={isTodaySelected}
 						onClick={() => setQuickRange(todayRange)}
-						className="rounded-full px-3 text-xs font-medium"
+						className="rounded-full px-2.5 text-xs font-medium"
 					>
 						Today
 					</Button>
@@ -87,7 +87,7 @@ export function ExpenseToolbar({
 						size="sm"
 						aria-pressed={isThisMonthSelected}
 						onClick={() => setQuickRange(thisMonthRange)}
-						className="rounded-full px-3 text-xs font-medium"
+						className="rounded-full px-2.5 text-xs font-medium"
 					>
 						This month
 					</Button>
@@ -124,6 +124,27 @@ export function ExpenseToolbar({
 				</div>
 
 				<div className="flex flex-wrap items-center gap-1.5">
+					<div className="flex items-center gap-1">
+						<Button
+							type="button"
+							variant={filter.types?.includes("need") ? "default" : "ghost"}
+							size="sm"
+							onClick={() => toggleType("need")}
+							className="rounded-full px-2.5 py-0.5 text-xs font-medium"
+						>
+							Need
+						</Button>
+						<Button
+							type="button"
+							variant={filter.types?.includes("want") ? "default" : "ghost"}
+							size="sm"
+							onClick={() => toggleType("want")}
+							className="rounded-full px-2.5 py-1 text-xs font-medium"
+						>
+							Want
+						</Button>
+					</div>
+
 					{userCategories.map((cat) => {
 						const isActive = filter.categoryIds?.includes(cat.id) ?? false;
 						return (
@@ -140,33 +161,12 @@ export function ExpenseToolbar({
 										categoryIds: updated.length > 0 ? updated : undefined,
 									});
 								}}
-								className={`rounded-full px-2.5 py-1 text-xs font-medium ${isActive ? "" : "text-muted-foreground"}`}
+								className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${isActive ? "" : "text-muted-foreground"}`}
 							>
 								{cat.name}
 							</Button>
 						);
 					})}
-				</div>
-
-				<div className="flex items-center gap-1">
-					<Button
-						type="button"
-						variant={filter.types?.includes("need") ? "default" : "ghost"}
-						size="sm"
-						onClick={() => toggleType("need")}
-						className="rounded-full px-2.5 py-1 text-xs font-medium"
-					>
-						Need
-					</Button>
-					<Button
-						type="button"
-						variant={filter.types?.includes("want") ? "default" : "ghost"}
-						size="sm"
-						onClick={() => toggleType("want")}
-						className="rounded-full px-2.5 py-1 text-xs font-medium"
-					>
-						Want
-					</Button>
 				</div>
 
 				{hasActiveFilters && (
