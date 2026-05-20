@@ -1,5 +1,12 @@
-import type { Category, Expense } from "../domain/types";
+import {
+	Table,
+	TableBody,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "#/components/ui/table";
 import { buildCategoryMap } from "../domain/services";
+import type { Category, Expense } from "../domain/types";
 import { ExpenseRow } from "./ExpenseRow";
 
 type ExpenseTableProps = {
@@ -41,51 +48,47 @@ export function ExpenseTable({
 	if (sorted.length === 0) {
 		return (
 			<div className="rounded-2xl border border-border/60 bg-card/30 p-12 text-center">
-				<p className="m-0 text-sm text-muted-foreground">
-					No expenses found.
-				</p>
+				<p className="m-0 text-sm text-muted-foreground">No expenses found.</p>
 			</div>
 		);
 	}
 
 	return (
 		<div className="overflow-hidden rounded-2xl border border-border/60 bg-card/30">
-			<div className="overflow-x-auto">
-				<table className="w-full">
-					<thead>
-						<tr className="border-b border-border/60">
-							<th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-								Date
-							</th>
-							<th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-								Category
-							</th>
-							<th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-								Description
-							</th>
-							<th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-								Type
-							</th>
-							<th className="whitespace-nowrap px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-								Amount
-							</th>
-							<th className="w-10 px-4 py-3" />
-						</tr>
-					</thead>
-					<tbody>
-						{sorted.map((expense) => (
-							<ExpenseRow
-								key={expense.id}
-								expense={expense}
-								category={categoryMap.get(expense.categoryId)}
-								currency={currency}
-								onEdit={onEdit}
-								onDelete={onDelete}
-							/>
-						))}
-					</tbody>
-				</table>
-			</div>
+			<Table>
+				<TableHeader>
+					<TableRow>
+						<TableHead className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+							Date
+						</TableHead>
+						<TableHead className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+							Category
+						</TableHead>
+						<TableHead className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+							Description
+						</TableHead>
+						<TableHead className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+							Type
+						</TableHead>
+						<TableHead className="whitespace-nowrap px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+							Amount
+						</TableHead>
+						<TableHead className="w-10 px-4 py-3" />
+					</TableRow>
+				</TableHeader>
+				<TableBody>
+					{sorted.map((expense) => (
+						<ExpenseRow
+							key={expense.id}
+							expense={expense}
+							category={categoryMap.get(expense.categoryId)}
+							currency={currency}
+							onEdit={onEdit}
+							onDelete={onDelete}
+						/>
+					))}
+				</TableBody>
+			</Table>
 		</div>
 	);
 }

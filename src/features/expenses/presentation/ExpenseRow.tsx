@@ -1,6 +1,7 @@
+import { TableCell, TableRow } from "#/components/ui/table";
 import { Trash2 } from "lucide-react";
-import type { Category, Expense } from "../domain/types";
 import { formatExpenseType } from "../domain/services";
+import type { Category, Expense } from "../domain/types";
 import { CategoryChip } from "./CategoryChip";
 
 type ExpenseRowProps = {
@@ -37,20 +38,20 @@ export function ExpenseRow({
 	const categoryColor = category?.color ?? "#78716C";
 
 	return (
-		<tr
+		<TableRow
 			className="group cursor-pointer border-b border-border/50 last:border-none hover:bg-muted/30 transition-colors"
 			onClick={() => onEdit(expense)}
 		>
-			<td className="whitespace-nowrap px-4 py-3 text-sm text-muted-foreground">
+			<TableCell className="whitespace-nowrap px-4 py-3 text-sm text-muted-foreground">
 				{formatDate(expense.date)}
-			</td>
-			<td className="px-4 py-3">
+			</TableCell>
+			<TableCell className="px-4 py-3">
 				<CategoryChip name={categoryName} color={categoryColor} />
-			</td>
-			<td className="max-w-[200px] truncate px-4 py-3 text-sm text-foreground">
+			</TableCell>
+			<TableCell className="max-w-[200px] truncate px-4 py-3 text-sm text-foreground">
 				{expense.description || "—"}
-			</td>
-			<td className="whitespace-nowrap px-4 py-3 text-sm">
+			</TableCell>
+			<TableCell className="whitespace-nowrap px-4 py-3 text-sm">
 				<span
 					className={`rounded-full px-2 py-0.5 text-xs font-medium ${
 						expense.type === "need"
@@ -60,11 +61,11 @@ export function ExpenseRow({
 				>
 					{formatExpenseType(expense.type)}
 				</span>
-			</td>
-			<td className="whitespace-nowrap px-4 py-3 text-right font-medium tabular-nums text-foreground">
+			</TableCell>
+			<TableCell className="whitespace-nowrap px-4 py-3 text-right font-medium tabular-nums text-foreground">
 				{formatCurrency(expense.amount, currency)}
-			</td>
-			<td className="px-4 py-3 text-right">
+			</TableCell>
+			<TableCell className="px-4 py-3 text-right">
 				<button
 					type="button"
 					onClick={(e) => {
@@ -76,7 +77,7 @@ export function ExpenseRow({
 				>
 					<Trash2 className="h-4 w-4" />
 				</button>
-			</td>
-		</tr>
+			</TableCell>
+		</TableRow>
 	);
 }
