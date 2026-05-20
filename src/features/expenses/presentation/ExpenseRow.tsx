@@ -1,4 +1,4 @@
-import { TableCell, TableRow } from "#/components/ui/table";
+import { TableCell, TableRow } from "@/components/ui/table";
 import { Trash2 } from "lucide-react";
 import { formatExpenseType } from "../domain/services";
 import type { Category, Expense } from "../domain/types";

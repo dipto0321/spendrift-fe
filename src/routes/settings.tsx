@@ -1,8 +1,8 @@
+import { categoryRepository } from "@/features/expenses/data/repository";
+import type { CategoryColor } from "@/features/expenses/domain/types";
+import { CategoryManager } from "@/features/expenses/presentation/CategoryManager";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { CategoryColor } from "#/features/expenses/domain/types";
-import { categoryRepository } from "#/features/expenses/data/repository";
-import { CategoryManager } from "#/features/expenses/presentation/CategoryManager";
 
 export const Route = createFileRoute("/settings")({
 	component: SettingsPage,
@@ -44,8 +44,7 @@ function SettingsPage() {
 	});
 
 	const deleteMutation = useMutation({
-		mutationFn: (id: string) =>
-			categoryRepository.delete(id, "uncategorized"),
+		mutationFn: (id: string) => categoryRepository.delete(id, "uncategorized"),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["categories"] });
 		},

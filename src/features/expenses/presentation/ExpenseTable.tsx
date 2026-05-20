@@ -4,7 +4,7 @@ import {
 	TableHead,
 	TableHeader,
 	TableRow,
-} from "#/components/ui/table";
+} from "@/components/ui/table";
 import { buildCategoryMap } from "../domain/services";
 import type { Category, Expense } from "../domain/types";
 import { ExpenseRow } from "./ExpenseRow";

@@ -1,7 +1,6 @@
+import { expenseRepository } from "@/features/expenses/data/repository";
+import type { Category } from "@/features/expenses/domain/types";
 import { useQuery } from "@tanstack/react-query";
-
-import type { Category } from "#/features/expenses/domain/types";
-import { expenseRepository } from "#/features/expenses/data/repository";
 import { getDashboardSummary } from "../api/mockDashboard";
 
 function formatCurrency(amount: number) {
@@ -43,10 +42,15 @@ export function DashboardPage() {
 
 	const { data: categories = [] } = useQuery({
 		queryKey: ["categories"],
-		queryFn: () => import("#/features/expenses/data/repository").then(m => m.categoryRepository.getAll()),
+		queryFn: () =>
+			import("@/features/expenses/data/repository").then((m) =>
+				m.categoryRepository.getAll(),
+			),
 	});
 
-	const categoryMap = new Map<string, Category>(categories.map((c) => [c.id, c]));
+	const categoryMap = new Map<string, Category>(
+		categories.map((c) => [c.id, c]),
+	);
 
 	const recentExpenses = [...expenses]
 		.sort((a, b) => b.date.localeCompare(a.date))
@@ -96,12 +100,19 @@ export function DashboardPage() {
 
 			<section className="mt-6 grid gap-6 lg:grid-cols-2">
 				<div className="min-w-0">
-					<section className="island-shell rounded-2xl p-6" aria-labelledby="recent-expenses-heading">
-						<h2 id="recent-expenses-heading" className="island-kicker mb-4">Recent expenses</h2>
+					<section
+						className="island-shell rounded-2xl p-6"
+						aria-labelledby="recent-expenses-heading"
+					>
+						<h2 id="recent-expenses-heading" className="island-kicker mb-4">
+							Recent expenses
+						</h2>
 						{expensesLoading ? (
 							<p className="m-0 text-sm text-muted-foreground">Loading…</p>
 						) : recentExpenses.length === 0 ? (
-							<p className="m-0 text-sm text-muted-foreground">No expenses yet.</p>
+							<p className="m-0 text-sm text-muted-foreground">
+								No expenses yet.
+							</p>
 						) : (
 							<ul className="m-0 list-none space-y-3 p-0">
 								{recentExpenses.map((expense) => {

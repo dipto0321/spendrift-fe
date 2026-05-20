@@ -3,7 +3,7 @@ import {
 	DialogClose,
 	DialogContent,
 	DialogTitle,
-} from "#/components/ui/dialog";
+} from "@/components/ui/dialog";
 import type { Category, Expense, ExpenseCreateInput } from "../domain/types";
 import { ExpenseForm } from "./ExpenseForm";
 

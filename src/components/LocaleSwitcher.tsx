@@ -1,5 +1,5 @@
-import { m } from "#/paraglide/messages";
-import { getLocale, locales, setLocale } from "#/paraglide/runtime";
+import { m } from "@/paraglide/messages";
+import { getLocale, locales, setLocale } from "@/paraglide/runtime";
 
 export default function ParaglideLocaleSwitcher() {
 	const currentLocale = getLocale();
