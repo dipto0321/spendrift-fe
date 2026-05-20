@@ -175,6 +175,10 @@ Avoid unnecessary chart abstraction.
 
 ---
 
+# Shadcn components creation rules
+
+use `pnpm dlx shadcn@latest add <component-name>` to create new components. follow official documentation for usage and customization. avoid creating custom components if existing ones can be composed to achieve the desired UI.
+
 # Git Workflow Rules
 
 After every meaningful implementation:
