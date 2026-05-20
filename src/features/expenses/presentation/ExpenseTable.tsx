@@ -1,0 +1,91 @@
+import type { Category, Expense } from "../domain/types";
+import { buildCategoryMap } from "../domain/services";
+import { ExpenseRow } from "./ExpenseRow";
+
+type ExpenseTableProps = {
+	expenses: Expense[];
+	categories: Category[];
+	currency: string;
+	onEdit: (expense: Expense) => void;
+	onDelete: (id: string) => void;
+	isLoading?: boolean;
+};
+
+export function ExpenseTable({
+	expenses,
+	categories,
+	currency,
+	onEdit,
+	onDelete,
+	isLoading,
+}: ExpenseTableProps) {
+	const categoryMap = buildCategoryMap(categories);
+
+	const sorted = [...expenses].sort((a, b) => b.date.localeCompare(a.date));
+
+	if (isLoading) {
+		return (
+			<div className="rounded-2xl border border-border/60 bg-card/30 p-6">
+				<div className="space-y-3">
+					{[1, 2, 3].map((i) => (
+						<div
+							key={i}
+							className="h-12 animate-pulse rounded-lg bg-muted/50"
+						/>
+					))}
+				</div>
+			</div>
+		);
+	}
+
+	if (sorted.length === 0) {
+		return (
+			<div className="rounded-2xl border border-border/60 bg-card/30 p-12 text-center">
+				<p className="m-0 text-sm text-muted-foreground">
+					No expenses found.
+				</p>
+			</div>
+		);
+	}
+
+	return (
+		<div className="overflow-hidden rounded-2xl border border-border/60 bg-card/30">
+			<div className="overflow-x-auto">
+				<table className="w-full">
+					<thead>
+						<tr className="border-b border-border/60">
+							<th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+								Date
+							</th>
+							<th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+								Category
+							</th>
+							<th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+								Description
+							</th>
+							<th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+								Type
+							</th>
+							<th className="whitespace-nowrap px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+								Amount
+							</th>
+							<th className="w-10 px-4 py-3" />
+						</tr>
+					</thead>
+					<tbody>
+						{sorted.map((expense) => (
+							<ExpenseRow
+								key={expense.id}
+								expense={expense}
+								category={categoryMap.get(expense.categoryId)}
+								currency={currency}
+								onEdit={onEdit}
+								onDelete={onDelete}
+							/>
+						))}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	);
+}

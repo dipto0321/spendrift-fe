@@ -1,4 +1,4 @@
-import type { Category, CategoryColor, Expense, ExpenseType } from "../domain/types";
+import type { Category, Expense, ExpenseType } from "../domain/types";
 
 export const DEFAULT_CATEGORIES: Category[] = [
 	{ id: "uncategorized", name: "Uncategorized", color: "#78716C", createdAt: "2026-01-01" },
@@ -53,4 +53,4 @@ export function getSeedCategories(): Category[] {
 	return DEFAULT_CATEGORIES.map((c) => ({ ...c }));
 }
 
-export { type SeedExpense };
+export type { SeedExpense };

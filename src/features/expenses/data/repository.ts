@@ -4,10 +4,9 @@ import type {
 	Expense,
 	ExpenseCreateInput,
 	ExpenseFilter,
-	ExpenseRepository,
-	CategoryRepository,
 	ExpenseUpdateInput,
 } from "../domain/types";
+import type { ExpenseRepository, CategoryRepository } from "../domain/repository";
 import { filterExpenses, sortExpensesByDate } from "../domain/services";
 import {
 	getSeedExpenses,

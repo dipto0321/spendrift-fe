@@ -1,0 +1,82 @@
+import { Trash2 } from "lucide-react";
+import type { Category, Expense } from "../domain/types";
+import { formatExpenseType } from "../domain/services";
+import { CategoryChip } from "./CategoryChip";
+
+type ExpenseRowProps = {
+	expense: Expense;
+	category: Category | undefined;
+	currency: string;
+	onEdit: (expense: Expense) => void;
+	onDelete: (id: string) => void;
+};
+
+function formatCurrency(amount: number, currency: string) {
+	return new Intl.NumberFormat(undefined, {
+		style: "currency",
+		currency,
+	}).format(amount);
+}
+
+function formatDate(isoDate: string) {
+	return new Date(`${isoDate}T12:00:00`).toLocaleDateString(undefined, {
+		month: "short",
+		day: "numeric",
+		year: "numeric",
+	});
+}
+
+export function ExpenseRow({
+	expense,
+	category,
+	currency,
+	onEdit,
+	onDelete,
+}: ExpenseRowProps) {
+	const categoryName = category?.name ?? "Uncategorized";
+	const categoryColor = category?.color ?? "#78716C";
+
+	return (
+		<tr
+			className="group cursor-pointer border-b border-border/50 last:border-none hover:bg-muted/30 transition-colors"
+			onClick={() => onEdit(expense)}
+		>
+			<td className="whitespace-nowrap px-4 py-3 text-sm text-muted-foreground">
+				{formatDate(expense.date)}
+			</td>
+			<td className="px-4 py-3">
+				<CategoryChip name={categoryName} color={categoryColor} />
+			</td>
+			<td className="max-w-[200px] truncate px-4 py-3 text-sm text-foreground">
+				{expense.description || "—"}
+			</td>
+			<td className="whitespace-nowrap px-4 py-3 text-sm">
+				<span
+					className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+						expense.type === "need"
+							? "bg-green-500/15 text-green-600 dark:text-green-400"
+							: "bg-orange-500/15 text-orange-600 dark:text-orange-400"
+					}`}
+				>
+					{formatExpenseType(expense.type)}
+				</span>
+			</td>
+			<td className="whitespace-nowrap px-4 py-3 text-right font-medium tabular-nums text-foreground">
+				{formatCurrency(expense.amount, currency)}
+			</td>
+			<td className="px-4 py-3 text-right">
+				<button
+					type="button"
+					onClick={(e) => {
+						e.stopPropagation();
+						onDelete(expense.id);
+					}}
+					className="opacity-0 group-hover:opacity-100 transition-opacity rounded-lg p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+					aria-label={`Delete expense: ${expense.description || categoryName}`}
+				>
+					<Trash2 className="h-4 w-4" />
+				</button>
+			</td>
+		</tr>
+	);
+}
