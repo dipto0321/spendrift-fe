@@ -1,5 +1,22 @@
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectGroup,
+	SelectItem,
+	SelectLabel,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { useState } from "react";
-import type { Category, Expense, ExpenseCreateInput, ExpenseType } from "../domain/types";
+import type {
+	Category,
+	Expense,
+	ExpenseCreateInput,
+	ExpenseType,
+} from "../domain/types";
 
 type ExpenseFormProps = {
 	categories: Category[];
@@ -15,18 +32,23 @@ export function ExpenseForm({
 	onSubmit,
 	onCancel,
 	isSubmitting,
-}: ExpenseFormProps) {
+}: Readonly<ExpenseFormProps>) {
 	const [amount, setAmount] = useState(initialData?.amount?.toString() ?? "");
 	const [categoryId, setCategoryId] = useState(initialData?.categoryId ?? "");
-	const [date, setDate] = useState(initialData?.date ?? new Date().toISOString().split("T")[0]);
-	const [description, setDescription] = useState(initialData?.description ?? "");
+	const [date, setDate] = useState(
+		initialData?.date ?? new Date().toISOString().split("T")[0],
+	);
+	const [description, setDescription] = useState(
+		initialData?.description ?? "",
+	);
 	const [type, setType] = useState<ExpenseType>(initialData?.type ?? "need");
 
 	const [errors, setErrors] = useState<Record<string, string>>({});
 
 	function validate(): boolean {
 		const newErrors: Record<string, string> = {};
-		const numAmount = parseFloat(amount);
+
+		const numAmount = Number.parseFloat(amount);
 		if (!amount || Number.isNaN(numAmount)) {
 			newErrors.amount = "Amount is required";
 		} else if (numAmount <= 0) {
@@ -38,40 +60,50 @@ export function ExpenseForm({
 		if (!date) {
 			newErrors.date = "Date is required";
 		}
+		if (!description) {
+			newErrors.description = "Description is required";
+		}
 		setErrors(newErrors);
 		return Object.keys(newErrors).length === 0;
 	}
 
-	function handleSubmit(e: React.FormEvent) {
+	function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
 		e.preventDefault();
 		if (!validate()) return;
 		onSubmit({
-			amount: parseFloat(amount),
+			amount: Number.parseFloat(amount),
 			categoryId,
 			date,
-			description: description || undefined,
+			description,
 			type,
 		});
+	}
+
+	let submitLabel = "Add Expense";
+	if (isSubmitting) {
+		submitLabel = "Saving…";
+	} else if (initialData) {
+		submitLabel = "Update";
 	}
 
 	return (
 		<form onSubmit={handleSubmit} className="space-y-5">
 			<div className="space-y-1.5">
-				<label htmlFor="amount" className="text-sm font-medium text-foreground">
+				<Label htmlFor="amount">
 					Amount <span className="text-destructive">*</span>
-				</label>
-				<input
+				</Label>
+				<Input
 					id="amount"
 					type="number"
 					inputMode="decimal"
 					step="0.01"
-					min="0"
+					min={0}
 					placeholder="0.00"
 					value={amount}
 					onChange={(e) => setAmount(e.target.value)}
-					className={`w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 ${
-						errors.amount ? "border-destructive" : "border-input"
-					}`}
+					className={
+						errors.amount ? "aria-invalid:border-destructive" : undefined
+					}
 				/>
 				{errors.amount && (
 					<p className="text-xs text-destructive">{errors.amount}</p>
@@ -79,43 +111,44 @@ export function ExpenseForm({
 			</div>
 
 			<div className="space-y-1.5">
-				<label htmlFor="category" className="text-sm font-medium text-foreground">
+				<Label htmlFor="category">
 					Category <span className="text-destructive">*</span>
-				</label>
-				<select
-					id="category"
-					value={categoryId}
-					onChange={(e) => setCategoryId(e.target.value)}
-					className={`w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 ${
-						errors.categoryId ? "border-destructive" : "border-input"
-					}`}
-				>
-					<option value="">Select a category</option>
-					{categories
-						.filter((c) => c.id !== "uncategorized" || initialData?.categoryId === "uncategorized")
-						.map((c) => (
-							<option key={c.id} value={c.id}>
-								{c.name}
-							</option>
-						))}
-				</select>
+				</Label>
+				<Select value={categoryId} onValueChange={(v) => setCategoryId(v)}>
+					<SelectTrigger className="w-full" size="default">
+						<SelectValue placeholder="Select a category" />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectGroup>
+							<SelectLabel>Categories</SelectLabel>
+							{categories
+								.filter(
+									(c) =>
+										c.id !== "uncategorized" ||
+										initialData?.categoryId === "uncategorized",
+								)
+								.map((c) => (
+									<SelectItem key={c.id} value={c.id}>
+										{c.name}
+									</SelectItem>
+								))}
+						</SelectGroup>
+					</SelectContent>
+				</Select>
 				{errors.categoryId && (
 					<p className="text-xs text-destructive">{errors.categoryId}</p>
 				)}
 			</div>
 
 			<div className="space-y-1.5">
-				<label htmlFor="date" className="text-sm font-medium text-foreground">
+				<Label htmlFor="date">
 					Date <span className="text-destructive">*</span>
-				</label>
-				<input
+				</Label>
+				<Input
 					id="date"
 					type="date"
 					value={date}
 					onChange={(e) => setDate(e.target.value)}
-					className={`w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 ${
-						errors.date ? "border-destructive" : "border-input"
-					}`}
 				/>
 				{errors.date && (
 					<p className="text-xs text-destructive">{errors.date}</p>
@@ -123,65 +156,93 @@ export function ExpenseForm({
 			</div>
 
 			<div className="space-y-1.5">
-				<label htmlFor="description" className="text-sm font-medium text-foreground">
-					Description
-				</label>
-				<input
+				<Label htmlFor="description">
+					Description <span className="text-destructive">*</span>
+				</Label>
+				<Input
 					id="description"
 					type="text"
 					placeholder="What was this expense for?"
 					value={description}
 					onChange={(e) => setDescription(e.target.value)}
-					className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+					className={
+						errors.description ? "aria-invalid:border-destructive" : undefined
+					}
 				/>
+				{errors.description && (
+					<p className="text-xs text-destructive">{errors.description}</p>
+				)}
 			</div>
 
 			<div className="space-y-1.5">
-				<span className="text-sm font-medium text-foreground">
+				<Label>
 					Type <span className="text-destructive">*</span>
-				</span>
-				<div className="flex gap-2">
-					<button
-						type="button"
-						onClick={() => setType("need")}
-						className={`flex-1 rounded-lg border py-2 text-sm font-medium transition-all ${
+				</Label>
+				<div role="radiogroup" aria-label="Expense type" className="flex gap-4">
+					<Label
+						className={`relative flex-1 cursor-pointer rounded-lg border p-2.5 text-base font-medium transition-all flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
 							type === "need"
-								? "border-green-500/50 bg-green-500/15 text-green-600 dark:text-green-400"
-								: "border-input bg-background text-muted-foreground hover:bg-muted/50"
+								? "border-green-500 bg-card"
+								: "border-border bg-card/0 text-muted-foreground hover:border-muted-foreground/50"
 						}`}
 					>
-						Need
-					</button>
-					<button
-						type="button"
-						onClick={() => setType("want")}
-						className={`flex-1 rounded-lg border py-2 text-sm font-medium transition-all ${
+						<input
+							type="radio"
+							name="expense-type"
+							value="need"
+							checked={type === "need"}
+							onChange={() => setType("need")}
+							className="sr-only"
+						/>
+						<span
+							className={`absolute left-3 top-3 h-2.5 w-2.5 rounded-full ${type === "need" ? "bg-green-500 ring-2 ring-green-400" : "border bg-transparent"}`}
+						/>
+						<span
+							className={`${type === "need" ? "text-green-400" : "text-muted-foreground"}`}
+						>
+							Need
+						</span>
+					</Label>
+
+					<Label
+						className={`relative flex-1 cursor-pointer rounded-lg border p-2.5 text-base font-medium transition-all flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
 							type === "want"
-								? "border-orange-500/50 bg-orange-500/15 text-orange-600 dark:text-orange-400"
-								: "border-input bg-background text-muted-foreground hover:bg-muted/50"
+								? "border-primary/30 bg-card"
+								: "border-border bg-card/0 text-muted-foreground hover:border-muted-foreground/50"
 						}`}
 					>
-						Want
-					</button>
+						<input
+							type="radio"
+							name="expense-type"
+							value="want"
+							checked={type === "want"}
+							onChange={() => setType("want")}
+							className="sr-only"
+						/>
+						<span
+							className={`absolute left-3 top-3 h-2.5 w-2.5 rounded-full ${type === "want" ? "bg-primary/60 ring-2 ring-primary/40" : "border bg-transparent"}`}
+						/>
+						<span
+							className={`${type === "want" ? "text-primary/60" : "text-muted-foreground"}`}
+						>
+							Want
+						</span>
+					</Label>
 				</div>
 			</div>
 
 			<div className="flex justify-end gap-2 pt-2">
-				<button
+				<Button
+					variant="outline"
 					type="button"
 					onClick={onCancel}
 					disabled={isSubmitting}
-					className="rounded-lg border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted/50 disabled:opacity-50"
 				>
 					Cancel
-				</button>
-				<button
-					type="submit"
-					disabled={isSubmitting}
-					className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
-				>
-					{isSubmitting ? "Saving…" : initialData ? "Update" : "Add Expense"}
-				</button>
+				</Button>
+				<Button type="submit" disabled={isSubmitting}>
+					{submitLabel}
+				</Button>
 			</div>
 		</form>
 	);

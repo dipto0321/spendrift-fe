@@ -1,4 +1,11 @@
+import { Button } from "#/components/ui/button";
+import { Input } from "#/components/ui/input";
 import { Plus, Search, X } from "lucide-react";
+import {
+	getThisMonthRange,
+	getTodayRange,
+	isSameDateRange,
+} from "../domain/services";
 import type { Category, ExpenseFilter, ExpenseType } from "../domain/types";
 
 type ExpenseToolbarProps = {
@@ -13,7 +20,7 @@ export function ExpenseToolbar({
 	categories,
 	onFilterChange,
 	onAddExpense,
-}: ExpenseToolbarProps) {
+}: Readonly<ExpenseToolbarProps>) {
 	function updateFilter(patch: Partial<ExpenseFilter>) {
 		onFilterChange({ ...filter, ...patch });
 	}
@@ -27,12 +34,21 @@ export function ExpenseToolbar({
 	}
 
 	function clearFilter() {
-		onFilterChange({});
+		onFilterChange({ dateRange: getTodayRange() });
 	}
+
+	function setQuickRange(dateRange: ExpenseFilter["dateRange"]) {
+		onFilterChange({ ...filter, dateRange });
+	}
+
+	const todayRange = getTodayRange();
+	const thisMonthRange = getThisMonthRange();
+	const isTodaySelected = isSameDateRange(filter.dateRange, todayRange);
+	const isThisMonthSelected = isSameDateRange(filter.dateRange, thisMonthRange);
 
 	const hasActiveFilters =
 		filter.search ||
-		filter.dateRange ||
+		!isTodaySelected ||
 		(filter.categoryIds && filter.categoryIds.length > 0) ||
 		(filter.types && filter.types.length > 0);
 
@@ -41,19 +57,44 @@ export function ExpenseToolbar({
 	return (
 		<div className="space-y-3">
 			<div className="flex flex-wrap items-center gap-2">
-				<div className="relative flex-1 min-w-[200px]">
+				<div className="relative flex-1 min-w-50">
 					<Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-					<input
+					<Input
 						type="search"
 						placeholder="Search expenses…"
 						value={filter.search ?? ""}
-						onChange={(e) => updateFilter({ search: e.target.value || undefined })}
-						className="w-full rounded-lg border border-input bg-background pl-9 pr-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+						onChange={(e) =>
+							updateFilter({ search: e.target.value || undefined })
+						}
+						className="pl-9"
 					/>
 				</div>
 
+				<div className="flex items-center gap-1 rounded-full border border-border/60 bg-muted/30 p-1">
+					<Button
+						type="button"
+						variant={isTodaySelected ? "default" : "secondary"}
+						size="sm"
+						aria-pressed={isTodaySelected}
+						onClick={() => setQuickRange(todayRange)}
+						className="rounded-full px-3 text-xs font-medium"
+					>
+						Today
+					</Button>
+					<Button
+						type="button"
+						variant={isThisMonthSelected ? "default" : "secondary"}
+						size="sm"
+						aria-pressed={isThisMonthSelected}
+						onClick={() => setQuickRange(thisMonthRange)}
+						className="rounded-full px-3 text-xs font-medium"
+					>
+						This month
+					</Button>
+				</div>
+
 				<div className="flex items-center gap-1.5">
-					<input
+					<Input
 						type="date"
 						title="From date"
 						value={filter.dateRange?.start ?? ""}
@@ -65,10 +106,9 @@ export function ExpenseToolbar({
 								},
 							})
 						}
-						className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
 					/>
 					<span className="text-muted-foreground">—</span>
-					<input
+					<Input
 						type="date"
 						title="To date"
 						value={filter.dateRange?.end ?? ""}
@@ -80,18 +120,17 @@ export function ExpenseToolbar({
 								},
 							})
 						}
-						className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
 					/>
 				</div>
 
 				<div className="flex flex-wrap items-center gap-1.5">
 					{userCategories.map((cat) => {
-						const isActive =
-							filter.categoryIds?.includes(cat.id) ?? false;
+						const isActive = filter.categoryIds?.includes(cat.id) ?? false;
 						return (
-							<button
+							<Button
 								key={cat.id}
-								type="button"
+								variant={isActive ? "default" : "ghost"}
+								size="sm"
 								onClick={() => {
 									const current = filter.categoryIds ?? [];
 									const updated = isActive
@@ -101,62 +140,56 @@ export function ExpenseToolbar({
 										categoryIds: updated.length > 0 ? updated : undefined,
 									});
 								}}
-								className={`rounded-full border px-2.5 py-1 text-xs font-medium transition-all ${
-									isActive
-										? "border-primary/50 bg-primary/10 text-primary"
-										: "border-border bg-card text-muted-foreground hover:border-muted-foreground/50"
-								}`}
+								className={`rounded-full px-2.5 py-1 text-xs font-medium ${isActive ? "" : "text-muted-foreground"}`}
 							>
 								{cat.name}
-							</button>
+							</Button>
 						);
 					})}
 				</div>
 
 				<div className="flex items-center gap-1">
-					<button
+					<Button
 						type="button"
+						variant={filter.types?.includes("need") ? "default" : "ghost"}
+						size="sm"
 						onClick={() => toggleType("need")}
-						className={`rounded-full border px-2.5 py-1 text-xs font-medium transition-all ${
-							filter.types?.includes("need")
-								? "border-green-500/50 bg-green-500/15 text-green-600 dark:text-green-400"
-								: "border-border bg-card text-muted-foreground hover:border-muted-foreground/50"
-						}`}
+						className="rounded-full px-2.5 py-1 text-xs font-medium"
 					>
 						Need
-					</button>
-					<button
+					</Button>
+					<Button
 						type="button"
+						variant={filter.types?.includes("want") ? "default" : "ghost"}
+						size="sm"
 						onClick={() => toggleType("want")}
-						className={`rounded-full border px-2.5 py-1 text-xs font-medium transition-all ${
-							filter.types?.includes("want")
-								? "border-orange-500/50 bg-orange-500/15 text-orange-600 dark:text-orange-400"
-								: "border-border bg-card text-muted-foreground hover:border-muted-foreground/50"
-						}`}
+						className="rounded-full px-2.5 py-1 text-xs font-medium"
 					>
 						Want
-					</button>
+					</Button>
 				</div>
 
 				{hasActiveFilters && (
-					<button
+					<Button
 						type="button"
+						variant="outline"
+						size="sm"
 						onClick={clearFilter}
-						className="flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-xs text-muted-foreground hover:border-destructive/50 hover:text-destructive transition-all"
+						className="flex items-center gap-1 rounded-full px-2.5 py-1 text-xs"
 					>
 						<X className="h-3 w-3" />
 						Clear
-					</button>
+					</Button>
 				)}
 
-				<button
+				<Button
 					type="button"
 					onClick={onAddExpense}
-					className="ml-auto flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+					className="ml-auto flex items-center gap-1.5"
 				>
 					<Plus className="h-4 w-4" />
 					Add Expense
-				</button>
+				</Button>
 			</div>
 		</div>
 	);
