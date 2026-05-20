@@ -1,6 +1,5 @@
 import { useState } from "react";
-import type { Category, CategoryColor, Expense, ExpenseCreateInput, ExpenseType } from "../domain/types";
-import { CategoryColorPicker } from "./CategoryColorPicker";
+import type { Category, Expense, ExpenseCreateInput, ExpenseType } from "../domain/types";
 
 type ExpenseFormProps = {
 	categories: Category[];
@@ -22,9 +21,6 @@ export function ExpenseForm({
 	const [date, setDate] = useState(initialData?.date ?? new Date().toISOString().split("T")[0]);
 	const [description, setDescription] = useState(initialData?.description ?? "");
 	const [type, setType] = useState<ExpenseType>(initialData?.type ?? "need");
-	const [showNewCategory, setShowNewCategory] = useState(false);
-	const [newCategoryName, setNewCategoryName] = useState("");
-	const [newCategoryColor, setNewCategoryColor] = useState<CategoryColor>("#3B82F6");
 
 	const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -41,9 +37,6 @@ export function ExpenseForm({
 		}
 		if (!date) {
 			newErrors.date = "Date is required";
-		}
-		if (!type) {
-			newErrors.type = "Type is required";
 		}
 		setErrors(newErrors);
 		return Object.keys(newErrors).length === 0;
@@ -109,51 +102,6 @@ export function ExpenseForm({
 				{errors.categoryId && (
 					<p className="text-xs text-destructive">{errors.categoryId}</p>
 				)}
-				<button
-					type="button"
-					onClick={() => setShowNewCategory(!showNewCategory)}
-					className="text-xs text-primary hover:underline"
-				>
-					{showNewCategory ? "Cancel new category" : "+ Create new category"}
-				</button>
-
-				{showNewCategory && (
-					<div className="mt-2 space-y-2 rounded-lg border border-border/50 bg-muted/20 p-3">
-						<input
-							type="text"
-							placeholder="Category name"
-							value={newCategoryName}
-							onChange={(e) => setNewCategoryName(e.target.value)}
-							className="w-full rounded-lg border border-input bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-						/>
-						<CategoryColorPicker
-							value={newCategoryColor}
-							onChange={setNewCategoryColor}
-						/>
-						<button
-							type="button"
-							onClick={() => {
-								if (newCategoryName.trim()) {
-									onSubmit({
-										amount: 0,
-										categoryId: "new",
-										date: new Date().toISOString().split("T")[0],
-										type: "need",
-										description: JSON.stringify({
-											action: "createCategory",
-											name: newCategoryName.trim(),
-											color: newCategoryColor,
-										}),
-									});
-								}
-							}}
-							disabled={!newCategoryName.trim()}
-							className="w-full rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
-						>
-							Add Category
-						</button>
-					</div>
-				)}
 			</div>
 
 			<div className="space-y-1.5">
@@ -216,9 +164,6 @@ export function ExpenseForm({
 						Want
 					</button>
 				</div>
-				{errors.type && (
-					<p className="text-xs text-destructive">{errors.type}</p>
-				)}
 			</div>
 
 			<div className="flex justify-end gap-2 pt-2">

@@ -1,13 +1,11 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Expense, ExpenseFilter, ExpenseCreateInput } from "../domain/types";
-import type { CategoryColor } from "../domain/types";
 import { expenseRepository, categoryRepository } from "../data/repository";
 import { filterExpenses } from "../domain/services";
 import { ExpenseToolbar } from "./ExpenseToolbar";
 import { ExpenseTable } from "./ExpenseTable";
 import { ExpenseModal } from "./ExpenseModal";
-import { CategoryManager } from "./CategoryManager";
 
 export function ExpensePage() {
 	const queryClient = useQueryClient();
@@ -26,9 +24,7 @@ export function ExpensePage() {
 		queryFn: () => expenseRepository.getAll(),
 	});
 
-	const {
-		data: categories = [],
-	} = useQuery({
+	const { data: categories = [] } = useQuery({
 		queryKey: ["categories"],
 		queryFn: () => categoryRepository.getAll(),
 	});
@@ -62,46 +58,6 @@ export function ExpensePage() {
 		},
 	});
 
-	const categoryCreateMutation = useMutation({
-		mutationFn: ({
-			name,
-			color,
-		}: {
-			name: string;
-			color: CategoryColor
-		}) => categoryRepository.create(name, color as CategoryColor),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["categories"] });
-		},
-	});
-
-	const categoryUpdateMutation = useMutation({
-		mutationFn: ({
-			id,
-			name,
-			color,
-		}: {
-			id: string;
-			name: string;
-			color: CategoryColor
-		}) =>
-			categoryRepository.update(id, {
-				name,
-				color: color as CategoryColor,
-			}),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["categories"] });
-		},
-	});
-
-	const categoryDeleteMutation = useMutation({
-		mutationFn: (id: string) => categoryRepository.delete(id, "uncategorized"),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["categories"] });
-			queryClient.invalidateQueries({ queryKey: ["expenses"] });
-		},
-	});
-
 	const filteredExpenses = filterExpenses(allExpenses, filter);
 
 	function openAddModal() {
@@ -117,17 +73,6 @@ export function ExpensePage() {
 	}
 
 	async function handleFormSubmit(data: ExpenseCreateInput) {
-		if (data.amount === 0 && data.categoryId === "new") {
-			const parsed = JSON.parse(data.description || "{}");
-			if (parsed.action === "createCategory") {
-				await categoryCreateMutation.mutateAsync({
-					name: parsed.name,
-					color: parsed.color,
-				});
-				return;
-			}
-		}
-
 		if (modalState.expense) {
 			await updateMutation.mutateAsync({
 				id: modalState.expense.id,
@@ -178,19 +123,6 @@ export function ExpensePage() {
 					isLoading={expensesLoading}
 					onEdit={openEditModal}
 					onDelete={(id) => deleteMutation.mutate(id)}
-				/>
-
-				<CategoryManager
-					categories={categories}
-					onCreate={async (name, color) => {
-						await categoryCreateMutation.mutateAsync({ name, color });
-					}}
-					onUpdate={async (id, name, color) => {
-						await categoryUpdateMutation.mutateAsync({ id, name, color });
-					}}
-					onDelete={async (id) => {
-						await categoryDeleteMutation.mutateAsync(id);
-					}}
 				/>
 			</div>
 
