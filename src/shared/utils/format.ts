@@ -1,8 +1,20 @@
 export function formatCurrency(amount: number, currency: string) {
-	return new Intl.NumberFormat(undefined, {
-		style: "currency",
-		currency,
-	}).format(amount);
+	if (currency?.trim().length !== 3) {
+		return new Intl.NumberFormat(undefined, {
+			maximumFractionDigits: 2,
+		}).format(amount);
+	}
+
+	try {
+		return new Intl.NumberFormat(undefined, {
+			style: "currency",
+			currency: currency.toUpperCase(),
+		}).format(amount);
+	} catch {
+		return new Intl.NumberFormat(undefined, {
+			maximumFractionDigits: 2,
+		}).format(amount);
+	}
 }
 
 export function formatDate(isoDate: string) {
