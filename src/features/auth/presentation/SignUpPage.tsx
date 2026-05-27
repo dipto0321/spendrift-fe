@@ -84,7 +84,10 @@ export function SignUpPage() {
 								const cleanEmail = email.trim();
 								const cleanPassword = password.trim();
 								const cleanConfirmPassword = confirmPassword.trim();
-								const cleanHumanAnswer = Number.parseInt(humanAnswer.trim(), 10);
+								const cleanHumanAnswer = Number.parseInt(
+									humanAnswer.trim(),
+									10,
+								);
 
 								if (!cleanName || !cleanEmail || !cleanPassword) {
 									setLocalError(
@@ -160,7 +163,9 @@ export function SignUpPage() {
 											size="icon-sm"
 											className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
 											onClick={() => setShowPassword((value) => !value)}
-											aria-label={showPassword ? "Hide password" : "Show password"}
+											aria-label={
+												showPassword ? "Hide password" : "Show password"
+											}
 										>
 											{showPassword ? <EyeOff /> : <Eye />}
 										</Button>
@@ -175,7 +180,9 @@ export function SignUpPage() {
 											type={showConfirmPassword ? "text" : "password"}
 											autoComplete="new-password"
 											value={confirmPassword}
-											onChange={(event) => setConfirmPassword(event.target.value)}
+											onChange={(event) =>
+												setConfirmPassword(event.target.value)
+											}
 											placeholder="Repeat password"
 											className="pr-10"
 										/>
@@ -186,7 +193,9 @@ export function SignUpPage() {
 											className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
 											onClick={() => setShowConfirmPassword((value) => !value)}
 											aria-label={
-												showConfirmPassword ? "Hide confirm password" : "Show confirm password"
+												showConfirmPassword
+													? "Hide confirm password"
+													: "Show confirm password"
 											}
 										>
 											{showConfirmPassword ? <EyeOff /> : <Eye />}
@@ -218,7 +227,8 @@ export function SignUpPage() {
 								</div>
 								<div className="mt-4 flex items-center justify-center gap-3 rounded-2xl border border-border/60 bg-background px-4 py-3">
 									<span className="text-lg font-semibold tracking-tight text-foreground">
-										{humanChallenge.left} {humanChallenge.operator} {humanChallenge.right} = ?
+										{humanChallenge.left} {humanChallenge.operator}{" "}
+										{humanChallenge.right} = ?
 									</span>
 									<Input
 										id="human-check"
@@ -253,7 +263,10 @@ export function SignUpPage() {
 					<CardFooter className="border-t border-border/50 px-6 py-5 sm:px-8">
 						<div className="text-sm text-muted-foreground">
 							Already have an account?{" "}
-							<Link to="/sign-in" className="font-medium text-primary hover:underline">
+							<Link
+								to="/sign-in"
+								className="font-medium text-primary hover:underline"
+							>
 								Sign in
 							</Link>
 						</div>
