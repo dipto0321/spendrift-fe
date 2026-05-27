@@ -5,6 +5,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import {
 	categoryRepository,
 	expenseRepository,
 } from "@/features/expenses/data/repository";
@@ -70,6 +78,9 @@ function ReportsPage() {
 	const currency = activeTracker?.currency ?? "";
 	const [period, setPeriod] = useState<ReportPeriod>("monthly");
 	const [customRange, setCustomRange] = useState<PickerDateRange | undefined>();
+	const [customRangeOpen, setCustomRangeOpen] = useState(false);
+	const [customRangeSelectionStarted, setCustomRangeSelectionStarted] =
+		useState(false);
 
 	const { data: expenses = [], isLoading } = useQuery({
 		queryKey: ["expenses"],
@@ -107,6 +118,7 @@ function ReportsPage() {
 	);
 	const needsWantsSplit = calculateNeedsWantsSplit(filteredExpenses);
 	const rangeLabel = getRangeLabel(customRange);
+	const isCustomRangeActive = customRangeOpen || Boolean(customRange);
 
 	const periodLabels: { value: ReportPeriod; label: string }[] = [
 		{ value: "weekly", label: "Weekly" },
@@ -137,40 +149,6 @@ function ReportsPage() {
 				description="Analyze spending patterns, category breakdowns, and year-over-year trends."
 			/>
 
-			<section className="mb-6 rounded-2xl border border-border/60 bg-card/30 p-6">
-				<div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-					<div>
-						<div className="flex flex-wrap items-center gap-2">
-							<h2 className="m-0 text-base font-semibold text-foreground">
-								Custom range
-							</h2>
-							<Badge variant="outline">{rangeLabel}</Badge>
-						</div>
-						<p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-							Choose a start and end date to limit every report section to a
-							custom calendar range.
-						</p>
-					</div>
-					<Button
-						type="button"
-						variant="outline"
-						onClick={() => setCustomRange(undefined)}
-						disabled={!customRange?.from && !customRange?.to}
-					>
-						Clear range
-					</Button>
-				</div>
-				<div className="mt-4 overflow-hidden rounded-2xl border border-border/60 bg-background p-2">
-					<Calendar
-						mode="range"
-						selected={customRange}
-						onSelect={setCustomRange}
-						numberOfMonths={2}
-						className="w-full"
-					/>
-				</div>
-			</section>
-
 			<section className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
 				<StatCard
 					label="Total"
@@ -186,25 +164,60 @@ function ReportsPage() {
 			</section>
 
 			<section className="mb-6">
-				<div className="flex items-center justify-between gap-4">
-					<h2 className="m-0 text-base font-semibold text-foreground">
-						Spending Over Time
-					</h2>
-					<div className="flex items-center gap-1 rounded-full border border-border/60 bg-muted/30 p-1">
-						{periodLabels.map(({ value, label }) => (
+				<div className="flex flex-col gap-4">
+					<div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+						<div>
+							<h2 className="m-0 text-base font-semibold text-foreground">
+								Spending Over Time
+							</h2>
+							<p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+								Switch the grouping or choose a custom calendar range.
+							</p>
+						</div>
+						<div className="flex items-center gap-1 rounded-full border border-border/60 bg-muted/30 p-1">
+							{periodLabels.map(({ value, label }) => (
+								<button
+									key={value}
+									type="button"
+									onClick={() => setPeriod(value)}
+									className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+										!isCustomRangeActive && period === value
+											? "bg-primary text-primary-foreground"
+											: "text-muted-foreground hover:text-foreground"
+									}`}
+								>
+									{label}
+								</button>
+							))}
 							<button
-								key={value}
 								type="button"
-								onClick={() => setPeriod(value)}
+								onClick={() => {
+									setCustomRangeSelectionStarted(false);
+									setCustomRangeOpen(true);
+								}}
 								className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-									period === value
+									isCustomRangeActive
 										? "bg-primary text-primary-foreground"
 										: "text-muted-foreground hover:text-foreground"
 								}`}
 							>
-								{label}
+								Custom range
 							</button>
-						))}
+						</div>
+					</div>
+					<div className="flex flex-wrap items-center gap-2">
+						<span className="text-sm text-muted-foreground">Showing</span>
+						<Badge variant="outline">{rangeLabel}</Badge>
+						{customRange ? (
+							<Button
+								type="button"
+								variant="ghost"
+								size="sm"
+								onClick={() => setCustomRange(undefined)}
+							>
+								Clear custom range
+							</Button>
+						) : null}
 					</div>
 				</div>
 				<div className="mt-4 rounded-2xl border border-border/60 bg-card/30 p-6">
@@ -215,6 +228,55 @@ function ReportsPage() {
 					/>
 				</div>
 			</section>
+
+			<Dialog open={customRangeOpen} onOpenChange={setCustomRangeOpen}>
+				<DialogContent className="sm:max-w-4xl">
+					<DialogHeader>
+						<DialogTitle>Select custom date range</DialogTitle>
+						<DialogDescription>
+							Pick a start and end date. The reports update as soon as the range
+							is complete.
+						</DialogDescription>
+					</DialogHeader>
+					<div className="overflow-hidden rounded-2xl border border-border/60 bg-background p-2">
+						<Calendar
+							mode="range"
+							selected={customRange}
+							onSelect={(range) => {
+								setCustomRange(range);
+								if (range?.from && !range?.to) {
+									setCustomRangeSelectionStarted(true);
+									return;
+								}
+
+								if (range?.from && range?.to && customRangeSelectionStarted) {
+									setCustomRangeOpen(false);
+									setCustomRangeSelectionStarted(false);
+								}
+							}}
+							numberOfMonths={2}
+							className="w-full"
+						/>
+					</div>
+					<DialogFooter>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => {
+								setCustomRange(undefined);
+								setCustomRangeSelectionStarted(false);
+								setCustomRangeOpen(false);
+							}}
+							disabled={!customRange?.from && !customRange?.to}
+						>
+							Clear range
+						</Button>
+						<Button type="button" onClick={() => setCustomRangeOpen(false)}>
+							Done
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 
 			<section className="mb-6 grid gap-6 lg:grid-cols-2">
 				<div className="rounded-2xl border border-border/60 bg-card/30 p-6">
