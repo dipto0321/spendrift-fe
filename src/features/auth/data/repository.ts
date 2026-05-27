@@ -18,6 +18,11 @@ const USERS_KEY = "fintrack.mock-auth.users";
 const SESSION_KEY = "fintrack.mock-auth.session";
 
 const listeners = new Set<() => void>();
+let snapshotCache: AuthSnapshot = {
+	user: null,
+	hasAccount: false,
+	isAuthenticated: false,
+};
 
 const delay = (ms: number) =>
 	new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -54,9 +59,20 @@ function writeSessionId(userId: string | null) {
 }
 
 function notify() {
+	snapshotCache = readSnapshot();
 	for (const listener of listeners) {
 		listener();
 	}
+}
+
+function readSnapshot(): AuthSnapshot {
+	const users = readUsers();
+	const user = getCurrentUser(users);
+	return {
+		user: user ? cloneUser(user) : null,
+		hasAccount: users.length > 0,
+		isAuthenticated: Boolean(user),
+	};
 }
 
 function getCurrentUser(users: AuthUser[]) {
@@ -80,13 +96,7 @@ function persistCurrentUser(user: AuthUser) {
 
 export const authRepository = {
 	getSnapshot(): AuthSnapshot {
-		const users = readUsers();
-		const user = getCurrentUser(users);
-		return {
-			user: user ? cloneUser(user) : null,
-			hasAccount: users.length > 0,
-			isAuthenticated: Boolean(user),
-		};
+		return snapshotCache;
 	},
 
 	subscribe(listener: () => void) {
@@ -197,6 +207,8 @@ export const authRepository = {
 		return persistCurrentUser(updated);
 	},
 };
+
+snapshotCache = readSnapshot();
 
 export function useAuthSnapshot() {
 	return useSyncExternalStore(
