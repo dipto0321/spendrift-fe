@@ -1,4 +1,13 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { trackerRepository } from "../data/repository";
 
 export function TrackerOnboarding() {
@@ -13,72 +22,97 @@ export function TrackerOnboarding() {
 
 	return (
 		<div className="min-h-screen bg-background px-4 py-6">
-			<div className="mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-2xl items-center">
-				<div className="w-full rounded-4xl border border-border/60 bg-card/40 p-6 shadow-2xl shadow-black/10 backdrop-blur-sm sm:p-8">
-					<p className="island-kicker mb-2">Welcome</p>
-					<h1 className="display-title m-0 text-3xl font-semibold text-foreground sm:text-5xl">
-						Create your first tracker
-					</h1>
-					<p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base">
-						FinTrack starts with a tracker. Add a name and currency to unlock
-						the workspace.
-					</p>
-
-					<form
-						className="mt-8 space-y-4"
-						onSubmit={async (event) => {
-							event.preventDefault();
-							const form = event.currentTarget;
-							const nameInput = form.elements.namedItem(
-								"name",
-							) as HTMLInputElement | null;
-							const currencyInput = form.elements.namedItem(
-								"currency",
-							) as HTMLInputElement | null;
-							const name = nameInput?.value.trim() ?? "";
-							const currency = currencyInput?.value.trim().toUpperCase() ?? "";
-							if (!name || !currency) return;
-							await createMutation.mutateAsync({ name, currency });
-							form.reset();
-						}}
-					>
-						<div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_140px]">
-							<label className="grid gap-2">
-								<span className="text-sm font-medium text-foreground">
-									Tracker name
-								</span>
-								<input
-									name="name"
-									type="text"
-									placeholder="Personal finances"
-									className="rounded-xl border border-input bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-									required
-								/>
-							</label>
-							<label className="grid gap-2">
-								<span className="text-sm font-medium text-foreground">
-									Currency
-								</span>
-								<input
-									name="currency"
-									type="text"
-									placeholder="USD"
-									className="rounded-xl border border-input bg-background px-4 py-3 text-sm text-foreground uppercase placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-									maxLength={3}
-									required
-								/>
-							</label>
+			<div className="mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-4xl items-center">
+				<Card className="w-full overflow-hidden rounded-4xl border-border/60 bg-card/60 shadow-2xl shadow-black/10 backdrop-blur-sm">
+					<CardHeader className="space-y-4 border-b border-border/50 px-6 py-8 sm:px-8 sm:py-10">
+						<div className="space-y-2">
+							<p className="island-kicker mb-0">Welcome</p>
+							<CardTitle className="display-title text-3xl font-semibold tracking-tight text-foreground sm:text-5xl">
+								Create your first tracker
+							</CardTitle>
 						</div>
+						<CardDescription className="max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
+							FinTrack starts with a tracker. Add a name and currency to unlock
+							the workspace.
+						</CardDescription>
+					</CardHeader>
 
-						<button
-							type="submit"
-							disabled={createMutation.isPending}
-							className="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
+					<CardContent className="px-6 py-6 sm:px-8 sm:py-8">
+						<form
+							className="space-y-6"
+							onSubmit={async (event) => {
+								event.preventDefault();
+								const form = event.currentTarget;
+								const nameInput = form.elements.namedItem(
+									"name",
+								) as HTMLInputElement | null;
+								const currencyInput = form.elements.namedItem(
+									"currency",
+								) as HTMLInputElement | null;
+								const name = nameInput?.value.trim() ?? "";
+								const currency =
+									currencyInput?.value.trim().toUpperCase() ?? "";
+								if (!name || !currency) return;
+								await createMutation.mutateAsync({ name, currency });
+								form.reset();
+							}}
 						>
-							{createMutation.isPending ? "Creating..." : "Create tracker"}
-						</button>
-					</form>
-				</div>
+							<div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_12rem] md:items-end">
+								<div className="grid gap-2">
+									<Label
+										htmlFor="tracker-name"
+										className="text-sm font-medium text-foreground"
+									>
+										Tracker name
+									</Label>
+									<Input
+										id="tracker-name"
+										name="name"
+										type="text"
+										placeholder="Personal finances"
+										className="h-12 rounded-xl bg-background text-sm"
+										required
+									/>
+								</div>
+								<div className="grid gap-2">
+									<Label
+										htmlFor="tracker-currency"
+										className="text-sm font-medium text-foreground"
+									>
+										Currency
+									</Label>
+									<Input
+										id="tracker-currency"
+										name="currency"
+										type="text"
+										placeholder="BDT"
+										className="h-12 rounded-xl bg-background text-sm uppercase"
+										maxLength={3}
+										onChange={(event) => {
+											event.currentTarget.value = event.currentTarget.value
+												.toUpperCase()
+												.slice(0, 3);
+										}}
+										required
+									/>
+								</div>
+							</div>
+
+							<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+								<p className="text-sm text-muted-foreground">
+									Use a short tracker name and a three-letter currency code.
+								</p>
+								<button
+									type="submit"
+									disabled={createMutation.isPending}
+									className="inline-flex h-12 items-center justify-center rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60 sm:min-w-40"
+								>
+									{createMutation.isPending ? "Creating..." : "Create tracker"}
+								</button>
+							</div>
+						</form>
+					</CardContent>
+				</Card>
 			</div>
 		</div>
 	);
