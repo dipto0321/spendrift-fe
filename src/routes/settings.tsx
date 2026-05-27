@@ -1,5 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { trackerRepository } from "@/features/trackers/data/repository";
+import { TrackerManager } from "@/features/trackers/presentation/TrackerManager";
+import { useTracker } from "@/features/trackers/presentation/TrackerContext";
 import { categoryRepository } from "@/features/expenses/data/repository";
 import type { CategoryColor } from "@/features/expenses/domain/types";
 import { CategoryManager } from "@/features/expenses/presentation/CategoryManager";
@@ -10,10 +13,16 @@ export const Route = createFileRoute("/settings")({
 
 function SettingsPage() {
 	const queryClient = useQueryClient();
+	const { activeTracker, setActiveTrackerById } = useTracker();
 
 	const { data: categories = [] } = useQuery({
 		queryKey: ["categories"],
 		queryFn: () => categoryRepository.getAll(),
+	});
+
+	const { data: trackers = [] } = useQuery({
+		queryKey: ["trackers"],
+		queryFn: () => trackerRepository.getAll(),
 	});
 
 	const createMutation = useMutation({
@@ -50,6 +59,36 @@ function SettingsPage() {
 		},
 	});
 
+	const createTrackerMutation = useMutation({
+		mutationFn: ({ name, currency }: { name: string; currency: string }) =>
+			trackerRepository.create(name, currency),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["trackers"] });
+		},
+	});
+
+	const updateTrackerMutation = useMutation({
+		mutationFn: ({
+			id,
+			name,
+			currency,
+		}: {
+			id: string;
+			name: string;
+			currency: string;
+		}) => trackerRepository.update(id, { name, currency }),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["trackers"] });
+		},
+	});
+
+	const deleteTrackerMutation = useMutation({
+		mutationFn: (id: string) => trackerRepository.delete(id),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["trackers"] });
+		},
+	});
+
 	return (
 		<main className="page-wrap px-4 pb-14 pt-10 sm:pt-12">
 			<header className="mb-6">
@@ -82,6 +121,31 @@ function SettingsPage() {
 					onDelete={async (id) => {
 						await deleteMutation.mutateAsync(id);
 					}}
+				/>
+			</section>
+
+			<section className="mb-6">
+				<div className="mb-3">
+					<h2 className="text-base font-semibold text-foreground">
+						Trackers
+					</h2>
+					<p className="m-0 text-sm text-muted-foreground">
+						Create, rename, switch, and delete your trackers.
+					</p>
+				</div>
+				<TrackerManager
+					trackers={trackers}
+					activeTrackerId={activeTracker.id}
+					onCreate={async (name, currency) => {
+						await createTrackerMutation.mutateAsync({ name, currency });
+					}}
+					onUpdate={async (id, name, currency) => {
+						await updateTrackerMutation.mutateAsync({ id, name, currency });
+					}}
+					onDelete={async (id) => {
+						await deleteTrackerMutation.mutateAsync(id);
+					}}
+					onActivate={setActiveTrackerById}
 				/>
 			</section>
 		</main>

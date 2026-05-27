@@ -22,7 +22,7 @@ export function TrackerSelector() {
 					</select>
 				</div>
 				<p className="mt-1 ml-6 text-[10px] text-muted-foreground">
-					{activeTracker.country} · {activeTracker.currency}
+					Currency: {activeTracker.currency}
 				</p>
 			</div>
 		</div>
