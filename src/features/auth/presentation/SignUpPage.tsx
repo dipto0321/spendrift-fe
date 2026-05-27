@@ -111,14 +111,14 @@ export function SignUpPage() {
 						</div>
 					</div>
 
-					<div className="order-1 rounded-3xl bg-linear-to-br from-cyan-500 via-blue-600 to-slate-900 p-6 text-white lg:order-2">
-						<p className="text-sm font-medium uppercase tracking-[0.2em] text-white/60">
+					<div className="order-1 rounded-3xl  p-6 text-foreground lg:order-2">
+						<p className="text-sm font-medium uppercase tracking-[0.2em] text-foreground/60">
 							First step
 						</p>
 						<h2 className="mt-4 text-3xl font-semibold tracking-tight sm:text-5xl">
 							Create your account, then create a tracker.
 						</h2>
-						<p className="mt-4 max-w-xl text-sm leading-6 text-white/70 sm:text-base">
+						<p className="mt-4 max-w-xl text-sm leading-6 text-foreground/70 sm:text-base">
 							The app will open the tracker onboarding screen immediately after
 							signup.
 						</p>

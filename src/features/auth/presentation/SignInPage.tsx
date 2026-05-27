@@ -15,29 +15,18 @@ export function SignInPage() {
 	return (
 		<div className="min-h-screen bg-background px-4 py-6">
 			<div className="mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-5xl items-center">
-				<div className="grid w-full gap-8 rounded-[2rem] border border-border/60 bg-card/40 p-6 shadow-2xl shadow-black/10 backdrop-blur-sm lg:grid-cols-[1.1fr_0.9fr] lg:p-8">
-					<div className="flex flex-col justify-between rounded-[1.5rem] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 p-6 text-white">
+				<div className="grid w-full gap-8 rounded-4xl border border-border/60 bg-card/40 p-6 shadow-2xl shadow-black/10 backdrop-blur-sm lg:grid-cols-[1.1fr_0.9fr] lg:p-8">
+					<div className="flex flex-col justify-between rounded-3xl text-foreground">
 						<div>
-							<p className="text-sm font-medium uppercase tracking-[0.2em] text-white/60">
+							<p className="text-sm font-medium uppercase tracking-[0.2em] text-foreground/60">
 								FinTrack
 							</p>
 							<h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-5xl">
 								Track money with a clean workspace.
 							</h1>
-							<p className="mt-4 max-w-xl text-sm leading-6 text-white/70 sm:text-base">
+							<p className="mt-4 max-w-xl text-sm leading-6 text-foreground/70 sm:text-base">
 								Sign in to open your trackers, budgets, expenses, and reports.
 							</p>
-						</div>
-						<div className="mt-10 grid grid-cols-3 gap-3 text-xs text-white/70 sm:text-sm">
-							<div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-								Secure sign-in
-							</div>
-							<div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-								One tracker gate
-							</div>
-							<div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-								Profile settings
-							</div>
 						</div>
 					</div>
 
@@ -59,8 +48,14 @@ export function SignInPage() {
 									event.preventDefault();
 									const form = event.currentTarget;
 									const data = new FormData(form);
-									const email = String(data.get("email") ?? "").trim();
-									const password = String(data.get("password") ?? "").trim();
+									const emailInput = data.get("email");
+									const passwordInput = data.get("password");
+									const email =
+										typeof emailInput === "string" ? emailInput.trim() : "";
+									const password =
+										typeof passwordInput === "string"
+											? passwordInput.trim()
+											: "";
 									if (!email || !password) return;
 									await signInMutation.mutateAsync({ email, password });
 								}}
