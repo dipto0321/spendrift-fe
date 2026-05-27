@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { requireAuth } from "@/features/auth/presentation/routeGuards";
 import { categoryRepository } from "@/features/expenses/data/repository";
 import type { CategoryColor } from "@/features/expenses/domain/types";
 import { CategoryManager } from "@/features/expenses/presentation/CategoryManager";
@@ -8,6 +9,7 @@ import { useTracker } from "@/features/trackers/presentation/TrackerContext";
 import { TrackerManager } from "@/features/trackers/presentation/TrackerManager";
 
 export const Route = createFileRoute("/settings")({
+	beforeLoad: requireAuth,
 	component: SettingsPage,
 });
 

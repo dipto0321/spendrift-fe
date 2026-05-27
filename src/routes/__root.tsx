@@ -6,6 +6,7 @@ import {
 	Scripts,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
+import { useAuthSnapshot } from "@/features/auth/data/repository";
 import {
 	TrackerProvider,
 	useTracker,
@@ -87,7 +88,12 @@ function RootDocument({ children }: Readonly<{ children: React.ReactNode }>) {
 }
 
 function WorkspaceGate({ children }: Readonly<{ children: React.ReactNode }>) {
+	const auth = useAuthSnapshot();
 	const { hasTrackers } = useTracker();
+
+	if (!auth.isAuthenticated) {
+		return <>{children}</>;
+	}
 
 	if (!hasTrackers) {
 		return <TrackerOnboarding />;

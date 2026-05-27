@@ -10,6 +10,10 @@ function cloneTrackers(source: Tracker[]) {
 
 let trackers: Tracker[] = [];
 
+export function resetTrackerMockData() {
+	trackers = [];
+}
+
 export const trackerRepository: TrackerRepository = {
 	async getAll(): Promise<Tracker[]> {
 		await delay(120);

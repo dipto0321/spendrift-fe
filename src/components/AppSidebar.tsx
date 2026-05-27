@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import {
 	BarChart3,
 	ChevronRight,
@@ -8,6 +8,10 @@ import {
 	ReceiptText,
 	Settings2,
 } from "lucide-react";
+import {
+	authRepository,
+	useAuthSnapshot,
+} from "@/features/auth/data/repository";
 import { TrackerSelector } from "@/features/trackers/presentation/TrackerSelector";
 import ThemeToggle from "./ThemeToggle";
 
@@ -16,16 +20,21 @@ const navItems = [
 	{ to: "/expenses", label: "Expenses", icon: ReceiptText },
 	{ to: "/budget", label: "Budget", icon: PiggyBank },
 	{ to: "/reports", label: "Reports", icon: BarChart3 },
+	{ to: "/profile", label: "Profile", icon: CircleUserRound },
 	{ to: "/settings", label: "Settings", icon: Settings2 },
 ] as const;
 
 export default function AppSidebar() {
+	const navigate = useNavigate();
+	const auth = useAuthSnapshot();
+	const user = auth.user;
+
 	return (
-		<aside className="w-full lg:w-[280px] lg:shrink-0 lg:sticky lg:top-3 lg:h-[calc(100vh-1.5rem)]">
-			<div className="flex h-full min-h-[320px] flex-col rounded-2xl border border-border/60 bg-card/50 backdrop-blur-sm shadow-sm dark:shadow-none">
+		<aside className="w-full lg:w-70 lg:shrink-0 lg:sticky lg:top-3 lg:h-[calc(100vh-1.5rem)]">
+			<div className="flex h-full min-h-80 flex-col rounded-2xl border border-border/60 bg-card/50 shadow-sm backdrop-blur-sm dark:shadow-none">
 				<div className="flex items-center gap-3 px-4 pt-5 pb-6">
-					<div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-blue-500 to-cyan-400 shadow-lg shadow-blue-500/25">
-						<span className="text-lg font-bold tracking-[-0.05em] text-white">
+					<div className="grid h-10 w-10 place-items-center rounded-xl bg-linear-to-br from-blue-500 to-cyan-400 shadow-lg shadow-blue-500/25">
+						<span className="text-lg font-bold tracking-tighter text-white">
 							F
 						</span>
 					</div>
@@ -78,17 +87,40 @@ export default function AppSidebar() {
 				<div className="mt-auto px-3 pt-5">
 					<div className="rounded-xl border border-border/60 bg-muted/30 px-4 py-3">
 						<div className="flex items-center gap-3">
-							<div className="grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-amber-400/80 to-orange-500/80 ring-1 ring-border">
-								<CircleUserRound className="h-5 w-5 text-white" />
+							<Link
+								to="/profile"
+								className="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-linear-to-br from-amber-400/80 to-orange-500/80 ring-1 ring-border"
+							>
+								{user?.avatarDataUrl ? (
+									<img
+										src={user.avatarDataUrl}
+										alt={user.name}
+										className="h-full w-full object-cover"
+									/>
+								) : (
+									<CircleUserRound className="h-5 w-5 text-white" />
+								)}
+							</Link>
+							<div className="min-w-0 flex-1">
+								<Link to="/profile" className="block">
+									<p className="m-0 truncate text-sm font-semibold text-foreground">
+										{user?.name ?? "Profile"}
+									</p>
+									<p className="m-0 truncate text-xs text-muted-foreground">
+										{user?.email ?? "View Profile"}
+									</p>
+								</Link>
 							</div>
-							<div className="min-w-0">
-								<p className="m-0 truncate text-sm font-semibold text-foreground">
-									John Doe
-								</p>
-								<p className="m-0 text-xs text-muted-foreground">
-									View Profile
-								</p>
-							</div>
+							<button
+								type="button"
+								onClick={async () => {
+									await authRepository.signOut();
+									await navigate({ to: "/sign-in" });
+								}}
+								className="shrink-0 rounded-lg border border-border/60 bg-background px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted/30"
+							>
+								Sign out
+							</button>
 						</div>
 					</div>
 				</div>

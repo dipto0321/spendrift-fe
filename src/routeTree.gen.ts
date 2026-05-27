@@ -9,12 +9,25 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SignUpRouteImport } from './routes/sign-up'
+import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ExpensesRouteImport } from './routes/expenses'
 import { Route as BudgetRouteImport } from './routes/budget'
 import { Route as IndexRouteImport } from './routes/index'
 
+const SignUpRoute = SignUpRouteImport.update({
+  id: '/sign-up',
+  path: '/sign-up',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignInRoute = SignInRouteImport.update({
+  id: '/sign-in',
+  path: '/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -23,6 +36,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const ReportsRoute = ReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ExpensesRoute = ExpensesRouteImport.update({
@@ -45,42 +63,93 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/budget': typeof BudgetRoute
   '/expenses': typeof ExpensesRoute
+  '/profile': typeof ProfileRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
+  '/sign-in': typeof SignInRoute
+  '/sign-up': typeof SignUpRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/budget': typeof BudgetRoute
   '/expenses': typeof ExpensesRoute
+  '/profile': typeof ProfileRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
+  '/sign-in': typeof SignInRoute
+  '/sign-up': typeof SignUpRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/budget': typeof BudgetRoute
   '/expenses': typeof ExpensesRoute
+  '/profile': typeof ProfileRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
+  '/sign-in': typeof SignInRoute
+  '/sign-up': typeof SignUpRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/budget' | '/expenses' | '/reports' | '/settings'
+  fullPaths:
+    | '/'
+    | '/budget'
+    | '/expenses'
+    | '/profile'
+    | '/reports'
+    | '/settings'
+    | '/sign-in'
+    | '/sign-up'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/budget' | '/expenses' | '/reports' | '/settings'
-  id: '__root__' | '/' | '/budget' | '/expenses' | '/reports' | '/settings'
+  to:
+    | '/'
+    | '/budget'
+    | '/expenses'
+    | '/profile'
+    | '/reports'
+    | '/settings'
+    | '/sign-in'
+    | '/sign-up'
+  id:
+    | '__root__'
+    | '/'
+    | '/budget'
+    | '/expenses'
+    | '/profile'
+    | '/reports'
+    | '/settings'
+    | '/sign-in'
+    | '/sign-up'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BudgetRoute: typeof BudgetRoute
   ExpensesRoute: typeof ExpensesRoute
+  ProfileRoute: typeof ProfileRoute
   ReportsRoute: typeof ReportsRoute
   SettingsRoute: typeof SettingsRoute
+  SignInRoute: typeof SignInRoute
+  SignUpRoute: typeof SignUpRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sign-up': {
+      id: '/sign-up'
+      path: '/sign-up'
+      fullPath: '/sign-up'
+      preLoaderRoute: typeof SignUpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sign-in': {
+      id: '/sign-in'
+      path: '/sign-in'
+      fullPath: '/sign-in'
+      preLoaderRoute: typeof SignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -93,6 +162,13 @@ declare module '@tanstack/react-router' {
       path: '/reports'
       fullPath: '/reports'
       preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/expenses': {
@@ -123,8 +199,11 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BudgetRoute: BudgetRoute,
   ExpensesRoute: ExpensesRoute,
+  ProfileRoute: ProfileRoute,
   ReportsRoute: ReportsRoute,
   SettingsRoute: SettingsRoute,
+  SignInRoute: SignInRoute,
+  SignUpRoute: SignUpRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

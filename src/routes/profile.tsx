@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { ProfilePage } from "@/features/auth/presentation/ProfilePage";
 import { requireAuth } from "@/features/auth/presentation/routeGuards";
-import ReportsPage from "@/features/reports/presentation/ReportsPage";
 
-export const Route = createFileRoute("/reports")({
+export const Route = createFileRoute("/profile")({
 	beforeLoad: requireAuth,
-	component: ReportsPage,
+	component: ProfilePage,
 });
