@@ -8,6 +8,7 @@ import {
 	ReceiptText,
 	Settings2,
 } from "lucide-react";
+import { TrackerSelector } from "@/features/trackers/presentation/TrackerSelector";
 import ThemeToggle from "./ThemeToggle";
 
 const navItems = [
@@ -38,7 +39,9 @@ export default function AppSidebar() {
 					</div>
 				</div>
 
-				<nav className="space-y-1 px-3">
+				<TrackerSelector />
+
+				<nav className="space-y-1 px-3 pt-2">
 					{navItems.map(({ to, label, icon: Icon }) => (
 						<Link
 							key={to}
@@ -60,7 +63,9 @@ export default function AppSidebar() {
 					<div className="rounded-xl border border-border/60 bg-muted/30 px-4 py-3">
 						<div className="flex items-center justify-between gap-4">
 							<div>
-								<p className="m-0 text-sm font-semibold text-foreground">Theme</p>
+								<p className="m-0 text-sm font-semibold text-foreground">
+									Theme
+								</p>
 								<p className="m-0 text-xs text-muted-foreground">
 									Light or dark mode
 								</p>
@@ -80,7 +85,9 @@ export default function AppSidebar() {
 								<p className="m-0 truncate text-sm font-semibold text-foreground">
 									John Doe
 								</p>
-								<p className="m-0 text-xs text-muted-foreground">View Profile</p>
+								<p className="m-0 text-xs text-muted-foreground">
+									View Profile
+								</p>
 							</div>
 						</div>
 					</div>

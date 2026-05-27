@@ -1,4 +1,3 @@
-import { getLocale } from "@/paraglide/runtime";
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import type { QueryClient } from "@tanstack/react-query";
 import {
@@ -7,6 +6,8 @@ import {
 	Scripts,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
+import { TrackerProvider } from "@/features/trackers/presentation/TrackerContext";
+import { getLocale } from "@/paraglide/runtime";
 import AppSidebar from "../components/AppSidebar";
 
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
@@ -58,14 +59,16 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			</head>
 			<body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-primary/20">
 				<TanStackQueryProvider>
-					<div className="min-h-screen bg-background">
-						<div className="flex min-h-[calc(100vh-1.5rem)] w-full max-w-[1560px] flex-col gap-3 p-3 lg:flex-row lg:gap-4 lg:p-4">
-							<AppSidebar />
-							<main className="min-w-0 h-auto flex-1 overflow-hidden rounded-2xl border border-border/60 bg-card/30 backdrop-blur-sm">
-								{children}
-							</main>
+					<TrackerProvider>
+						<div className="min-h-screen bg-background">
+							<div className="flex min-h-[calc(100vh-1.5rem)] w-full max-w-[1560px] flex-col gap-3 p-3 lg:flex-row lg:gap-4 lg:p-4">
+								<AppSidebar />
+								<main className="min-w-0 h-auto flex-1 overflow-hidden rounded-2xl border border-border/60 bg-card/30 backdrop-blur-sm">
+									{children}
+								</main>
+							</div>
 						</div>
-					</div>
+					</TrackerProvider>
 					{import.meta.env.DEV ? (
 						<TanStackDevtools
 							config={{
