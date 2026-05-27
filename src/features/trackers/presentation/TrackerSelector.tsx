@@ -3,6 +3,8 @@ import { useTracker } from "./TrackerContext";
 
 export function TrackerSelector() {
 	const { trackers, activeTracker, setActiveTrackerById } = useTracker();
+	const selectedTrackerId = activeTracker?.id ?? trackers[0]?.id ?? "";
+	const selectedCurrency = activeTracker?.currency ?? "";
 
 	return (
 		<div className="px-3 pt-4">
@@ -10,7 +12,7 @@ export function TrackerSelector() {
 				<div className="flex items-center gap-2.5">
 					<ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground" />
 					<select
-						value={activeTracker.id}
+						value={selectedTrackerId}
 						onChange={(e) => setActiveTrackerById(e.target.value)}
 						className="flex-1 bg-transparent text-sm font-medium text-foreground outline-none cursor-pointer appearance-none"
 					>
@@ -22,7 +24,7 @@ export function TrackerSelector() {
 					</select>
 				</div>
 				<p className="mt-1 ml-6 text-[10px] text-muted-foreground">
-					Currency: {activeTracker.currency}
+					Currency: {selectedCurrency}
 				</p>
 			</div>
 		</div>

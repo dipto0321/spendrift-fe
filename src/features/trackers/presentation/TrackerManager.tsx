@@ -45,7 +45,11 @@ export function TrackerManager({
 
 	async function handleUpdate() {
 		if (!editingId || !editName.trim() || !editCurrency.trim()) return;
-		await onUpdate(editingId, editName.trim(), editCurrency.trim().toUpperCase());
+		await onUpdate(
+			editingId,
+			editName.trim(),
+			editCurrency.trim().toUpperCase(),
+		);
 		cancelEdit();
 	}
 
@@ -69,7 +73,9 @@ export function TrackerManager({
 				onClick={() => setIsExpanded(!isExpanded)}
 				className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-muted/20"
 			>
-				<span className="text-sm font-medium text-foreground">Manage Trackers</span>
+				<span className="text-sm font-medium text-foreground">
+					Manage Trackers
+				</span>
 				{isExpanded ? (
 					<ChevronDown className="h-4 w-4 text-muted-foreground" />
 				) : (
@@ -97,7 +103,9 @@ export function TrackerManager({
 										<input
 											type="text"
 											value={editCurrency}
-											onChange={(e) => setEditCurrency(e.target.value.toUpperCase())}
+											onChange={(e) =>
+												setEditCurrency(e.target.value.toUpperCase())
+											}
 											placeholder="USD"
 											className="w-24 rounded border border-input bg-background px-2 py-1 text-sm text-foreground uppercase focus:outline-none focus:ring-1 focus:ring-primary/50"
 										/>
@@ -140,7 +148,9 @@ export function TrackerManager({
 									<>
 										<div className="min-w-0 flex-1">
 											<div className="flex items-center gap-2">
-												<span className="truncate text-sm text-foreground">{tracker.name}</span>
+												<span className="truncate text-sm text-foreground">
+													{tracker.name}
+												</span>
 												<span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
 													{tracker.currency}
 												</span>
@@ -174,7 +184,11 @@ export function TrackerManager({
 											disabled={!canDelete}
 											className="shrink-0 rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:cursor-not-allowed disabled:opacity-40"
 											aria-label={`Delete ${tracker.name}`}
-											title={canDelete ? `Delete ${tracker.name}` : "At least one tracker is required"}
+											title={
+												canDelete
+													? `Delete ${tracker.name}`
+													: "At least one tracker is required"
+											}
 										>
 											<Trash2 className="h-3.5 w-3.5" />
 										</button>

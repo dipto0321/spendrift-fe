@@ -14,6 +14,7 @@ import { BudgetStatusCard } from "./BudgetStatusCard";
 
 function BudgetPage() {
 	const { activeTracker } = useTracker();
+	const currency = activeTracker?.currency ?? "";
 	const queryClient = useQueryClient();
 	const currentMonth = getCurrentMonth();
 	const [showForm, setShowForm] = useState(false);
@@ -146,7 +147,7 @@ function BudgetPage() {
 						monthlyLimit={currentBudget.monthlyLimit}
 						savingsTarget={currentBudget.savingsTarget}
 						status={status}
-						currency={activeTracker.currency}
+						currency={currency}
 					/>
 				) : (
 					!showForm && (
@@ -166,23 +167,17 @@ function BudgetPage() {
 						label="This Month Spent"
 						value={formatCurrency(
 							needsWantsSplit.needs + needsWantsSplit.wants,
-							activeTracker.currency,
+							currency,
 						)}
 					/>
 					<StatCard
 						label="Needs"
-						value={formatCurrency(
-							needsWantsSplit.needs,
-							activeTracker.currency,
-						)}
+						value={formatCurrency(needsWantsSplit.needs, currency)}
 						subtext={`${needsWantsSplit.percentage.needs}% of spending`}
 					/>
 					<StatCard
 						label="Wants"
-						value={formatCurrency(
-							needsWantsSplit.wants,
-							activeTracker.currency,
-						)}
+						value={formatCurrency(needsWantsSplit.wants, currency)}
 						subtext={`${needsWantsSplit.percentage.wants}% of spending`}
 					/>
 				</section>
@@ -215,16 +210,8 @@ function BudgetPage() {
 													{budget.name}
 												</p>
 												<p className="m-0 text-xs text-muted-foreground">
-													Spent{" "}
-													{formatCurrency(
-														prevStatus.spent,
-														activeTracker.currency,
-													)}{" "}
-													of{" "}
-													{formatCurrency(
-														budget.monthlyLimit,
-														activeTracker.currency,
-													)}
+													Spent {formatCurrency(prevStatus.spent, currency)} of{" "}
+													{formatCurrency(budget.monthlyLimit, currency)}
 												</p>
 											</div>
 											<div className="flex items-center gap-2">
@@ -233,7 +220,7 @@ function BudgetPage() {
 												>
 													{prevStatus.isOverBudget
 														? "Over"
-														: `${formatCurrency(prevStatus.remaining, activeTracker.currency)} left`}
+														: `${formatCurrency(prevStatus.remaining, currency)} left`}
 												</span>
 											</div>
 										</div>

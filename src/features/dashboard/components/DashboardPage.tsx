@@ -31,6 +31,7 @@ const miniChartConfig = {
 
 export function DashboardPage() {
 	const { activeTracker } = useTracker();
+	const currency = activeTracker?.currency ?? "";
 	const { data: summary, isLoading: summaryLoading } = useQuery({
 		queryKey: ["dashboard-summary"],
 		queryFn: getDashboardSummary,
@@ -101,7 +102,7 @@ export function DashboardPage() {
 					value={
 						summaryLoading || !summary
 							? "—"
-							: formatCurrency(summary.totalBalance, activeTracker.currency)
+							: formatCurrency(summary.totalBalance, currency)
 					}
 				/>
 				<StatCard
@@ -109,7 +110,7 @@ export function DashboardPage() {
 					value={
 						summaryLoading || !summary
 							? "—"
-							: formatCurrency(summary.monthSpend, activeTracker.currency)
+							: formatCurrency(summary.monthSpend, currency)
 					}
 				/>
 				<StatCard
@@ -117,7 +118,7 @@ export function DashboardPage() {
 					value={
 						summaryLoading || !summary
 							? "—"
-							: formatCurrency(summary.monthIncome, activeTracker.currency)
+							: formatCurrency(summary.monthIncome, currency)
 					}
 				/>
 			</section>
@@ -157,7 +158,7 @@ export function DashboardPage() {
 										content={
 											<ChartTooltipContent
 												formatter={(value) =>
-													formatCurrency(Number(value), activeTracker.currency)
+													formatCurrency(Number(value), currency)
 												}
 											/>
 										}
@@ -179,10 +180,7 @@ export function DashboardPage() {
 							<div className="flex items-center justify-between text-sm">
 								<span className="text-foreground">Needs</span>
 								<span className="font-semibold tabular-nums text-foreground">
-									{formatCurrency(
-										needsWantsSplit.needs,
-										activeTracker.currency,
-									)}
+									{formatCurrency(needsWantsSplit.needs, currency)}
 								</span>
 							</div>
 							<div className="mt-1 h-2 overflow-hidden rounded-full bg-muted">
@@ -196,10 +194,7 @@ export function DashboardPage() {
 							<div className="flex items-center justify-between text-sm">
 								<span className="text-foreground">Wants</span>
 								<span className="font-semibold tabular-nums text-foreground">
-									{formatCurrency(
-										needsWantsSplit.wants,
-										activeTracker.currency,
-									)}
+									{formatCurrency(needsWantsSplit.wants, currency)}
 								</span>
 							</div>
 							<div className="mt-1 h-2 overflow-hidden rounded-full bg-muted">
@@ -227,10 +222,7 @@ export function DashboardPage() {
 										Remaining
 									</span>
 									<span className="text-xl font-semibold tabular-nums text-foreground">
-										{formatCurrency(
-											budgetStatus.remaining,
-											activeTracker.currency,
-										)}
+										{formatCurrency(budgetStatus.remaining, currency)}
 									</span>
 								</div>
 								<div>
@@ -264,10 +256,7 @@ export function DashboardPage() {
 								<div className="flex items-baseline justify-between text-sm">
 									<span className="text-muted-foreground">Limit</span>
 									<span className="font-medium tabular-nums text-foreground">
-										{formatCurrency(
-											currentBudget.monthlyLimit,
-											activeTracker.currency,
-										)}
+										{formatCurrency(currentBudget.monthlyLimit, currency)}
 									</span>
 								</div>
 							</div>
@@ -313,7 +302,7 @@ export function DashboardPage() {
 											</p>
 										</div>
 										<span className="shrink-0 font-medium tabular-nums text-[var(--sea-ink)]">
-											{formatCurrency(expense.amount, activeTracker.currency)}
+											{formatCurrency(expense.amount, currency)}
 										</span>
 									</li>
 								);

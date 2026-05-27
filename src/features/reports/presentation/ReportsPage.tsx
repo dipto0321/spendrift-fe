@@ -25,6 +25,7 @@ import { YearComparisonChart } from "./YearComparisonChart";
 
 function ReportsPage() {
 	const { activeTracker } = useTracker();
+	const currency = activeTracker?.currency ?? "";
 	const [period, setPeriod] = useState<ReportPeriod>("monthly");
 
 	const { data: expenses = [], isLoading } = useQuery({
@@ -82,19 +83,13 @@ function ReportsPage() {
 			<section className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
 				<StatCard
 					label="Total"
-					value={formatCurrency(analytics.total, activeTracker.currency)}
+					value={formatCurrency(analytics.total, currency)}
 				/>
-				<StatCard
-					label="Min"
-					value={formatCurrency(analytics.min, activeTracker.currency)}
-				/>
-				<StatCard
-					label="Max"
-					value={formatCurrency(analytics.max, activeTracker.currency)}
-				/>
+				<StatCard label="Min" value={formatCurrency(analytics.min, currency)} />
+				<StatCard label="Max" value={formatCurrency(analytics.max, currency)} />
 				<StatCard
 					label="Average"
-					value={formatCurrency(analytics.avg, activeTracker.currency)}
+					value={formatCurrency(analytics.avg, currency)}
 				/>
 				<StatCard label="Count" value={String(analytics.count)} />
 			</section>
@@ -125,7 +120,7 @@ function ReportsPage() {
 					<SpendingChart
 						data={periodData}
 						period={period}
-						currency={activeTracker.currency}
+						currency={currency}
 					/>
 				</div>
 			</section>
@@ -137,7 +132,7 @@ function ReportsPage() {
 					</h2>
 					<CategoryBreakdownChart
 						data={categoryBreakdown}
-						currency={activeTracker.currency}
+						currency={currency}
 					/>
 					<div className="mt-4 space-y-2">
 						{categoryBreakdown.slice(0, 5).map((item) => (
@@ -154,7 +149,7 @@ function ReportsPage() {
 								</div>
 								<div className="flex items-center gap-3 tabular-nums">
 									<span className="text-muted-foreground">
-										{formatCurrency(item.total, activeTracker.currency)}
+										{formatCurrency(item.total, currency)}
 									</span>
 									<span className="text-xs text-muted-foreground">
 										{item.percentage}%
@@ -174,19 +169,19 @@ function ReportsPage() {
 						wants={needsWantsSplit.wants}
 						needsPercentage={needsWantsSplit.percentage.needs}
 						wantsPercentage={needsWantsSplit.percentage.wants}
-						currency={activeTracker.currency}
+						currency={currency}
 					/>
 					<div className="mt-4 grid grid-cols-2 gap-4">
 						<div>
 							<p className="m-0 text-xs text-muted-foreground">Needs</p>
 							<p className="m-0 mt-1 text-lg font-semibold tabular-nums text-foreground">
-								{formatCurrency(needsWantsSplit.needs, activeTracker.currency)}
+								{formatCurrency(needsWantsSplit.needs, currency)}
 							</p>
 						</div>
 						<div>
 							<p className="m-0 text-xs text-muted-foreground">Wants</p>
 							<p className="m-0 mt-1 text-lg font-semibold tabular-nums text-foreground">
-								{formatCurrency(needsWantsSplit.wants, activeTracker.currency)}
+								{formatCurrency(needsWantsSplit.wants, currency)}
 							</p>
 						</div>
 					</div>
@@ -199,10 +194,7 @@ function ReportsPage() {
 						<h2 className="m-0 mb-4 text-base font-semibold text-foreground">
 							Year-over-Year Comparison
 						</h2>
-						<YearComparisonChart
-							data={yearComparison}
-							currency={activeTracker.currency}
-						/>
+						<YearComparisonChart data={yearComparison} currency={currency} />
 					</div>
 				</section>
 			)}

@@ -1,11 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { trackerRepository } from "@/features/trackers/data/repository";
-import { TrackerManager } from "@/features/trackers/presentation/TrackerManager";
-import { useTracker } from "@/features/trackers/presentation/TrackerContext";
 import { categoryRepository } from "@/features/expenses/data/repository";
 import type { CategoryColor } from "@/features/expenses/domain/types";
 import { CategoryManager } from "@/features/expenses/presentation/CategoryManager";
+import { trackerRepository } from "@/features/trackers/data/repository";
+import { useTracker } from "@/features/trackers/presentation/TrackerContext";
+import { TrackerManager } from "@/features/trackers/presentation/TrackerManager";
 
 export const Route = createFileRoute("/settings")({
 	component: SettingsPage,
@@ -24,6 +24,8 @@ function SettingsPage() {
 		queryKey: ["trackers"],
 		queryFn: () => trackerRepository.getAll(),
 	});
+
+	const activeTrackerId = activeTracker?.id ?? trackers[0]?.id ?? "";
 
 	const createMutation = useMutation({
 		mutationFn: ({ name, color }: { name: string; color: string }) =>
@@ -126,16 +128,14 @@ function SettingsPage() {
 
 			<section className="mb-6">
 				<div className="mb-3">
-					<h2 className="text-base font-semibold text-foreground">
-						Trackers
-					</h2>
+					<h2 className="text-base font-semibold text-foreground">Trackers</h2>
 					<p className="m-0 text-sm text-muted-foreground">
 						Create, rename, switch, and delete your trackers.
 					</p>
 				</div>
 				<TrackerManager
 					trackers={trackers}
-					activeTrackerId={activeTracker.id}
+					activeTrackerId={activeTrackerId}
 					onCreate={async (name, currency) => {
 						await createTrackerMutation.mutateAsync({ name, currency });
 					}}

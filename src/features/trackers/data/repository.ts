@@ -1,15 +1,19 @@
 import type { TrackerRepository } from "../domain/repository";
 import type { Tracker } from "../domain/types";
-import { SEED_TRACKERS } from "./mock-data";
 
-const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+const delay = (ms: number) =>
+	new Promise<void>((resolve) => setTimeout(resolve, ms));
 
-let trackers: Tracker[] = SEED_TRACKERS.map((tracker) => ({ ...tracker }));
+function cloneTrackers(source: Tracker[]) {
+	return source.map((tracker) => ({ ...tracker }));
+}
+
+let trackers: Tracker[] = [];
 
 export const trackerRepository: TrackerRepository = {
 	async getAll(): Promise<Tracker[]> {
 		await delay(120);
-		return trackers.map((tracker) => ({ ...tracker }));
+		return cloneTrackers(trackers);
 	},
 
 	async getById(id: string): Promise<Tracker | null> {
@@ -37,7 +41,9 @@ export const trackerRepository: TrackerRepository = {
 		const index = trackers.findIndex((tracker) => tracker.id === id);
 		if (index === -1) return null;
 		const updated: Tracker = { ...trackers[index], ...patch };
-		trackers = trackers.map((tracker) => (tracker.id === id ? updated : tracker));
+		trackers = trackers.map((tracker) =>
+			tracker.id === id ? updated : tracker,
+		);
 		return { ...updated };
 	},
 

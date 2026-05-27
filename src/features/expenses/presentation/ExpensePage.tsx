@@ -20,6 +20,7 @@ import { ExpenseToolbar } from "./ExpenseToolbar";
 
 export function ExpensePage() {
 	const { activeTracker } = useTracker();
+	const currency = activeTracker?.currency ?? "";
 	const queryClient = useQueryClient();
 	const [filter, setFilter] = useState<ExpenseFilter>(() => ({
 		dateRange: getTodayRange(),
@@ -77,7 +78,7 @@ export function ExpensePage() {
 	const filteredExpenseCount = filteredExpenses.length;
 	const formattedFilteredExpenseTotal = formatCurrency(
 		filteredExpenseTotal,
-		activeTracker.currency,
+		currency,
 	);
 
 	function openAddModal() {
@@ -152,7 +153,7 @@ export function ExpensePage() {
 				<ExpenseTable
 					expenses={filteredExpenses}
 					categories={categories}
-					currency={activeTracker.currency}
+					currency={currency}
 					isLoading={expensesLoading}
 					onEdit={openEditModal}
 					onDelete={(id) => deleteMutation.mutate(id)}

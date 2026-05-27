@@ -6,10 +6,13 @@ import {
 	Scripts,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
-import { TrackerProvider } from "@/features/trackers/presentation/TrackerContext";
+import {
+	TrackerProvider,
+	useTracker,
+} from "@/features/trackers/presentation/TrackerContext";
+import { TrackerOnboarding } from "@/features/trackers/presentation/TrackerOnboarding";
 import { getLocale } from "@/paraglide/runtime";
 import AppSidebar from "../components/AppSidebar";
-
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import TanStackQueryProvider from "../integrations/tanstack-query/root-provider";
 import appCss from "../styles.css?url";
@@ -50,7 +53,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 	shellComponent: RootDocument,
 });
 
-function RootDocument({ children }: { children: React.ReactNode }) {
+function RootDocument({ children }: Readonly<{ children: React.ReactNode }>) {
 	return (
 		<html lang={getLocale()} suppressHydrationWarning>
 			<head>
@@ -60,32 +63,44 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			<body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-primary/20">
 				<TanStackQueryProvider>
 					<TrackerProvider>
-						<div className="min-h-screen bg-background">
-							<div className="flex min-h-[calc(100vh-1.5rem)] w-full max-w-[1560px] flex-col gap-3 p-3 lg:flex-row lg:gap-4 lg:p-4">
-								<AppSidebar />
-								<main className="min-w-0 h-auto flex-1 overflow-hidden rounded-2xl border border-border/60 bg-card/30 backdrop-blur-sm">
-									{children}
-								</main>
-							</div>
-						</div>
+						<WorkspaceGate>{children}</WorkspaceGate>
+						{import.meta.env.DEV ? (
+							<TanStackDevtools
+								config={{
+									position: "bottom-right",
+								}}
+								plugins={[
+									{
+										name: "Tanstack Router",
+										render: <TanStackRouterDevtoolsPanel />,
+									},
+									TanStackQueryDevtools,
+								]}
+							/>
+						) : null}
 					</TrackerProvider>
-					{import.meta.env.DEV ? (
-						<TanStackDevtools
-							config={{
-								position: "bottom-right",
-							}}
-							plugins={[
-								{
-									name: "Tanstack Router",
-									render: <TanStackRouterDevtoolsPanel />,
-								},
-								TanStackQueryDevtools,
-							]}
-						/>
-					) : null}
 				</TanStackQueryProvider>
 				<Scripts />
 			</body>
 		</html>
+	);
+}
+
+function WorkspaceGate({ children }: Readonly<{ children: React.ReactNode }>) {
+	const { hasTrackers } = useTracker();
+
+	if (!hasTrackers) {
+		return <TrackerOnboarding />;
+	}
+
+	return (
+		<div className="min-h-screen bg-background">
+			<div className="flex min-h-[calc(100vh-1.5rem)] w-full max-w-[1560px] flex-col gap-3 p-3 lg:flex-row lg:gap-4 lg:p-4">
+				<AppSidebar />
+				<main className="min-w-0 h-auto flex-1 overflow-hidden rounded-2xl border border-border/60 bg-card/30 backdrop-blur-sm">
+					{children}
+				</main>
+			</div>
+		</div>
 	);
 }
