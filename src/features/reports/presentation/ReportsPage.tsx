@@ -1,5 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
+import type { DateRange as PickerDateRange } from "react-day-picker";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
 	categoryRepository,
 	expenseRepository,
@@ -17,16 +21,55 @@ import {
 	groupByYear,
 	multiYearComparison,
 } from "../domain/services";
-import type { ReportPeriod } from "../domain/types";
+import type { PeriodData, ReportPeriod } from "../domain/types";
 import { CategoryBreakdownChart } from "./CategoryBreakdownChart";
 import { NeedsVsWantsPie } from "./NeedsVsWantsPie";
 import { SpendingChart } from "./SpendingChart";
 import { YearComparisonChart } from "./YearComparisonChart";
 
+function formatCalendarDate(date: Date) {
+	return date.toLocaleDateString(undefined, {
+		month: "short",
+		day: "numeric",
+		year: "numeric",
+	});
+}
+
+function getRangeLabel(range: PickerDateRange | undefined) {
+	if (!range?.from && !range?.to) return "All time";
+
+	const fromLabel = range.from ? formatCalendarDate(range.from) : "Start";
+	const toLabel = range.to ? formatCalendarDate(range.to) : "End";
+
+	return `${fromLabel} - ${toLabel}`;
+}
+
+function isExpenseWithinRange(
+	expenseDate: string,
+	range: PickerDateRange | undefined,
+) {
+	if (!range?.from && !range?.to) return true;
+
+	const expenseTime = new Date(`${expenseDate}T12:00:00`).getTime();
+
+	if (range.from) {
+		const startTime = new Date(range.from).setHours(0, 0, 0, 0);
+		if (expenseTime < startTime) return false;
+	}
+
+	if (range.to) {
+		const endTime = new Date(range.to).setHours(23, 59, 59, 999);
+		if (expenseTime > endTime) return false;
+	}
+
+	return true;
+}
+
 function ReportsPage() {
 	const { activeTracker } = useTracker();
 	const currency = activeTracker?.currency ?? "";
 	const [period, setPeriod] = useState<ReportPeriod>("monthly");
+	const [customRange, setCustomRange] = useState<PickerDateRange | undefined>();
 
 	const { data: expenses = [], isLoading } = useQuery({
 		queryKey: ["expenses"],
@@ -38,18 +81,32 @@ function ReportsPage() {
 		queryFn: () => categoryRepository.getAll(),
 	});
 
-	const analytics = computeAnalytics(expenses);
+	const filteredExpenses = expenses.filter((expense) =>
+		isExpenseWithinRange(expense.date, customRange),
+	);
 
-	const periodData =
-		period === "weekly"
-			? groupByWeek(expenses)
-			: period === "monthly"
-				? groupByMonth(expenses)
-				: groupByYear(expenses);
+	const analytics = computeAnalytics(filteredExpenses);
 
-	const yearComparison = multiYearComparison(expenses);
-	const categoryBreakdown = computeCategoryBreakdown(expenses, categories);
-	const needsWantsSplit = calculateNeedsWantsSplit(expenses);
+	let periodData: PeriodData[];
+	switch (period) {
+		case "weekly":
+			periodData = groupByWeek(filteredExpenses);
+			break;
+		case "monthly":
+			periodData = groupByMonth(filteredExpenses);
+			break;
+		case "yearly":
+			periodData = groupByYear(filteredExpenses);
+			break;
+	}
+
+	const yearComparison = multiYearComparison(filteredExpenses);
+	const categoryBreakdown = computeCategoryBreakdown(
+		filteredExpenses,
+		categories,
+	);
+	const needsWantsSplit = calculateNeedsWantsSplit(filteredExpenses);
+	const rangeLabel = getRangeLabel(customRange);
 
 	const periodLabels: { value: ReportPeriod; label: string }[] = [
 		{ value: "weekly", label: "Weekly" },
@@ -79,6 +136,40 @@ function ReportsPage() {
 				title="Reports & Analytics"
 				description="Analyze spending patterns, category breakdowns, and year-over-year trends."
 			/>
+
+			<section className="mb-6 rounded-2xl border border-border/60 bg-card/30 p-6">
+				<div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+					<div>
+						<div className="flex flex-wrap items-center gap-2">
+							<h2 className="m-0 text-base font-semibold text-foreground">
+								Custom range
+							</h2>
+							<Badge variant="outline">{rangeLabel}</Badge>
+						</div>
+						<p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+							Choose a start and end date to limit every report section to a
+							custom calendar range.
+						</p>
+					</div>
+					<Button
+						type="button"
+						variant="outline"
+						onClick={() => setCustomRange(undefined)}
+						disabled={!customRange?.from && !customRange?.to}
+					>
+						Clear range
+					</Button>
+				</div>
+				<div className="mt-4 overflow-hidden rounded-2xl border border-border/60 bg-background p-2">
+					<Calendar
+						mode="range"
+						selected={customRange}
+						onSelect={setCustomRange}
+						numberOfMonths={2}
+						className="w-full"
+					/>
+				</div>
+			</section>
 
 			<section className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
 				<StatCard

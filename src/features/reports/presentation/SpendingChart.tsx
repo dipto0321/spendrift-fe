@@ -5,6 +5,7 @@ import {
 	ChartTooltip,
 	ChartTooltipContent,
 } from "@/components/ui/chart";
+import { formatCurrency } from "@/shared/utils/format";
 import { getMonthLabel, getWeekLabel } from "../domain/services";
 import type { PeriodData } from "../domain/types";
 
@@ -21,23 +22,20 @@ const chartConfig = {
 	},
 } satisfies ChartConfig;
 
-function formatAmount(value: number, currency: string): string {
-	return new Intl.NumberFormat(undefined, {
-		style: "currency",
-		currency,
-		minimumFractionDigits: 0,
-		maximumFractionDigits: 0,
-	}).format(value);
-}
-
-export function SpendingChart({ data, period, currency }: SpendingChartProps) {
+export function SpendingChart({
+	data,
+	period,
+	currency,
+}: Readonly<SpendingChartProps>) {
 	const chartData = data.map((d) => {
-		const label =
-			period === "monthly"
-				? getMonthLabel(d.label)
-				: period === "weekly"
-					? getWeekLabel(d.label)
-					: d.label;
+		let label = d.label;
+
+		if (period === "monthly") {
+			label = getMonthLabel(d.label);
+		} else if (period === "weekly") {
+			label = getWeekLabel(d.label);
+		}
+
 		return {
 			label,
 			total: d.total,
@@ -46,7 +44,7 @@ export function SpendingChart({ data, period, currency }: SpendingChartProps) {
 
 	return (
 		<div>
-			<ChartContainer config={chartConfig} className="h-[300px] w-full">
+			<ChartContainer config={chartConfig} className="h-75 w-full">
 				<BarChart
 					data={chartData}
 					margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
@@ -67,7 +65,7 @@ export function SpendingChart({ data, period, currency }: SpendingChartProps) {
 					<ChartTooltip
 						content={
 							<ChartTooltipContent
-								formatter={(value) => formatAmount(Number(value), currency)}
+								formatter={(value) => formatCurrency(Number(value), currency)}
 							/>
 						}
 					/>
