@@ -1,4 +1,9 @@
 import type {
+	CategoryRepository,
+	ExpenseRepository,
+} from "../domain/repository";
+import { filterExpenses, sortExpensesByDate } from "../domain/services";
+import type {
 	Category,
 	CategoryColor,
 	Expense,
@@ -6,11 +11,9 @@ import type {
 	ExpenseFilter,
 	ExpenseUpdateInput,
 } from "../domain/types";
-import type { ExpenseRepository, CategoryRepository } from "../domain/repository";
-import { filterExpenses, sortExpensesByDate } from "../domain/services";
 import {
-	getSeedExpenses,
 	getSeedCategories,
+	getSeedExpenses,
 	UNCATEGORIZED_ID,
 } from "./mock-data";
 

@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { ChevronDown, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
 import type { Category, CategoryColor } from "../domain/types";
 import { CategoryColorPicker } from "./CategoryColorPicker";
 

@@ -1,8 +1,8 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
 import { categoryRepository } from "@/features/expenses/data/repository";
 import type { CategoryColor } from "@/features/expenses/domain/types";
 import { CategoryManager } from "@/features/expenses/presentation/CategoryManager";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/settings")({
 	component: SettingsPage,

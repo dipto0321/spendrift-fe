@@ -1,5 +1,6 @@
-import { TableCell, TableRow } from "@/components/ui/table";
 import { Trash2 } from "lucide-react";
+import { TableCell, TableRow } from "@/components/ui/table";
+import { formatCurrency, formatDateShort } from "@/shared/utils/format";
 import { formatExpenseType } from "../domain/services";
 import type { Category, Expense } from "../domain/types";
 import { CategoryChip } from "./CategoryChip";
@@ -11,21 +12,6 @@ type ExpenseRowProps = {
 	onEdit: (expense: Expense) => void;
 	onDelete: (id: string) => void;
 };
-
-function formatCurrency(amount: number, currency: string) {
-	return new Intl.NumberFormat(undefined, {
-		style: "currency",
-		currency,
-	}).format(amount);
-}
-
-function formatDate(isoDate: string) {
-	return new Date(`${isoDate}T12:00:00`).toLocaleDateString(undefined, {
-		month: "short",
-		day: "numeric",
-		year: "numeric",
-	});
-}
 
 export function ExpenseRow({
 	expense,
@@ -43,7 +29,7 @@ export function ExpenseRow({
 			onClick={() => onEdit(expense)}
 		>
 			<TableCell className="whitespace-nowrap px-4 py-3 text-sm text-muted-foreground">
-				{formatDate(expense.date)}
+				{formatDateShort(expense.date)}
 			</TableCell>
 			<TableCell className="px-4 py-3">
 				<CategoryChip name={categoryName} color={categoryColor} />

@@ -1,5 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useTracker } from "@/features/trackers/presentation/TrackerContext";
+import { PageHeader } from "@/shared/ui/PageHeader";
+import { formatCurrency } from "@/shared/utils/format";
 import { categoryRepository, expenseRepository } from "../data/repository";
 import {
 	calculateTotal,
@@ -16,6 +19,7 @@ import { ExpenseTable } from "./ExpenseTable";
 import { ExpenseToolbar } from "./ExpenseToolbar";
 
 export function ExpensePage() {
+	const { activeTracker } = useTracker();
 	const queryClient = useQueryClient();
 	const [filter, setFilter] = useState<ExpenseFilter>(() => ({
 		dateRange: getTodayRange(),
@@ -71,10 +75,10 @@ export function ExpensePage() {
 	const filteredExpenses = filterExpenses(allExpenses, filter);
 	const filteredExpenseTotal = calculateTotal(filteredExpenses);
 	const filteredExpenseCount = filteredExpenses.length;
-	const formattedFilteredExpenseTotal = new Intl.NumberFormat("en-US", {
-		style: "currency",
-		currency: "USD",
-	}).format(filteredExpenseTotal);
+	const formattedFilteredExpenseTotal = formatCurrency(
+		filteredExpenseTotal,
+		activeTracker.currency,
+	);
 
 	function openAddModal() {
 		setModalState({ open: true });
@@ -114,32 +118,27 @@ export function ExpensePage() {
 	return (
 		<main className="page-wrap px-4 pb-14 pt-10 sm:pt-12">
 			<header className="mb-6">
-				<p className="island-kicker mb-2">Expenses</p>
-				<div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-					<div>
-						<h1 className="display-title m-0 text-3xl font-semibold text-foreground sm:text-5xl">
-							Expense list
-						</h1>
-						<p className="m-0 mt-2 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-							Track and manage your spending by category and type.
-						</p>
-					</div>
-
-					<div className="rounded-2xl border border-border/60 bg-card/40 px-4 py-3 shadow-sm backdrop-blur-sm">
-						<p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-							Filtered expenses
-						</p>
-						<div className="mt-2 flex items-baseline gap-3">
-							<p className="text-2xl font-semibold text-foreground">
-								{formattedFilteredExpenseTotal}
+				<PageHeader
+					kicker="Expenses"
+					title="Expense list"
+					description="Track and manage your spending by category and type."
+					actions={
+						<div className="rounded-2xl border border-border/60 bg-card/40 px-4 py-3 shadow-sm backdrop-blur-sm">
+							<p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+								Filtered expenses
 							</p>
-							<p className="text-sm text-muted-foreground">
-								{filteredExpenseCount} expense
-								{filteredExpenseCount === 1 ? "" : "s"}
-							</p>
+							<div className="mt-2 flex items-baseline gap-3">
+								<p className="text-2xl font-semibold text-foreground">
+									{formattedFilteredExpenseTotal}
+								</p>
+								<p className="text-sm text-muted-foreground">
+									{filteredExpenseCount} expense
+									{filteredExpenseCount === 1 ? "" : "s"}
+								</p>
+							</div>
 						</div>
-					</div>
-				</div>
+					}
+				/>
 			</header>
 
 			<div className="space-y-4">
@@ -153,7 +152,7 @@ export function ExpensePage() {
 				<ExpenseTable
 					expenses={filteredExpenses}
 					categories={categories}
-					currency="USD"
+					currency={activeTracker.currency}
 					isLoading={expensesLoading}
 					onEdit={openEditModal}
 					onDelete={(id) => deleteMutation.mutate(id)}
