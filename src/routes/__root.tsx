@@ -6,11 +6,13 @@ import {
 	Scripts,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
+import { useSyncExternalStore } from "react";
 import { useAuthSnapshot } from "@/features/auth/data/repository";
 import {
-	TrackerProvider,
-	useTracker,
-} from "@/features/trackers/presentation/TrackerContext";
+	getTrackerOnboardingStatus,
+	subscribeTrackerOnboardingStatusChange,
+} from "@/features/trackers/data/onboarding";
+import { TrackerProvider } from "@/features/trackers/presentation/TrackerContext";
 import { TrackerOnboarding } from "@/features/trackers/presentation/TrackerOnboarding";
 import { getLocale } from "@/paraglide/runtime";
 import AppSidebar from "../components/AppSidebar";
@@ -89,13 +91,17 @@ function RootDocument({ children }: Readonly<{ children: React.ReactNode }>) {
 
 function WorkspaceGate({ children }: Readonly<{ children: React.ReactNode }>) {
 	const auth = useAuthSnapshot();
-	const { hasTrackers } = useTracker();
+	const hasCompletedOnboarding = useSyncExternalStore(
+		subscribeTrackerOnboardingStatusChange,
+		getTrackerOnboardingStatus,
+		() => false,
+	);
 
 	if (!auth.isAuthenticated) {
 		return <>{children}</>;
 	}
 
-	if (!hasTrackers) {
+	if (!hasCompletedOnboarding) {
 		return <TrackerOnboarding />;
 	}
 
