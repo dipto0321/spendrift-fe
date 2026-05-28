@@ -25,13 +25,6 @@ export function ProfilePage() {
 		mutationFn: authRepository.updateAvatar,
 	});
 
-	const signOutMutation = useMutation({
-		mutationFn: authRepository.signOut,
-		onSuccess: async () => {
-			await navigate({ to: "/sign-in" });
-		},
-	});
-
 	if (!user) {
 		return null;
 	}
@@ -48,13 +41,6 @@ export function ProfilePage() {
 						Update your name, email, password, and profile picture.
 					</p>
 				</div>
-				<button
-					type="button"
-					onClick={() => signOutMutation.mutate()}
-					className="rounded-xl border border-border/60 bg-card/40 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted/30"
-				>
-					Sign out
-				</button>
 			</header>
 
 			<section className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
