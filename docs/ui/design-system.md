@@ -2,7 +2,7 @@
 
 ## Design Philosophy
 
-FinTracker follows:
+Spendrift follows:
 
 - Minimal UI
 - Calm fintech aesthetic

@@ -7,7 +7,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* FinTrack brand + system tokens (Light) */
+  /* Spendrift brand + system tokens (Light) */
   --brand: oklch(0.66 0.13 195);
   --brand-strong: oklch(0.58 0.14 195);
   --success: oklch(0.7 0.14 155);
@@ -70,7 +70,7 @@
 }
 
 .dark {
-  /* FinTrack brand + system tokens (Dark) */
+  /* Spendrift brand + system tokens (Dark) */
   --brand: oklch(0.7 0.12 195);
   --brand-strong: oklch(0.76 0.12 195);
   --success: oklch(0.74 0.13 155);

@@ -33,7 +33,7 @@ export function TrackerOnboarding() {
 							</CardTitle>
 						</div>
 						<CardDescription className="max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-							FinTrack starts with a tracker. Add a name and currency to unlock
+							Spendrift starts with a tracker. Add a name and currency to unlock
 							the workspace.
 						</CardDescription>
 					</CardHeader>

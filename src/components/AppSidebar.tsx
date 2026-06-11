@@ -39,7 +39,7 @@ export default function AppSidebar() {
 					</div>
 					<div className="min-w-0">
 						<p className="m-0 text-base font-bold tracking-tight text-foreground">
-							FinTracker
+							Spendrift
 						</p>
 						<p className="m-0 text-xs text-muted-foreground">
 							Personal Finance

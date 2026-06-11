@@ -1,8 +1,8 @@
-# FinTracker Frontend — Codex Context
+# Spendrift Frontend — Codex Context
 
 ## Project Overview
 
-FinTracker is a modern personal finance tracking frontend application.
+Spendrift is a modern personal finance tracking frontend application.
 
 The project is initially built for personal use but architected to scale into a SaaS product later.
 

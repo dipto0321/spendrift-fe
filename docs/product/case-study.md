@@ -1,12 +1,12 @@
-# FinTracker — Building a Modern Personal Finance Tracker with AI-Assisted Development
+# Spendrift — Building a Modern Personal Finance Tracker with AI-Assisted Development
 
 ## Overview
 
-FinTracker is a modern personal finance management application designed to help users track expenses, manage budgets, monitor savings goals, and analyze spending behavior through insightful reports.
+Spendrift is a modern personal finance management application designed to help users track expenses, manage budgets, monitor savings goals, and analyze spending behavior through insightful reports.
 
 The project initially started as a personal tool to solve a real-world problem: maintaining financial clarity across multiple countries and currencies while keeping the experience simple and distraction-free.
 
-Unlike traditional finance apps overloaded with features, FinTracker focuses on:
+Unlike traditional finance apps overloaded with features, Spendrift focuses on:
 
 * clarity,
 * simplicity,
@@ -41,7 +41,7 @@ Another important challenge was tracking expenses independently across multiple 
 
 # Goals
 
-The primary goals of FinTracker were:
+The primary goals of Spendrift were:
 
 ## Functional Goals
 
@@ -72,7 +72,7 @@ The primary goals of FinTracker were:
 
 # Product Concept
 
-FinTracker uses a tracker-based architecture.
+Spendrift uses a tracker-based architecture.
 
 Each tracker acts as an independent financial workspace.
 
@@ -205,7 +205,7 @@ The backend is being designed using modular architecture principles with future 
 
 # AI-Assisted Development
 
-One of the most unique aspects of FinTracker is its development process.
+One of the most unique aspects of Spendrift is its development process.
 
 The project is also being used as an experiment in:
 
@@ -288,7 +288,7 @@ Potential future roadmap includes:
 
 # Key Learnings
 
-Building FinTracker reinforced several important engineering lessons:
+Building Spendrift reinforced several important engineering lessons:
 
 * Simplicity scales better than premature complexity
 * Strong UX matters more than feature quantity
@@ -300,7 +300,7 @@ Building FinTracker reinforced several important engineering lessons:
 
 # Conclusion
 
-FinTracker is more than just a finance app.
+Spendrift is more than just a finance app.
 
 It represents:
 

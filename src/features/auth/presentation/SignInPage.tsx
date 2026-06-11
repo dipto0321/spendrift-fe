@@ -19,7 +19,7 @@ export function SignInPage() {
 					<div className="flex flex-col justify-between rounded-3xl text-foreground">
 						<div>
 							<p className="text-sm font-medium uppercase tracking-[0.2em] text-foreground/60">
-								FinTrack
+								Spendrift
 							</p>
 							<h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-5xl">
 								Track money with a clean workspace.

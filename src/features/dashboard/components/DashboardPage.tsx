@@ -92,7 +92,7 @@ export function DashboardPage() {
 		<main className="page-wrap px-4 pb-14 pt-10 sm:pt-12">
 			<PageHeader
 				kicker="Dashboard"
-				title="FinTrack overview"
+				title="Spendrift overview"
 				description="Track what matters: cash position, monthly trends, and recent spending."
 			/>
 

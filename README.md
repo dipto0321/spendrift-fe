@@ -1,4 +1,4 @@
-# 💰 FinTracker
+# 💰 Spendrift
 
 A modern, minimal personal finance tracking application built with a focus on clarity, scalability, and AI-assisted development.
 
@@ -6,7 +6,7 @@ A modern, minimal personal finance tracking application built with a focus on cl
 
 ## 🚀 Overview
 
-FinTracker helps users track:
+Spendrift helps users track:
 
 - Daily expenses
 - Monthly budgets
@@ -43,7 +43,7 @@ The app is designed as a **tracker-based system**, where each tracker represents
 
 ## 🏗️ Architecture
 
-FinTracker follows a **Domain-Driven, Feature-Based Architecture (DDD)**.
+Spendrift follows a **Domain-Driven, Feature-Based Architecture (DDD)**.
 
 Each domain is isolated and self-contained:
 
@@ -121,7 +121,7 @@ Each tracker contains:
 
 ## 📊 UI / UX Philosophy
 
-FinTracker is designed to feel:
+Spendrift is designed to feel:
 
 - Minimal
 - Calm

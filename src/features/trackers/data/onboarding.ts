@@ -1,5 +1,5 @@
-const TRACKER_ONBOARDING_STORAGE_KEY = "fintrack.tracker-onboarded";
-const TRACKER_ONBOARDING_EVENT = "fintrack:tracker-onboarding-changed";
+const TRACKER_ONBOARDING_STORAGE_KEY = "spendrift.tracker-onboarded";
+const TRACKER_ONBOARDING_EVENT = "spendrift:tracker-onboarding-changed";
 
 function isBrowser() {
 	return globalThis.window !== undefined;

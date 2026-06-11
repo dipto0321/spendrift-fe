@@ -14,8 +14,8 @@ type AuthSnapshot = {
 	isAuthenticated: boolean;
 };
 
-const USERS_KEY = "fintrack.mock-auth.users";
-const SESSION_KEY = "fintrack.mock-auth.session";
+const USERS_KEY = "spendrift.mock-auth.users";
+const SESSION_KEY = "spendrift.mock-auth.session";
 
 const listeners = new Set<() => void>();
 let snapshotCache: AuthSnapshot = {
