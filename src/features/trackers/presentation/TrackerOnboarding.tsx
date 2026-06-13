@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
@@ -108,13 +109,14 @@ export function TrackerOnboarding() {
 								<p className="text-sm text-muted-foreground">
 									Use a short tracker name and a three-letter currency code.
 								</p>
-								<button
+								<Button
 									type="submit"
+									size="lg"
 									disabled={createMutation.isPending}
-									className="inline-flex h-12 items-center justify-center rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60 sm:min-w-40"
+									className="sm:min-w-40"
 								>
 									{createMutation.isPending ? "Creating..." : "Create tracker"}
-								</button>
+								</Button>
 							</div>
 						</form>
 					</CardContent>

@@ -1,3 +1,4 @@
+import { Badge } from "@/components/ui/badge";
 import {
 	getHealthBgColor,
 	getHealthColor,
@@ -9,21 +10,20 @@ type SavingsHealthBadgeProps = {
 	health: SavingsHealth;
 };
 
+const dotColor: Record<SavingsHealth, string> = {
+	green: "bg-green-500",
+	yellow: "bg-yellow-500",
+	red: "bg-red-500",
+};
+
 export function SavingsHealthBadge({ health }: SavingsHealthBadgeProps) {
 	return (
-		<span
-			className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${getHealthBgColor(health)} ${getHealthColor(health)}`}
+		<Badge
+			variant="outline"
+			className={`gap-1.5 border-transparent px-2.5 py-1 font-semibold ${getHealthBgColor(health)} ${getHealthColor(health)}`}
 		>
-			<span
-				className={`h-2 w-2 rounded-full ${
-					health === "green"
-						? "bg-green-500"
-						: health === "yellow"
-							? "bg-yellow-500"
-							: "bg-red-500"
-				}`}
-			/>
+			<span className={`h-2 w-2 rounded-full ${dotColor[health]}`} />
 			{getHealthLabel(health)}
-		</span>
+		</Badge>
 	);
 }

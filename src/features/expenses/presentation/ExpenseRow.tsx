@@ -10,6 +10,7 @@ import {
 	AlertDialogTitle,
 	AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { formatCurrency, formatDateShort } from "@/shared/utils/format";
 import { formatExpenseType } from "../domain/services";
@@ -49,15 +50,16 @@ export function ExpenseRow({
 				{expense.description || "—"}
 			</TableCell>
 			<TableCell className="whitespace-nowrap px-4 py-3 text-sm">
-				<span
-					className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+				<Badge
+					variant="outline"
+					className={`border-transparent ${
 						expense.type === "need"
 							? "bg-green-500/15 text-green-600 dark:text-green-400"
 							: "bg-orange-500/15 text-orange-600 dark:text-orange-400"
 					}`}
 				>
 					{formatExpenseType(expense.type)}
-				</span>
+				</Badge>
 			</TableCell>
 			<TableCell className="whitespace-nowrap px-4 py-3 text-right font-medium tabular-nums text-foreground">
 				{formatCurrency(expense.amount, currency)}
