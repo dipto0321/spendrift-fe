@@ -1,5 +1,7 @@
 import { ChevronDown, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import type { Tracker } from "../domain/types";
 
 type TrackerManagerProps = {
@@ -93,56 +95,63 @@ export function TrackerManager({
 							>
 								{editingId === tracker.id ? (
 									<>
-										<input
+										<Input
 											type="text"
 											value={editName}
 											onChange={(e) => setEditName(e.target.value)}
 											placeholder="Tracker name"
-											className="min-w-0 flex-1 rounded border border-input bg-background px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+											className="h-8 min-w-0 flex-1"
 										/>
-										<input
+										<Input
 											type="text"
 											value={editCurrency}
 											onChange={(e) =>
 												setEditCurrency(e.target.value.toUpperCase())
 											}
 											placeholder="USD"
-											className="w-24 rounded border border-input bg-background px-2 py-1 text-sm text-foreground uppercase focus:outline-none focus:ring-1 focus:ring-primary/50"
+											className="h-8 w-24 uppercase"
 										/>
-										<button
+										<Button
 											type="button"
+											size="sm"
 											onClick={handleUpdate}
-											className="shrink-0 rounded bg-primary px-2 py-1 text-xs font-medium text-primary-foreground"
+											className="shrink-0"
 										>
 											Save
-										</button>
-										<button
+										</Button>
+										<Button
 											type="button"
+											size="sm"
+											variant="outline"
 											onClick={cancelEdit}
-											className="shrink-0 rounded border border-input bg-background px-2 py-1 text-xs font-medium"
+											className="shrink-0"
 										>
 											Cancel
-										</button>
+										</Button>
 									</>
 								) : confirmDeleteId === tracker.id ? (
 									<>
 										<span className="flex-1 truncate text-sm text-muted-foreground">
 											Delete "{tracker.name}"?
 										</span>
-										<button
+										<Button
 											type="button"
+											size="sm"
+											variant="destructive"
 											onClick={() => handleDelete(tracker.id)}
-											className="shrink-0 rounded bg-destructive px-2 py-1 text-xs font-medium text-destructive-foreground"
+											className="shrink-0"
 										>
 											Confirm
-										</button>
-										<button
+										</Button>
+										<Button
 											type="button"
+											size="sm"
+											variant="outline"
 											onClick={() => setConfirmDeleteId(null)}
-											className="shrink-0 rounded border border-input bg-background px-2 py-1 text-xs font-medium"
+											className="shrink-0"
 										>
 											Cancel
-										</button>
+										</Button>
 									</>
 								) : (
 									<>
@@ -162,13 +171,15 @@ export function TrackerManager({
 											</div>
 										</div>
 										{activeTrackerId !== tracker.id ? (
-											<button
+											<Button
 												type="button"
+												size="sm"
+												variant="outline"
 												onClick={() => onActivate(tracker.id)}
-												className="shrink-0 rounded border border-input bg-background px-2 py-1 text-xs font-medium"
+												className="shrink-0"
 											>
 												Use
-											</button>
+											</Button>
 										) : null}
 										<button
 											type="button"
@@ -199,40 +210,40 @@ export function TrackerManager({
 
 						{showCreate ? (
 							<div className="space-y-2 rounded-lg border border-border/40 bg-card/50 p-3">
-								<input
+								<Input
 									type="text"
 									placeholder="Tracker name"
 									value={newName}
 									onChange={(e) => setNewName(e.target.value)}
-									className="w-full rounded border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
 								/>
-								<input
+								<Input
 									type="text"
 									placeholder="USD"
 									value={newCurrency}
 									onChange={(e) => setNewCurrency(e.target.value.toUpperCase())}
-									className="w-full rounded border border-input bg-background px-3 py-2 text-sm text-foreground uppercase placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+									className="uppercase"
 								/>
 								<div className="flex gap-2">
-									<button
+									<Button
 										type="button"
+										variant="outline"
 										onClick={() => {
 											setShowCreate(false);
 											setNewName("");
 											setNewCurrency("USD");
 										}}
-										className="flex-1 rounded border border-input bg-background px-3 py-1.5 text-sm font-medium"
+										className="flex-1"
 									>
 										Cancel
-									</button>
-									<button
+									</Button>
+									<Button
 										type="button"
 										onClick={handleCreate}
 										disabled={!newName.trim() || !newCurrency.trim()}
-										className="flex-1 rounded bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground disabled:opacity-50"
+										className="flex-1"
 									>
 										Create
-									</button>
+									</Button>
 								</div>
 							</div>
 						) : (
