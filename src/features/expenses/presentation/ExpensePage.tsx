@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { toast } from "sonner";
 import { useTracker } from "@/features/trackers/presentation/TrackerContext";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { formatCurrency } from "@/shared/utils/format";
@@ -49,6 +50,10 @@ export function ExpensePage() {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["expenses"] });
 			closeModal();
+			toast.success("Expense added");
+		},
+		onError: () => {
+			toast.error("Could not add expense. Please try again.");
 		},
 	});
 
@@ -63,6 +68,10 @@ export function ExpensePage() {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["expenses"] });
 			closeModal();
+			toast.success("Expense updated");
+		},
+		onError: () => {
+			toast.error("Could not update expense. Please try again.");
 		},
 	});
 
@@ -70,6 +79,10 @@ export function ExpensePage() {
 		mutationFn: (id: string) => expenseRepository.delete(id),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["expenses"] });
+			toast.success("Expense deleted");
+		},
+		onError: () => {
+			toast.error("Could not delete expense. Please try again.");
 		},
 	});
 

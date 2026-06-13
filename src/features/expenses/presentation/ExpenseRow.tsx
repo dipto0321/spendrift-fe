@@ -1,4 +1,15 @@
 import { Trash2 } from "lucide-react";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { formatCurrency, formatDateShort } from "@/shared/utils/format";
 import { formatExpenseType } from "../domain/services";
@@ -52,17 +63,37 @@ export function ExpenseRow({
 				{formatCurrency(expense.amount, currency)}
 			</TableCell>
 			<TableCell className="px-4 py-3 text-right">
-				<button
-					type="button"
-					onClick={(e) => {
-						e.stopPropagation();
-						onDelete(expense.id);
-					}}
-					className="opacity-0 group-hover:opacity-100 transition-opacity rounded-lg p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-					aria-label={`Delete expense: ${expense.description || categoryName}`}
-				>
-					<Trash2 className="h-4 w-4" />
-				</button>
+				<AlertDialog>
+					<AlertDialogTrigger asChild>
+						<button
+							type="button"
+							onClick={(e) => e.stopPropagation()}
+							className="opacity-0 group-hover:opacity-100 transition-opacity rounded-lg p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+							aria-label={`Delete expense: ${expense.description || categoryName}`}
+						>
+							<Trash2 className="h-4 w-4" />
+						</button>
+					</AlertDialogTrigger>
+					<AlertDialogContent onClick={(e) => e.stopPropagation()}>
+						<AlertDialogHeader>
+							<AlertDialogTitle>Delete this expense?</AlertDialogTitle>
+							<AlertDialogDescription>
+								This permanently removes "{expense.description || categoryName}"{" "}
+								({formatCurrency(expense.amount, currency)}). This action cannot
+								be undone.
+							</AlertDialogDescription>
+						</AlertDialogHeader>
+						<AlertDialogFooter>
+							<AlertDialogCancel>Cancel</AlertDialogCancel>
+							<AlertDialogAction
+								onClick={() => onDelete(expense.id)}
+								className="bg-destructive text-white hover:bg-destructive/90"
+							>
+								Delete
+							</AlertDialogAction>
+						</AlertDialogFooter>
+					</AlertDialogContent>
+				</AlertDialog>
 			</TableCell>
 		</TableRow>
 	);
