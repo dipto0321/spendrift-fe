@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { expenseRepository } from "@/features/expenses/data/repository";
 import { calculateNeedsWantsSplit } from "@/features/expenses/domain/services";
 import { useTracker } from "@/features/trackers/presentation/TrackerContext";
@@ -123,13 +124,9 @@ function BudgetPage() {
 			<div className="space-y-6">
 				{!showForm && !editingBudget && (
 					<div className="flex justify-end">
-						<button
-							type="button"
-							onClick={() => setShowForm(true)}
-							className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-						>
+						<Button type="button" onClick={() => setShowForm(true)}>
 							{currentBudget ? "Edit Budget" : "Create Budget"}
-						</button>
+						</Button>
 					</div>
 				)}
 
