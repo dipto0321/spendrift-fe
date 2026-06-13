@@ -126,7 +126,7 @@ function SettingsPage() {
 	});
 
 	return (
-		<main className="page-wrap px-4 pb-14 pt-10 sm:pt-12">
+		<main className="page-wrap rise-in px-4 pb-14 pt-10 sm:pt-12">
 			<header className="mb-6">
 				<p className="island-kicker mb-2">Settings</p>
 				<h1 className="display-title m-0 text-3xl font-semibold text-foreground sm:text-5xl">

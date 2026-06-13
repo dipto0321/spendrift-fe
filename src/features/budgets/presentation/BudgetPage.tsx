@@ -100,7 +100,7 @@ function BudgetPage() {
 
 	if (budgetsLoading) {
 		return (
-			<main className="page-wrap px-4 pb-14 pt-10 sm:pt-12">
+			<main className="page-wrap rise-in px-4 pb-14 pt-10 sm:pt-12">
 				<PageHeader
 					kicker="Budget"
 					title="Budget workspace"
@@ -114,7 +114,7 @@ function BudgetPage() {
 	}
 
 	return (
-		<main className="page-wrap px-4 pb-14 pt-10 sm:pt-12">
+		<main className="page-wrap rise-in px-4 pb-14 pt-10 sm:pt-12">
 			<PageHeader
 				kicker="Budget"
 				title="Budget workspace"

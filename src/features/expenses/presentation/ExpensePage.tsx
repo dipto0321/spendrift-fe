@@ -126,7 +126,7 @@ export function ExpensePage() {
 
 	if (expensesError) {
 		return (
-			<main className="page-wrap px-4 pb-14 pt-10 sm:pt-12">
+			<main className="page-wrap rise-in px-4 pb-14 pt-10 sm:pt-12">
 				<p className="text-sm text-destructive">
 					Failed to load expenses. Please try again.
 				</p>
@@ -135,7 +135,7 @@ export function ExpensePage() {
 	}
 
 	return (
-		<main className="page-wrap px-4 pb-14 pt-10 sm:pt-12">
+		<main className="page-wrap rise-in px-4 pb-14 pt-10 sm:pt-12">
 			<header className="mb-6">
 				<PageHeader
 					kicker="Expenses"
