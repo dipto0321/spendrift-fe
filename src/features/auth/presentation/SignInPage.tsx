@@ -1,5 +1,8 @@
 import { useMutation } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { authRepository, useAuthSnapshot } from "../data/repository";
 
 export function SignInPage() {
@@ -60,44 +63,40 @@ export function SignInPage() {
 									await signInMutation.mutateAsync({ email, password });
 								}}
 							>
-								<label className="grid gap-2">
-									<span className="text-sm font-medium text-foreground">
-										Email
-									</span>
-									<input
+								<div className="grid gap-2">
+									<Label htmlFor="signin-email">Email</Label>
+									<Input
+										id="signin-email"
 										name="email"
 										type="email"
 										autoComplete="email"
-										className="rounded-xl border border-input bg-background px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
 										required
 									/>
-								</label>
-								<label className="grid gap-2">
-									<span className="text-sm font-medium text-foreground">
-										Password
-									</span>
-									<input
+								</div>
+								<div className="grid gap-2">
+									<Label htmlFor="signin-password">Password</Label>
+									<Input
+										id="signin-password"
 										name="password"
 										type="password"
 										autoComplete="current-password"
-										className="rounded-xl border border-input bg-background px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
 										required
 									/>
-								</label>
+								</div>
 
 								{signInMutation.error ? (
-									<p className="text-sm text-red-500">
+									<p className="text-sm text-destructive">
 										{signInMutation.error.message}
 									</p>
 								) : null}
 
-								<button
+								<Button
 									type="submit"
 									disabled={signInMutation.isPending}
-									className="inline-flex w-full items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
+									className="w-full"
 								>
 									{signInMutation.isPending ? "Signing in..." : "Sign in"}
-								</button>
+								</Button>
 							</form>
 
 							<div className="mt-6 text-sm text-muted-foreground">
