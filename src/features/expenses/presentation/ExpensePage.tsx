@@ -21,6 +21,7 @@ import { ExpenseToolbar } from "./ExpenseToolbar";
 
 export function ExpensePage() {
 	const { activeTracker } = useTracker();
+	const trackerId = activeTracker?.id;
 	const currency = activeTracker?.currency ?? "";
 	const queryClient = useQueryClient();
 	const [filter, setFilter] = useState<ExpenseFilter>(() => ({
@@ -36,19 +37,22 @@ export function ExpensePage() {
 		isLoading: expensesLoading,
 		error: expensesError,
 	} = useQuery({
-		queryKey: ["expenses"],
-		queryFn: () => expenseRepository.getAll(),
+		queryKey: ["expenses", trackerId],
+		queryFn: () => expenseRepository.getAll(trackerId as string),
+		enabled: Boolean(trackerId),
 	});
 
 	const { data: categories = [] } = useQuery({
-		queryKey: ["categories"],
-		queryFn: () => categoryRepository.getAll(),
+		queryKey: ["categories", trackerId],
+		queryFn: () => categoryRepository.getAll(trackerId as string),
+		enabled: Boolean(trackerId),
 	});
 
 	const createMutation = useMutation({
-		mutationFn: (input: ExpenseCreateInput) => expenseRepository.create(input),
+		mutationFn: (input: ExpenseCreateInput) =>
+			expenseRepository.create(trackerId as string, input),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["expenses"] });
+			queryClient.invalidateQueries({ queryKey: ["expenses", trackerId] });
 			closeModal();
 			toast.success("Expense added");
 		},
@@ -64,9 +68,9 @@ export function ExpensePage() {
 		}: {
 			id: string;
 			data: Partial<ExpenseCreateInput>;
-		}) => expenseRepository.update(id, data),
+		}) => expenseRepository.update(trackerId as string, id, data),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["expenses"] });
+			queryClient.invalidateQueries({ queryKey: ["expenses", trackerId] });
 			closeModal();
 			toast.success("Expense updated");
 		},
@@ -76,9 +80,10 @@ export function ExpensePage() {
 	});
 
 	const deleteMutation = useMutation({
-		mutationFn: (id: string) => expenseRepository.delete(id),
+		mutationFn: (id: string) =>
+			expenseRepository.delete(trackerId as string, id),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["expenses"] });
+			queryClient.invalidateQueries({ queryKey: ["expenses", trackerId] });
 			toast.success("Expense deleted");
 		},
 		onError: () => {

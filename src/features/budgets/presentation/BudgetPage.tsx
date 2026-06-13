@@ -15,6 +15,7 @@ import { BudgetStatusCard } from "./BudgetStatusCard";
 
 function BudgetPage() {
 	const { activeTracker } = useTracker();
+	const trackerId = activeTracker?.id;
 	const currency = activeTracker?.currency ?? "";
 	const queryClient = useQueryClient();
 	const currentMonth = getCurrentMonth();
@@ -22,13 +23,15 @@ function BudgetPage() {
 	const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
 
 	const { data: budgets = [], isLoading: budgetsLoading } = useQuery({
-		queryKey: ["budgets"],
-		queryFn: () => budgetRepository.getAll(),
+		queryKey: ["budgets", trackerId],
+		queryFn: () => budgetRepository.getAll(trackerId as string),
+		enabled: Boolean(trackerId),
 	});
 
 	const { data: expenses = [] } = useQuery({
-		queryKey: ["expenses"],
-		queryFn: () => expenseRepository.getAll(),
+		queryKey: ["expenses", trackerId],
+		queryFn: () => expenseRepository.getAll(trackerId as string),
+		enabled: Boolean(trackerId),
 	});
 
 	const currentBudget = budgets.find((b) => b.month === currentMonth) ?? null;
@@ -48,9 +51,10 @@ function BudgetPage() {
 	const needsWantsSplit = calculateNeedsWantsSplit(currentMonthExpenses);
 
 	const createMutation = useMutation({
-		mutationFn: (input: BudgetCreateInput) => budgetRepository.create(input),
+		mutationFn: (input: BudgetCreateInput) =>
+			budgetRepository.create(trackerId as string, input),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["budgets"] });
+			queryClient.invalidateQueries({ queryKey: ["budgets", trackerId] });
 			setShowForm(false);
 			toast.success("Budget created");
 		},
@@ -66,22 +70,15 @@ function BudgetPage() {
 		}: {
 			id: string;
 			patch: Partial<BudgetCreateInput>;
-		}) => budgetRepository.update(id, patch),
+		}) => budgetRepository.update(trackerId as string, id, patch),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["budgets"] });
+			queryClient.invalidateQueries({ queryKey: ["budgets", trackerId] });
 			setShowForm(false);
 			setEditingBudget(null);
 			toast.success("Budget updated");
 		},
 		onError: () => {
 			toast.error("Could not update budget. Please try again.");
-		},
-	});
-
-	const deleteMutation = useMutation({
-		mutationFn: (id: string) => budgetRepository.delete(id),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["budgets"] });
 		},
 	});
 

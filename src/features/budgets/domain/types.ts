@@ -1,5 +1,6 @@
 export type Budget = {
 	id: string;
+	trackerId: string;
 	name: string;
 	monthlyLimit: number;
 	savingsTarget: number;
@@ -7,9 +8,11 @@ export type Budget = {
 	createdAt: string;
 };
 
-export type BudgetCreateInput = Omit<Budget, "id" | "createdAt">;
+export type BudgetCreateInput = Omit<Budget, "id" | "createdAt" | "trackerId">;
 
-export type BudgetUpdateInput = Partial<Omit<Budget, "id" | "createdAt">>;
+export type BudgetUpdateInput = Partial<
+	Omit<Budget, "id" | "createdAt" | "trackerId">
+>;
 
 export type SavingsHealth = "green" | "yellow" | "red";
 

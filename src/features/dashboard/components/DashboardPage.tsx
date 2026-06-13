@@ -34,6 +34,7 @@ const miniChartConfig = {
 
 export function DashboardPage() {
 	const { activeTracker } = useTracker();
+	const trackerId = activeTracker?.id;
 	const currency = activeTracker?.currency ?? "";
 	const { data: summary, isLoading: summaryLoading } = useQuery({
 		queryKey: ["dashboard-summary"],
@@ -41,18 +42,21 @@ export function DashboardPage() {
 	});
 
 	const { data: expenses = [], isLoading: expensesLoading } = useQuery({
-		queryKey: ["expenses"],
-		queryFn: () => expenseRepository.getAll(),
+		queryKey: ["expenses", trackerId],
+		queryFn: () => expenseRepository.getAll(trackerId as string),
+		enabled: Boolean(trackerId),
 	});
 
 	const { data: categories = [] } = useQuery({
-		queryKey: ["categories"],
-		queryFn: () => categoryRepository.getAll(),
+		queryKey: ["categories", trackerId],
+		queryFn: () => categoryRepository.getAll(trackerId as string),
+		enabled: Boolean(trackerId),
 	});
 
 	const { data: budgets = [] } = useQuery({
-		queryKey: ["budgets"],
-		queryFn: () => budgetRepository.getAll(),
+		queryKey: ["budgets", trackerId],
+		queryFn: () => budgetRepository.getAll(trackerId as string),
+		enabled: Boolean(trackerId),
 	});
 
 	const currentMonth = getCurrentMonth();
