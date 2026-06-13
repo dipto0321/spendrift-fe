@@ -3,6 +3,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import {
 	createRootRouteWithContext,
 	HeadContent,
+	retainSearchParams,
 	Scripts,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
@@ -26,6 +27,16 @@ interface MyRouterContext {
 }
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
+	// The active tracker lives in the URL as ?tracker=<id>. Declaring it on the
+	// root route makes it a typed search param everywhere, and retainSearchParams
+	// keeps it across every navigation so links never have to pass it explicitly.
+	validateSearch: (search: Record<string, unknown>): { tracker?: string } => ({
+		tracker: typeof search.tracker === "string" ? search.tracker : undefined,
+	}),
+	search: {
+		middlewares: [retainSearchParams(["tracker"])],
+	},
+
 	beforeLoad: async () => {
 		// Other redirect strategies are possible; see
 		// https://github.com/TanStack/router/tree/main/examples/react/i18n-paraglide#offline-redirect
