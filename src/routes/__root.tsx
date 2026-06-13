@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { useSyncExternalStore } from "react";
+import { Toaster } from "@/components/ui/sonner";
 import { useAuthSnapshot } from "@/features/auth/data/repository";
 import {
 	getTrackerOnboardingStatus,
@@ -83,6 +84,7 @@ function RootDocument({ children }: Readonly<{ children: React.ReactNode }>) {
 						) : null}
 					</TrackerProvider>
 				</TanStackQueryProvider>
+				<Toaster position="top-right" richColors />
 				<Scripts />
 			</body>
 		</html>

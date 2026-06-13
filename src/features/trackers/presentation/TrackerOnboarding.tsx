@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
 	Card,
 	CardContent,
@@ -18,6 +19,9 @@ export function TrackerOnboarding() {
 			trackerRepository.create(name, currency),
 		onSuccess: async () => {
 			await queryClient.invalidateQueries({ queryKey: ["trackers"] });
+		},
+		onError: () => {
+			toast.error("Could not create tracker. Please try again.");
 		},
 	});
 

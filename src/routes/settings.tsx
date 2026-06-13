@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { toast } from "sonner";
 import { requireAuth } from "@/features/auth/presentation/routeGuards";
 import { categoryRepository } from "@/features/expenses/data/repository";
 import type { CategoryColor } from "@/features/expenses/domain/types";
@@ -34,6 +35,10 @@ function SettingsPage() {
 			categoryRepository.create(name, color as CategoryColor),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["categories"] });
+			toast.success("Category created");
+		},
+		onError: () => {
+			toast.error("Could not create category. Please try again.");
 		},
 	});
 
@@ -53,6 +58,10 @@ function SettingsPage() {
 			}),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["categories"] });
+			toast.success("Category updated");
+		},
+		onError: () => {
+			toast.error("Could not update category. Please try again.");
 		},
 	});
 
@@ -60,6 +69,10 @@ function SettingsPage() {
 		mutationFn: (id: string) => categoryRepository.delete(id, "uncategorized"),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["categories"] });
+			toast.success("Category deleted");
+		},
+		onError: () => {
+			toast.error("Could not delete category. Please try again.");
 		},
 	});
 
@@ -68,6 +81,10 @@ function SettingsPage() {
 			trackerRepository.create(name, currency),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["trackers"] });
+			toast.success("Tracker created");
+		},
+		onError: () => {
+			toast.error("Could not create tracker. Please try again.");
 		},
 	});
 
@@ -83,6 +100,10 @@ function SettingsPage() {
 		}) => trackerRepository.update(id, { name, currency }),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["trackers"] });
+			toast.success("Tracker updated");
+		},
+		onError: () => {
+			toast.error("Could not update tracker. Please try again.");
 		},
 	});
 
@@ -90,6 +111,10 @@ function SettingsPage() {
 		mutationFn: (id: string) => trackerRepository.delete(id),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["trackers"] });
+			toast.success("Tracker deleted");
+		},
+		onError: () => {
+			toast.error("Could not delete tracker. Please try again.");
 		},
 	});
 

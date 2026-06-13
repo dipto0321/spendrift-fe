@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { toast } from "sonner";
 import { expenseRepository } from "@/features/expenses/data/repository";
 import { calculateNeedsWantsSplit } from "@/features/expenses/domain/services";
 import { useTracker } from "@/features/trackers/presentation/TrackerContext";
@@ -51,6 +52,10 @@ function BudgetPage() {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["budgets"] });
 			setShowForm(false);
+			toast.success("Budget created");
+		},
+		onError: () => {
+			toast.error("Could not create budget. Please try again.");
 		},
 	});
 
@@ -66,6 +71,10 @@ function BudgetPage() {
 			queryClient.invalidateQueries({ queryKey: ["budgets"] });
 			setShowForm(false);
 			setEditingBudget(null);
+			toast.success("Budget updated");
+		},
+		onError: () => {
+			toast.error("Could not update budget. Please try again.");
 		},
 	});
 
