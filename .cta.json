@@ -5,11 +5,7 @@
   "packageManager": "pnpm",
   "includeExamples": false,
   "tailwind": true,
-  "addOnOptions": {
-    "prisma": {
-      "database": "postgres"
-    }
-  },
+  "addOnOptions": {},
   "envVarValues": {},
   "git": true,
   "routerOnly": false,
@@ -18,9 +14,7 @@
   "chosenAddOns": [
     "biome",
     "nitro",
-    "neon",
     "sentry",
-    "prisma",
     "compiler",
     "paraglide",
     "shadcn",
