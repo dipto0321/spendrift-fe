@@ -40,7 +40,7 @@ export function NeedsVsWantsPie({
 	needsPercentage,
 	wantsPercentage,
 	currency,
-}: NeedsVsWantsPieProps) {
+}: NeedsWantsPieProps) {
 	const total = needs + wants;
 
 	if (total === 0) {

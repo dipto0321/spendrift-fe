@@ -26,7 +26,7 @@ export function CategoryColorPicker({
 					style={{
 						backgroundColor: color,
 						...(value === color && {
-							ringColor: color,
+							"--tw-ring-color": color,
 						}),
 					}}
 					aria-label={`Select color ${color}`}

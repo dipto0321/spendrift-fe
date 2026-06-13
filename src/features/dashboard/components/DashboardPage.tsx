@@ -12,7 +12,10 @@ import {
 	getCurrentMonth,
 } from "@/features/budgets/domain/services";
 import { SavingsHealthBadge } from "@/features/budgets/presentation/SavingsHealthBadge";
-import { expenseRepository } from "@/features/expenses/data/repository";
+import {
+	categoryRepository,
+	expenseRepository,
+} from "@/features/expenses/data/repository";
 import { calculateNeedsWantsSplit } from "@/features/expenses/domain/services";
 import type { Category } from "@/features/expenses/domain/types";
 import { groupByMonth } from "@/features/reports/domain/services";
@@ -44,10 +47,7 @@ export function DashboardPage() {
 
 	const { data: categories = [] } = useQuery({
 		queryKey: ["categories"],
-		queryFn: () =>
-			import("@/features/expenses/data/repository").then((m) =>
-				m.categoryRepository.getAll(),
-			),
+		queryFn: () => categoryRepository.getAll(),
 	});
 
 	const { data: budgets = [] } = useQuery({
