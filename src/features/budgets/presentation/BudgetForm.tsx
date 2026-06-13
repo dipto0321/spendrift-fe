@@ -1,7 +1,16 @@
-import { useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
+import {
+	Form,
+	FormControl,
+	FormField,
+	FormItem,
+	FormLabel,
+	FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { type BudgetFormValues, budgetFormSchema } from "../domain/schema";
 import type { Budget, BudgetCreateInput } from "../domain/types";
 
 type BudgetFormProps = {
@@ -11,66 +20,28 @@ type BudgetFormProps = {
 	isSubmitting?: boolean;
 };
 
+const requiredMark = <span className="text-destructive">*</span>;
+
+function getCurrentMonth() {
+	const now = new Date();
+	return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
+
 export function BudgetForm({
 	initialData,
 	onSubmit,
 	onCancel,
 	isSubmitting,
-}: BudgetFormProps) {
-	const currentMonth = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
-
-	const [name, setName] = useState(initialData?.name ?? "");
-	const [monthlyLimit, setMonthlyLimit] = useState(
-		initialData?.monthlyLimit?.toString() ?? "",
-	);
-	const [savingsTarget, setSavingsTarget] = useState(
-		initialData?.savingsTarget?.toString() ?? "",
-	);
-	const [month, setMonth] = useState(initialData?.month ?? currentMonth);
-
-	const [errors, setErrors] = useState<Record<string, string>>({});
-
-	function validate(): boolean {
-		const newErrors: Record<string, string> = {};
-
-		if (!name.trim()) {
-			newErrors.name = "Name is required";
-		}
-
-		const numLimit = Number.parseFloat(monthlyLimit);
-		if (!monthlyLimit || Number.isNaN(numLimit)) {
-			newErrors.monthlyLimit = "Monthly limit is required";
-		} else if (numLimit <= 0) {
-			newErrors.monthlyLimit = "Must be greater than 0";
-		}
-
-		const numTarget = Number.parseFloat(savingsTarget);
-		if (!savingsTarget || Number.isNaN(numTarget)) {
-			newErrors.savingsTarget = "Savings target is required";
-		} else if (numTarget < 0) {
-			newErrors.savingsTarget = "Cannot be negative";
-		} else if (numTarget > numLimit) {
-			newErrors.savingsTarget = "Savings target cannot exceed monthly limit";
-		}
-
-		if (!month) {
-			newErrors.month = "Month is required";
-		}
-
-		setErrors(newErrors);
-		return Object.keys(newErrors).length === 0;
-	}
-
-	function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
-		e.preventDefault();
-		if (!validate()) return;
-		onSubmit({
-			name: name.trim(),
-			monthlyLimit: Number.parseFloat(monthlyLimit),
-			savingsTarget: Number.parseFloat(savingsTarget),
-			month,
-		});
-	}
+}: Readonly<BudgetFormProps>) {
+	const form = useForm<BudgetFormValues>({
+		resolver: zodResolver(budgetFormSchema),
+		defaultValues: {
+			name: initialData?.name ?? "",
+			monthlyLimit: initialData?.monthlyLimit?.toString() ?? "",
+			savingsTarget: initialData?.savingsTarget?.toString() ?? "",
+			month: initialData?.month ?? getCurrentMonth(),
+		},
+	});
 
 	let submitLabel = "Create Budget";
 	if (isSubmitting) {
@@ -80,104 +51,107 @@ export function BudgetForm({
 	}
 
 	return (
-		<form onSubmit={handleSubmit} className="space-y-5">
-			<div className="space-y-1.5">
-				<Label htmlFor="budget-name">
-					Name <span className="text-destructive">*</span>
-				</Label>
-				<Input
-					id="budget-name"
-					type="text"
-					placeholder="e.g., May 2026 Budget"
-					value={name}
-					onChange={(e) => setName(e.target.value)}
-					className={
-						errors.name ? "aria-invalid:border-destructive" : undefined
-					}
-				/>
-				{errors.name && (
-					<p className="text-xs text-destructive">{errors.name}</p>
+		<Form {...form}>
+			<form
+				onSubmit={form.handleSubmit((values) =>
+					onSubmit({
+						...values,
+						monthlyLimit: Number.parseFloat(values.monthlyLimit),
+						savingsTarget: Number.parseFloat(values.savingsTarget),
+					}),
 				)}
-			</div>
-
-			<div className="grid grid-cols-2 gap-4">
-				<div className="space-y-1.5">
-					<Label htmlFor="monthly-limit">
-						Monthly Limit <span className="text-destructive">*</span>
-					</Label>
-					<Input
-						id="monthly-limit"
-						type="number"
-						inputMode="decimal"
-						step="0.01"
-						min={0}
-						placeholder="0.00"
-						value={monthlyLimit}
-						onChange={(e) => setMonthlyLimit(e.target.value)}
-						className={
-							errors.monthlyLimit
-								? "aria-invalid:border-destructive"
-								: undefined
-						}
-					/>
-					{errors.monthlyLimit && (
-						<p className="text-xs text-destructive">{errors.monthlyLimit}</p>
+				className="space-y-5"
+			>
+				<FormField
+					control={form.control}
+					name="name"
+					render={({ field }) => (
+						<FormItem>
+							<FormLabel>Name {requiredMark}</FormLabel>
+							<FormControl>
+								<Input
+									type="text"
+									placeholder="e.g., May 2026 Budget"
+									{...field}
+								/>
+							</FormControl>
+							<FormMessage />
+						</FormItem>
 					)}
+				/>
+
+				<div className="grid grid-cols-2 gap-4">
+					<FormField
+						control={form.control}
+						name="monthlyLimit"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Monthly Limit {requiredMark}</FormLabel>
+								<FormControl>
+									<Input
+										type="number"
+										inputMode="decimal"
+										step="0.01"
+										min={0}
+										placeholder="0.00"
+										{...field}
+									/>
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+
+					<FormField
+						control={form.control}
+						name="savingsTarget"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Savings Target {requiredMark}</FormLabel>
+								<FormControl>
+									<Input
+										type="number"
+										inputMode="decimal"
+										step="0.01"
+										min={0}
+										placeholder="0.00"
+										{...field}
+									/>
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
 				</div>
 
-				<div className="space-y-1.5">
-					<Label htmlFor="savings-target">
-						Savings Target <span className="text-destructive">*</span>
-					</Label>
-					<Input
-						id="savings-target"
-						type="number"
-						inputMode="decimal"
-						step="0.01"
-						min={0}
-						placeholder="0.00"
-						value={savingsTarget}
-						onChange={(e) => setSavingsTarget(e.target.value)}
-						className={
-							errors.savingsTarget
-								? "aria-invalid:border-destructive"
-								: undefined
-						}
-					/>
-					{errors.savingsTarget && (
-						<p className="text-xs text-destructive">{errors.savingsTarget}</p>
+				<FormField
+					control={form.control}
+					name="month"
+					render={({ field }) => (
+						<FormItem>
+							<FormLabel>Month {requiredMark}</FormLabel>
+							<FormControl>
+								<Input type="month" {...field} />
+							</FormControl>
+							<FormMessage />
+						</FormItem>
 					)}
-				</div>
-			</div>
-
-			<div className="space-y-1.5">
-				<Label htmlFor="budget-month">
-					Month <span className="text-destructive">*</span>
-				</Label>
-				<Input
-					id="budget-month"
-					type="month"
-					value={month}
-					onChange={(e) => setMonth(e.target.value)}
 				/>
-				{errors.month && (
-					<p className="text-xs text-destructive">{errors.month}</p>
-				)}
-			</div>
 
-			<div className="flex justify-end gap-2 pt-2">
-				<Button
-					variant="outline"
-					type="button"
-					onClick={onCancel}
-					disabled={isSubmitting}
-				>
-					Cancel
-				</Button>
-				<Button type="submit" disabled={isSubmitting}>
-					{submitLabel}
-				</Button>
-			</div>
-		</form>
+				<div className="flex justify-end gap-2 pt-2">
+					<Button
+						variant="outline"
+						type="button"
+						onClick={onCancel}
+						disabled={isSubmitting}
+					>
+						Cancel
+					</Button>
+					<Button type="submit" disabled={isSubmitting}>
+						{submitLabel}
+					</Button>
+				</div>
+			</form>
+		</Form>
 	);
 }
