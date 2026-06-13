@@ -1,12 +1,13 @@
 import { useMutation } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { authRepository, useAuthSnapshot } from "../data/repository";
 
 const MAX_AVATAR_SIZE = 1_000_000;
 
 export function ProfilePage() {
-	const navigate = useNavigate();
 	const auth = useAuthSnapshot();
 	const user = auth.user;
 	const [avatarError, setAvatarError] = useState<string | null>(null);
@@ -99,44 +100,39 @@ export function ProfilePage() {
 							}}
 						>
 							<div className="grid gap-4 sm:grid-cols-2">
-								<label className="grid gap-2">
-									<span className="text-sm font-medium text-foreground">
-										Name
-									</span>
-									<input
+								<div className="grid gap-2">
+									<Label htmlFor="profile-name">Name</Label>
+									<Input
+										id="profile-name"
 										name="name"
 										type="text"
 										defaultValue={user.name}
-										className="rounded-xl border border-input bg-background px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
 										required
 									/>
-								</label>
-								<label className="grid gap-2">
-									<span className="text-sm font-medium text-foreground">
-										Email
-									</span>
-									<input
+								</div>
+								<div className="grid gap-2">
+									<Label htmlFor="profile-email">Email</Label>
+									<Input
+										id="profile-email"
 										name="email"
 										type="email"
 										defaultValue={user.email}
-										className="rounded-xl border border-input bg-background px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
 										required
 									/>
-								</label>
+								</div>
 							</div>
 							{profileError ? (
-								<p className="text-sm text-red-500">{profileError}</p>
+								<p className="text-sm text-destructive">{profileError}</p>
 							) : null}
 							<div className="flex justify-end">
-								<button
+								<Button
 									type="submit"
 									disabled={updateProfileMutation.isPending}
-									className="rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
 								>
 									{updateProfileMutation.isPending
 										? "Saving..."
 										: "Save profile"}
-								</button>
+								</Button>
 							</div>
 						</form>
 					</section>
@@ -146,14 +142,12 @@ export function ProfilePage() {
 							Profile picture
 						</h2>
 						<div className="mt-4 grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-							<label className="grid gap-2">
-								<span className="text-sm font-medium text-foreground">
-									Avatar image
-								</span>
-								<input
+							<div className="grid gap-2">
+								<Label htmlFor="avatar-image">Avatar image</Label>
+								<Input
+									id="avatar-image"
 									type="file"
 									accept="image/*"
-									className="block w-full text-sm text-muted-foreground file:mr-4 file:rounded-lg file:border-0 file:bg-primary file:px-4 file:py-2 file:text-sm file:font-medium file:text-primary-foreground hover:file:bg-primary/90"
 									onChange={async (event) => {
 										setAvatarError(null);
 										const file = event.currentTarget.files?.[0];
@@ -168,17 +162,17 @@ export function ProfilePage() {
 										event.currentTarget.value = "";
 									}}
 								/>
-							</label>
-							<button
+							</div>
+							<Button
 								type="button"
+								variant="outline"
 								onClick={async () => updateAvatarMutation.mutateAsync(null)}
-								className="rounded-xl border border-border/60 bg-background px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-muted/30"
 							>
 								Remove image
-							</button>
+							</Button>
 						</div>
 						{avatarError ? (
-							<p className="mt-3 text-sm text-red-500">{avatarError}</p>
+							<p className="mt-3 text-sm text-destructive">{avatarError}</p>
 						) : null}
 					</section>
 
@@ -224,56 +218,49 @@ export function ProfilePage() {
 							}}
 						>
 							<div className="grid gap-4 sm:grid-cols-3">
-								<label className="grid gap-2">
-									<span className="text-sm font-medium text-foreground">
-										Current password
-									</span>
-									<input
+								<div className="grid gap-2">
+									<Label htmlFor="current-password">Current password</Label>
+									<Input
+										id="current-password"
 										name="currentPassword"
 										type="password"
 										autoComplete="current-password"
-										className="rounded-xl border border-input bg-background px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
 										required
 									/>
-								</label>
-								<label className="grid gap-2">
-									<span className="text-sm font-medium text-foreground">
-										New password
-									</span>
-									<input
+								</div>
+								<div className="grid gap-2">
+									<Label htmlFor="new-password">New password</Label>
+									<Input
+										id="new-password"
 										name="newPassword"
 										type="password"
 										autoComplete="new-password"
-										className="rounded-xl border border-input bg-background px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
 										required
 									/>
-								</label>
-								<label className="grid gap-2">
-									<span className="text-sm font-medium text-foreground">
-										Confirm password
-									</span>
-									<input
+								</div>
+								<div className="grid gap-2">
+									<Label htmlFor="confirm-password">Confirm password</Label>
+									<Input
+										id="confirm-password"
 										name="confirmPassword"
 										type="password"
 										autoComplete="new-password"
-										className="rounded-xl border border-input bg-background px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
 										required
 									/>
-								</label>
+								</div>
 							</div>
 							{passwordError ? (
-								<p className="text-sm text-red-500">{passwordError}</p>
+								<p className="text-sm text-destructive">{passwordError}</p>
 							) : null}
 							<div className="flex justify-end">
-								<button
+								<Button
 									type="submit"
 									disabled={updatePasswordMutation.isPending}
-									className="rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
 								>
 									{updatePasswordMutation.isPending
 										? "Updating..."
 										: "Update password"}
-								</button>
+								</Button>
 							</div>
 						</form>
 					</section>
