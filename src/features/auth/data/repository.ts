@@ -1,4 +1,6 @@
 import { useSyncExternalStore } from "react";
+import { resetBudgetsMockData } from "@/features/budgets/data/repository";
+import { resetExpensesMockData } from "@/features/expenses/data/repository";
 import { resetTrackerMockData } from "@/features/trackers/data/repository";
 import type {
 	AuthUser,
@@ -139,6 +141,8 @@ export const authRepository = {
 		};
 		writeUsers([...users, user]);
 		resetTrackerMockData();
+		resetExpensesMockData();
+		resetBudgetsMockData();
 		writeSessionId(user.id);
 		notify();
 		return cloneUser(user);

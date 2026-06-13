@@ -19,6 +19,7 @@ export type ExpenseType = "need" | "want";
 
 export type Expense = {
 	id: string;
+	trackerId: string;
 	amount: number;
 	categoryId: string;
 	date: string;
@@ -26,16 +27,23 @@ export type Expense = {
 	type: ExpenseType;
 };
 
-export type ExpenseCreateInput = Omit<Expense, "id">;
+// trackerId is assigned by the repository from the active tracker, so callers
+// only provide the expense fields themselves.
+export type ExpenseCreateInput = Omit<Expense, "id" | "trackerId">;
 
-export type ExpenseUpdateInput = Partial<Omit<Expense, "id">>;
+export type ExpenseUpdateInput = Partial<Omit<Expense, "id" | "trackerId">>;
 
 export type Category = {
 	id: string;
+	trackerId: string;
 	name: string;
 	color: CategoryColor;
 	createdAt: string;
 };
+
+// Default categories are seeded per tracker, so the base list carries no
+// trackerId until the repository stamps it on first access.
+export type CategorySeed = Omit<Category, "trackerId">;
 
 export type DateRange = {
 	start: string;

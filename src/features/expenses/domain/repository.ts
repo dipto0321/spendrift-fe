@@ -8,20 +8,33 @@ import type {
 } from "./types";
 
 export interface ExpenseRepository {
-	getAll(filter?: ExpenseFilter): Promise<Expense[]>;
-	getById(id: string): Promise<Expense | null>;
-	create(input: ExpenseCreateInput): Promise<Expense>;
-	update(id: string, patch: ExpenseUpdateInput): Promise<Expense | null>;
-	delete(id: string): Promise<boolean>;
+	getAll(trackerId: string, filter?: ExpenseFilter): Promise<Expense[]>;
+	getById(trackerId: string, id: string): Promise<Expense | null>;
+	create(trackerId: string, input: ExpenseCreateInput): Promise<Expense>;
+	update(
+		trackerId: string,
+		id: string,
+		patch: ExpenseUpdateInput,
+	): Promise<Expense | null>;
+	delete(trackerId: string, id: string): Promise<boolean>;
 }
 
 export interface CategoryRepository {
-	getAll(): Promise<Category[]>;
-	getById(id: string): Promise<Category | null>;
-	create(name: string, color: CategoryColor): Promise<Category>;
+	getAll(trackerId: string): Promise<Category[]>;
+	getById(trackerId: string, id: string): Promise<Category | null>;
+	create(
+		trackerId: string,
+		name: string,
+		color: CategoryColor,
+	): Promise<Category>;
 	update(
+		trackerId: string,
 		id: string,
 		patch: { name?: string; color?: CategoryColor },
 	): Promise<Category | null>;
-	delete(id: string, fallbackCategoryId: string): Promise<void>;
+	delete(
+		trackerId: string,
+		id: string,
+		fallbackCategoryId: string,
+	): Promise<void>;
 }

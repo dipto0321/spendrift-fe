@@ -17,10 +17,12 @@ export const Route = createFileRoute("/settings")({
 function SettingsPage() {
 	const queryClient = useQueryClient();
 	const { activeTracker, setActiveTrackerById } = useTracker();
+	const trackerId = activeTracker?.id;
 
 	const { data: categories = [] } = useQuery({
-		queryKey: ["categories"],
-		queryFn: () => categoryRepository.getAll(),
+		queryKey: ["categories", trackerId],
+		queryFn: () => categoryRepository.getAll(trackerId as string),
+		enabled: Boolean(trackerId),
 	});
 
 	const { data: trackers = [] } = useQuery({
@@ -32,9 +34,13 @@ function SettingsPage() {
 
 	const createMutation = useMutation({
 		mutationFn: ({ name, color }: { name: string; color: string }) =>
-			categoryRepository.create(name, color as CategoryColor),
+			categoryRepository.create(
+				trackerId as string,
+				name,
+				color as CategoryColor,
+			),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["categories"] });
+			queryClient.invalidateQueries({ queryKey: ["categories", trackerId] });
 			toast.success("Category created");
 		},
 		onError: () => {
@@ -52,12 +58,12 @@ function SettingsPage() {
 			name: string;
 			color: string;
 		}) =>
-			categoryRepository.update(id, {
+			categoryRepository.update(trackerId as string, id, {
 				name,
 				color: color as CategoryColor,
 			}),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["categories"] });
+			queryClient.invalidateQueries({ queryKey: ["categories", trackerId] });
 			toast.success("Category updated");
 		},
 		onError: () => {
@@ -66,9 +72,10 @@ function SettingsPage() {
 	});
 
 	const deleteMutation = useMutation({
-		mutationFn: (id: string) => categoryRepository.delete(id, "uncategorized"),
+		mutationFn: (id: string) =>
+			categoryRepository.delete(trackerId as string, id, "uncategorized"),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["categories"] });
+			queryClient.invalidateQueries({ queryKey: ["categories", trackerId] });
 			toast.success("Category deleted");
 		},
 		onError: () => {

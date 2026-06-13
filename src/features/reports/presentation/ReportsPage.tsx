@@ -75,6 +75,7 @@ function isExpenseWithinRange(
 
 function ReportsPage() {
 	const { activeTracker } = useTracker();
+	const trackerId = activeTracker?.id;
 	const currency = activeTracker?.currency ?? "";
 	const [period, setPeriod] = useState<ReportPeriod>("monthly");
 	const [customRange, setCustomRange] = useState<PickerDateRange | undefined>();
@@ -83,13 +84,15 @@ function ReportsPage() {
 		useState(false);
 
 	const { data: expenses = [], isLoading } = useQuery({
-		queryKey: ["expenses"],
-		queryFn: () => expenseRepository.getAll(),
+		queryKey: ["expenses", trackerId],
+		queryFn: () => expenseRepository.getAll(trackerId as string),
+		enabled: Boolean(trackerId),
 	});
 
 	const { data: categories = [] } = useQuery({
-		queryKey: ["categories"],
-		queryFn: () => categoryRepository.getAll(),
+		queryKey: ["categories", trackerId],
+		queryFn: () => categoryRepository.getAll(trackerId as string),
+		enabled: Boolean(trackerId),
 	});
 
 	const filteredExpenses = expenses.filter((expense) =>
