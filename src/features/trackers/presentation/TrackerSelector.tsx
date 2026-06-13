@@ -3,7 +3,7 @@ import { useTracker } from "./TrackerContext";
 
 export function TrackerSelector() {
 	const { trackers, activeTracker, setActiveTrackerById } = useTracker();
-	const selectedTrackerId = activeTracker?.id ?? trackers[0]?.id ?? "";
+	const selectedTrackerId = activeTracker?.id ?? "";
 	const selectedCurrency = activeTracker?.currency ?? "";
 
 	return (

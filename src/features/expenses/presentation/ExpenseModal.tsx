@@ -1,9 +1,4 @@
-import {
-	Dialog,
-	DialogClose,
-	DialogContent,
-	DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import type { Category, Expense, ExpenseCreateInput } from "../domain/types";
 import { ExpenseForm } from "./ExpenseForm";
 
@@ -41,7 +36,6 @@ export function ExpenseModal({
 						isSubmitting={isSubmitting}
 					/>
 				</div>
-				<DialogClose />
 			</DialogContent>
 		</Dialog>
 	);
