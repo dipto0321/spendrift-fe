@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,9 +8,13 @@ import { authRepository, useAuthSnapshot } from "../data/repository";
 export function SignInPage() {
 	const navigate = useNavigate();
 	const auth = useAuthSnapshot();
+	const queryClient = useQueryClient();
 	const signInMutation = useMutation({
 		mutationFn: authRepository.signIn,
 		onSuccess: async () => {
+			// Drop any cached data from a prior session so the workspace gate and
+			// queries re-read this user's trackers/expenses fresh.
+			queryClient.clear();
 			await navigate({ to: "/" });
 		},
 	});

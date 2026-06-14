@@ -31,7 +31,7 @@ export function ProfilePage() {
 	}
 
 	return (
-		<main className="page-wrap px-4 pb-14 pt-10 sm:pt-12">
+		<main className="page-wrap rise-in px-4 pb-14 pt-10 sm:pt-12">
 			<header className="mb-6 flex items-end justify-between gap-4">
 				<div>
 					<p className="island-kicker mb-2">Profile</p>

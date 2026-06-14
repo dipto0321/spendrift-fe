@@ -32,9 +32,9 @@ export default function AppSidebar() {
 		<aside className="w-full lg:w-70 lg:shrink-0 lg:sticky lg:top-3 lg:h-[calc(100vh-1.5rem)]">
 			<div className="flex h-full min-h-80 flex-col rounded-2xl border border-border/60 bg-card/50 shadow-sm backdrop-blur-sm dark:shadow-none">
 				<div className="flex items-center gap-3 px-4 pt-5 pb-6">
-					<div className="grid h-10 w-10 place-items-center rounded-xl bg-linear-to-br from-blue-500 to-cyan-400 shadow-lg shadow-blue-500/25">
+					<div className="grid h-10 w-10 place-items-center rounded-xl bg-linear-to-br from-emerald-500 to-teal-400 shadow-lg shadow-emerald-500/25">
 						<span className="text-lg font-bold tracking-tighter text-white">
-							F
+							S
 						</span>
 					</div>
 					<div className="min-w-0">

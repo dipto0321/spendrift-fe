@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
@@ -40,6 +40,7 @@ function createHumanChallenge(): HumanChallenge {
 
 export function SignUpPage() {
 	const navigate = useNavigate();
+	const queryClient = useQueryClient();
 	const [name, setName] = useState("");
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
@@ -54,6 +55,10 @@ export function SignUpPage() {
 	const signUpMutation = useMutation({
 		mutationFn: authRepository.signUp,
 		onSuccess: async () => {
+			// signUp wipes mock data for the fresh account; drop any cached
+			// trackers/expenses so the workspace gate re-reads the empty state
+			// and routes the new user into onboarding.
+			queryClient.clear();
 			await navigate({ to: "/" });
 		},
 	});

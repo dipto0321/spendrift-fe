@@ -131,7 +131,7 @@ function ReportsPage() {
 
 	if (isLoading) {
 		return (
-			<main className="page-wrap px-4 pb-14 pt-10 sm:pt-12">
+			<main className="page-wrap rise-in px-4 pb-14 pt-10 sm:pt-12">
 				<PageHeader
 					kicker="Reports"
 					title="Reports & Analytics"
@@ -145,7 +145,7 @@ function ReportsPage() {
 	}
 
 	return (
-		<main className="page-wrap px-4 pb-14 pt-10 sm:pt-12">
+		<main className="page-wrap rise-in px-4 pb-14 pt-10 sm:pt-12">
 			<PageHeader
 				kicker="Reports"
 				title="Reports & Analytics"

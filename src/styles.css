@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
 @import 'tailwindcss';
 @plugin '@tailwindcss/typography';
 
@@ -7,81 +7,82 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Spendrift brand + system tokens (Light) */
-  --brand: oklch(0.66 0.13 195);
-  --brand-strong: oklch(0.58 0.14 195);
-  --success: oklch(0.7 0.14 155);
-  --danger: oklch(0.62 0.22 25);
+  /* Spendrift — Emerald / calm fintech (Light) */
+  --brand: oklch(0.68 0.13 162);
+  --brand-strong: oklch(0.6 0.13 162);
+  --success: oklch(0.66 0.15 162);
+  --danger: oklch(0.62 0.21 14);
 
   /* Shadcn-style system variables */
-  --background: oklch(0.99 0.005 240);
-  --foreground: oklch(0.18 0.02 255);
+  --background: oklch(0.99 0.004 130);
+  --foreground: oklch(0.22 0.012 160);
   --card: oklch(1 0 0);
   --card-foreground: var(--foreground);
   --popover: var(--card);
   --popover-foreground: var(--foreground);
   --primary: var(--brand-strong);
-  --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.97 0.01 245);
+  --primary-foreground: oklch(0.99 0.01 160);
+  --secondary: oklch(0.965 0.006 150);
   --secondary-foreground: var(--foreground);
-  --muted: oklch(0.965 0.01 245);
-  --muted-foreground: oklch(0.48 0.03 255);
-  --accent: oklch(0.965 0.02 210);
-  --accent-foreground: var(--foreground);
+  --muted: oklch(0.965 0.006 150);
+  --muted-foreground: oklch(0.5 0.015 160);
+  --accent: oklch(0.95 0.025 162);
+  --accent-foreground: oklch(0.35 0.05 162);
   --destructive: var(--danger);
   --destructive-foreground: oklch(0.99 0 0);
-  --border: oklch(0.92 0.01 250);
+  --border: oklch(0.91 0.006 150);
   --input: var(--border);
-  --ring: color-mix(in oklab, var(--brand) 55%, white 45%);
-  --chart-1: oklch(0.64 0.16 195);
-  --chart-2: oklch(0.72 0.14 155);
-  --chart-3: oklch(0.68 0.16 80);
-  --chart-4: oklch(0.62 0.16 280);
-  --chart-5: oklch(0.62 0.22 25);
+  --ring: oklch(0.68 0.1 162);
+  --chart-1: oklch(0.68 0.13 162);
+  --chart-2: oklch(0.72 0.1 200);
+  --chart-3: oklch(0.76 0.13 85);
+  --chart-4: oklch(0.62 0.14 255);
+  --chart-5: oklch(0.64 0.2 14);
 
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.141 0.005 285.823);
-  --sidebar-primary: oklch(0.21 0.006 285.885);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.967 0.001 286.375);
-  --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
-  --sidebar-border: oklch(0.92 0.004 286.32);
-  --sidebar-ring: oklch(0.871 0.006 286.286);
+  --radius: 0.7rem;
+  --sidebar: oklch(0.985 0.004 150);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
 
   /* Design tokens used by current components */
   --surface-strong: var(--card);
-  --line: color-mix(in oklab, var(--border) 80%, transparent 20%);
+  --line: color-mix(in oklab, var(--border) 78%, transparent 22%);
   --inset-glint: color-mix(in oklab, white 60%, transparent 40%);
-  --kicker: color-mix(in oklab, var(--foreground) 50%, var(--muted-foreground) 50%);
+  --kicker: color-mix(in oklab, var(--foreground) 45%, var(--muted-foreground) 55%);
 }
 
 .dark {
-  /* Spendrift brand + system tokens (Dark) */
-  --brand: oklch(0.7 0.12 195);
-  --brand-strong: oklch(0.76 0.12 195);
-  --success: oklch(0.74 0.13 155);
-  --danger: oklch(0.66 0.2 25);
+  /* Spendrift — Emerald / calm fintech (Dark, warm charcoal) */
+  --brand: oklch(0.74 0.13 162);
+  --brand-strong: oklch(0.78 0.13 162);
+  --success: oklch(0.76 0.14 162);
+  --danger: oklch(0.68 0.19 14);
 
-  --background: oklch(0.14 0.02 255);
-  --foreground: oklch(0.97 0.01 250);
-  --card: oklch(0.19 0.02 255);
+  --background: oklch(0.17 0.008 165);
+  --foreground: oklch(0.96 0.006 150);
+  --card: oklch(0.205 0.01 165);
   --card-foreground: var(--foreground);
-  --popover: oklch(0.19 0.02 255);
+  --popover: oklch(0.205 0.01 165);
   --popover-foreground: var(--foreground);
   --primary: var(--brand-strong);
-  --primary-foreground: oklch(0.14 0.02 255);
-  --secondary: oklch(0.23 0.02 255);
+  --primary-foreground: oklch(0.16 0.01 165);
+  --secondary: oklch(0.25 0.01 165);
   --secondary-foreground: var(--foreground);
-  --muted: oklch(0.23 0.02 255);
-  --muted-foreground: oklch(0.72 0.02 255);
-  --accent: oklch(0.24 0.03 215);
-  --accent-foreground: var(--foreground);
+  --muted: oklch(0.25 0.01 165);
+  --muted-foreground: oklch(0.71 0.015 160);
+  --accent: oklch(0.28 0.025 165);
+  --accent-foreground: oklch(0.92 0.02 162);
   --destructive: var(--danger);
   --destructive-foreground: oklch(0.99 0 0);
-  --border: oklch(0.28 0.02 255);
-  --input: var(--border);
-  --ring: color-mix(in oklab, var(--brand) 55%, black 45%);
+  --border: oklch(0.28 0.008 165);
+  --input: oklch(0.31 0.009 165);
+  --ring: oklch(0.74 0.1 162);
+  --inset-glint: color-mix(in oklab, white 8%, transparent 92%);
 }
 
 @theme inline {
@@ -177,22 +178,33 @@ pre code {
 }
 
 .display-title {
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
 }
 
 .island-shell {
   border: 1px solid var(--line);
   background: var(--surface-strong);
   box-shadow:
-    0 1px 0 color-mix(in oklab, var(--inset-glint) 55%, transparent 45%) inset,
-    0 10px 22px rgba(17, 24, 39, 0.06);
+    0 1px 0 color-mix(in oklab, var(--inset-glint) 50%, transparent 50%) inset,
+    0 1px 2px rgba(16, 24, 20, 0.04),
+    0 8px 24px -12px rgba(16, 24, 20, 0.12);
 }
 
 button,
 .island-shell,
 a {
   transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease,
-    transform 180ms ease;
+    box-shadow 220ms ease, transform 220ms ease;
+}
+
+/* Opt-in hover lift for interactive cards/tiles. */
+.lift:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in oklab, var(--brand) 28%, var(--line));
+  box-shadow:
+    0 1px 0 color-mix(in oklab, var(--inset-glint) 50%, transparent 50%) inset,
+    0 2px 4px rgba(16, 24, 20, 0.05),
+    0 16px 32px -14px color-mix(in oklab, var(--brand) 30%, rgba(16, 24, 20, 0.22));
 }
 
 .island-kicker {
@@ -201,6 +213,28 @@ a {
   font-weight: 700;
   font-size: 0.69rem;
   color: var(--kicker);
+}
+
+/* Calm content entrance, used on page mains and key sections. */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rise-in {
+  animation: rise-in 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise-in {
+    animation: none;
+  }
 }
 
 @layer base {

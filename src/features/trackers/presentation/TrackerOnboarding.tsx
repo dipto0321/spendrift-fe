@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { markTrackerOnboardingComplete } from "../data/onboarding";
 import { trackerRepository } from "../data/repository";
 
 export function TrackerOnboarding() {
@@ -60,7 +59,6 @@ export function TrackerOnboarding() {
 									currencyInput?.value.trim().toUpperCase() ?? "";
 								if (!name || !currency) return;
 								await createMutation.mutateAsync({ name, currency });
-								markTrackerOnboardingComplete();
 								form.reset();
 							}}
 						>
