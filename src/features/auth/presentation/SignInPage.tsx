@@ -3,11 +3,10 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { authRepository, useAuthSnapshot } from "../data/repository";
+import { authRepository } from "../data/repository";
 
 export function SignInPage() {
 	const navigate = useNavigate();
-	const auth = useAuthSnapshot();
 	const queryClient = useQueryClient();
 	const signInMutation = useMutation({
 		mutationFn: authRepository.signIn,
@@ -44,9 +43,7 @@ export function SignInPage() {
 								Sign in
 							</h2>
 							<p className="mt-3 text-sm leading-6 text-muted-foreground">
-								{auth.hasAccount
-									? "Use your account to continue."
-									: "No account found yet. Create one to get started."}
+								Use your account to continue, or create one if you're new.
 							</p>
 
 							<form

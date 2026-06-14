@@ -9,9 +9,12 @@ import {
 	useRouterState,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
-import { useAuthSnapshot } from "@/features/auth/data/repository";
+import {
+	authRepository,
+	useAuthSnapshot,
+} from "@/features/auth/data/repository";
 import {
 	TrackerProvider,
 	useTracker,
@@ -124,6 +127,20 @@ function WorkspaceGate({ children }: Readonly<{ children: React.ReactNode }>) {
 	});
 	const onAuthPage = AUTH_PATHS.has(pathname);
 
+	// Auth state comes from localStorage, which doesn't exist during SSR. Render
+	// a stable placeholder until mounted so the server and first client render
+	// agree (no hydration mismatch); only then branch on the real auth state.
+	const [mounted, setMounted] = useState(false);
+	useEffect(() => {
+		setMounted(true);
+	}, []);
+
+	// On first load, if a token is present, resolve the session against the API
+	// (/users/me). Idempotent and a no-op when there is no token.
+	useEffect(() => {
+		authRepository.bootstrap();
+	}, []);
+
 	// Auth lives in localStorage, so it is unknown during SSR and the route-level
 	// beforeLoad guards can't see it on a hard page load. Enforce the redirects
 	// here on the client as the source of truth: guests land on /sign-in, and
@@ -135,6 +152,12 @@ function WorkspaceGate({ children }: Readonly<{ children: React.ReactNode }>) {
 			navigate({ to: "/" });
 		}
 	}, [auth.isAuthenticated, onAuthPage, navigate]);
+
+	// Until mounted, server and client can't agree on auth state — render the
+	// same neutral placeholder on both to avoid a hydration mismatch.
+	if (!mounted) {
+		return <FullScreenMessage>Loading…</FullScreenMessage>;
+	}
 
 	// Auth pages render their own full-screen form when you're a guest; while an
 	// authenticated user is being bounced off them, show a placeholder.

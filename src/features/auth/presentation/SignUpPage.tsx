@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Eye, EyeOff } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -47,11 +47,18 @@ export function SignUpPage() {
 	const [confirmPassword, setConfirmPassword] = useState("");
 	const [showPassword, setShowPassword] = useState(false);
 	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-	const [humanChallenge, setHumanChallenge] = useState<HumanChallenge>(() =>
-		createHumanChallenge(),
+	// Generated after mount, not in the initializer: createHumanChallenge() uses
+	// Math.random(), so seeding it during render makes the server and client
+	// disagree and triggers a hydration mismatch.
+	const [humanChallenge, setHumanChallenge] = useState<HumanChallenge | null>(
+		null,
 	);
 	const [humanAnswer, setHumanAnswer] = useState("");
 	const [localError, setLocalError] = useState<string | null>(null);
+
+	useEffect(() => {
+		setHumanChallenge(createHumanChallenge());
+	}, []);
 	const signUpMutation = useMutation({
 		mutationFn: authRepository.signUp,
 		onSuccess: async () => {
@@ -106,7 +113,7 @@ export function SignUpPage() {
 									return;
 								}
 
-								if (Number.isNaN(cleanHumanAnswer)) {
+								if (!humanChallenge || Number.isNaN(cleanHumanAnswer)) {
 									setLocalError("Solve the human check to continue.");
 									return;
 								}
@@ -232,8 +239,9 @@ export function SignUpPage() {
 								</div>
 								<div className="mt-4 flex items-center justify-center gap-3 rounded-2xl border border-border/60 bg-background px-4 py-3">
 									<span className="text-lg font-semibold tracking-tight text-foreground">
-										{humanChallenge.left} {humanChallenge.operator}{" "}
-										{humanChallenge.right} = ?
+										{humanChallenge
+											? `${humanChallenge.left} ${humanChallenge.operator} ${humanChallenge.right} = ?`
+											: "…"}
 									</span>
 									<Input
 										id="human-check"
