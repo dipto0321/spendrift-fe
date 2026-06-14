@@ -5,8 +5,11 @@ import {
 	HeadContent,
 	retainSearchParams,
 	Scripts,
+	useNavigate,
+	useRouterState,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { useAuthSnapshot } from "@/features/auth/data/repository";
 import {
@@ -100,23 +103,58 @@ function RootDocument({ children }: Readonly<{ children: React.ReactNode }>) {
 	);
 }
 
+const AUTH_PATHS = new Set(["/sign-in", "/sign-up"]);
+
+function FullScreenMessage({
+	children,
+}: Readonly<{ children: React.ReactNode }>) {
+	return (
+		<div className="grid min-h-screen place-items-center bg-background">
+			<p className="text-sm text-muted-foreground">{children}</p>
+		</div>
+	);
+}
+
 function WorkspaceGate({ children }: Readonly<{ children: React.ReactNode }>) {
 	const auth = useAuthSnapshot();
 	const { hasTrackers, isLoading } = useTracker();
+	const navigate = useNavigate();
+	const pathname = useRouterState({
+		select: (state) => state.location.pathname,
+	});
+	const onAuthPage = AUTH_PATHS.has(pathname);
 
-	// Unauthenticated visitors see the auth screens (sign in / sign up).
+	// Auth lives in localStorage, so it is unknown during SSR and the route-level
+	// beforeLoad guards can't see it on a hard page load. Enforce the redirects
+	// here on the client as the source of truth: guests land on /sign-in, and
+	// authenticated users never sit on the auth pages.
+	useEffect(() => {
+		if (!auth.isAuthenticated && !onAuthPage) {
+			navigate({ to: "/sign-in" });
+		} else if (auth.isAuthenticated && onAuthPage) {
+			navigate({ to: "/" });
+		}
+	}, [auth.isAuthenticated, onAuthPage, navigate]);
+
+	// Auth pages render their own full-screen form when you're a guest; while an
+	// authenticated user is being bounced off them, show a placeholder.
+	if (onAuthPage) {
+		return auth.isAuthenticated ? (
+			<FullScreenMessage>Redirecting…</FullScreenMessage>
+		) : (
+			<>{children}</>
+		);
+	}
+
+	// Every other route is protected: hold the redirect for guests.
 	if (!auth.isAuthenticated) {
-		return <>{children}</>;
+		return <FullScreenMessage>Redirecting to sign in…</FullScreenMessage>;
 	}
 
 	// Authenticated: decide onboarding vs. workspace on tracker existence. Wait
 	// for the trackers query so we never flash onboarding before they load.
 	if (isLoading) {
-		return (
-			<div className="grid min-h-screen place-items-center bg-background">
-				<p className="text-sm text-muted-foreground">Loading your workspace…</p>
-			</div>
-		);
+		return <FullScreenMessage>Loading your workspace…</FullScreenMessage>;
 	}
 
 	if (!hasTrackers) {

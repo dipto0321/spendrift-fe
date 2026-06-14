@@ -10,9 +10,9 @@ export function requireAuth() {
 		return;
 	}
 
-	const snapshot = authRepository.getSnapshot();
-	if (!snapshot.isAuthenticated) {
-		throw redirect({ to: snapshot.hasAccount ? "/sign-in" : "/sign-up" });
+	if (!authRepository.getSnapshot().isAuthenticated) {
+		// Always land on sign-in; new users can switch to sign-up from there.
+		throw redirect({ to: "/sign-in" });
 	}
 }
 
