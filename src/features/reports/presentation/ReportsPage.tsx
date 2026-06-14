@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import type { DateRange as PickerDateRange } from "react-day-picker";
 import { Badge } from "@/components/ui/badge";
@@ -12,11 +11,11 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import {
-	categoryRepository,
-	expenseRepository,
-} from "@/features/expenses/data/repository";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { calculateNeedsWantsSplit } from "@/features/expenses/domain/services";
+import { useCategories } from "@/features/expenses/presentation/useCategories";
+import { useExpenses } from "@/features/expenses/presentation/useExpenses";
 import { useTracker } from "@/features/trackers/presentation/TrackerContext";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { StatCard } from "@/shared/ui/StatCard";
@@ -83,17 +82,8 @@ function ReportsPage() {
 	const [customRangeSelectionStarted, setCustomRangeSelectionStarted] =
 		useState(false);
 
-	const { data: expenses = [], isLoading } = useQuery({
-		queryKey: ["expenses", trackerId],
-		queryFn: () => expenseRepository.getAll(trackerId as string),
-		enabled: Boolean(trackerId),
-	});
-
-	const { data: categories = [] } = useQuery({
-		queryKey: ["categories", trackerId],
-		queryFn: () => categoryRepository.getAll(trackerId as string),
-		enabled: Boolean(trackerId),
-	});
+	const { data: expenses = [], isLoading } = useExpenses(trackerId);
+	const { data: categories = [] } = useCategories(trackerId);
 
 	const filteredExpenses = expenses.filter((expense) =>
 		isExpenseWithinRange(expense.date, customRange),
@@ -137,9 +127,7 @@ function ReportsPage() {
 					title="Reports & Analytics"
 					description="Analyze spending patterns, category breakdowns, and year-over-year trends."
 				/>
-				<div className="animate-pulse space-y-4">
-					<div className="h-64 rounded-2xl bg-muted/50" />
-				</div>
+				<Skeleton className="h-64 rounded-2xl" />
 			</main>
 		);
 	}
@@ -177,36 +165,36 @@ function ReportsPage() {
 								Switch the grouping or choose a custom calendar range.
 							</p>
 						</div>
-						<div className="flex items-center gap-1 rounded-full border border-border/60 bg-muted/30 p-1">
-							{periodLabels.map(({ value, label }) => (
-								<button
-									key={value}
-									type="button"
-									onClick={() => setPeriod(value)}
-									className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-										!isCustomRangeActive && period === value
-											? "bg-primary text-primary-foreground"
-											: "text-muted-foreground hover:text-foreground"
-									}`}
-								>
-									{label}
-								</button>
-							))}
-							<button
-								type="button"
-								onClick={() => {
+						<ToggleGroup
+							type="single"
+							value={isCustomRangeActive ? "custom" : period}
+							onValueChange={(value) => {
+								if (!value) return;
+								if (value === "custom") {
 									setCustomRangeSelectionStarted(false);
 									setCustomRangeOpen(true);
-								}}
-								className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-									isCustomRangeActive
-										? "bg-primary text-primary-foreground"
-										: "text-muted-foreground hover:text-foreground"
-								}`}
+									return;
+								}
+								setPeriod(value as ReportPeriod);
+							}}
+							className="rounded-full border border-border/60 bg-muted/30 p-1"
+						>
+							{periodLabels.map(({ value, label }) => (
+								<ToggleGroupItem
+									key={value}
+									value={value}
+									className="rounded-full px-3 py-1 text-xs font-medium data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+								>
+									{label}
+								</ToggleGroupItem>
+							))}
+							<ToggleGroupItem
+								value="custom"
+								className="rounded-full px-3 py-1 text-xs font-medium data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
 							>
 								Custom range
-							</button>
-						</div>
+							</ToggleGroupItem>
+						</ToggleGroup>
 					</div>
 					<div className="flex flex-wrap items-center gap-2">
 						<span className="text-sm text-muted-foreground">Showing</span>

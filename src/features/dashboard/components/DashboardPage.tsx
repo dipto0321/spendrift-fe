@@ -6,6 +6,8 @@ import {
 	ChartTooltip,
 	ChartTooltipContent,
 } from "@/components/ui/chart";
+import { Progress } from "@/components/ui/progress";
+import { getProgressBarColor } from "@/features/budgets/domain/services";
 import { SavingsHealthBadge } from "@/features/budgets/presentation/SavingsHealthBadge";
 import { useCurrentBudgetStatus } from "@/features/budgets/presentation/useCurrentBudgetStatus";
 import type { Category } from "@/features/expenses/domain/types";
@@ -59,6 +61,14 @@ export function DashboardPage() {
 	const recentExpenses = [...expenses]
 		.sort((a, b) => b.date.localeCompare(a.date))
 		.slice(0, 5);
+
+	const budgetSpentPercentage =
+		currentBudget && budgetStatus && currentBudget.monthlyLimit > 0
+			? Math.min(
+					100,
+					Math.round((budgetStatus.spent / currentBudget.monthlyLimit) * 100),
+				)
+			: 0;
 
 	return (
 		<main className="page-wrap rise-in px-4 pb-14 pt-10 sm:pt-12">
@@ -155,12 +165,11 @@ export function DashboardPage() {
 									{formatCurrency(needsWantsSplit.needs, currency)}
 								</span>
 							</div>
-							<div className="mt-1 h-2 overflow-hidden rounded-full bg-muted">
-								<div
-									className="h-full rounded-full bg-green-500 transition-all"
-									style={{ width: `${needsWantsSplit.percentage.needs}%` }}
-								/>
-							</div>
+							<Progress
+								value={needsWantsSplit.percentage.needs}
+								className="mt-1 h-2 bg-muted"
+								indicatorClassName="bg-green-500"
+							/>
 						</div>
 						<div>
 							<div className="flex items-center justify-between text-sm">
@@ -169,12 +178,11 @@ export function DashboardPage() {
 									{formatCurrency(needsWantsSplit.wants, currency)}
 								</span>
 							</div>
-							<div className="mt-1 h-2 overflow-hidden rounded-full bg-muted">
-								<div
-									className="h-full rounded-full bg-orange-500 transition-all"
-									style={{ width: `${needsWantsSplit.percentage.wants}%` }}
-								/>
-							</div>
+							<Progress
+								value={needsWantsSplit.percentage.wants}
+								className="mt-1 h-2 bg-muted"
+								indicatorClassName="bg-orange-500"
+							/>
 						</div>
 					</div>
 				</section>
@@ -200,30 +208,15 @@ export function DashboardPage() {
 								<div>
 									<div className="flex items-center justify-between text-xs text-muted-foreground">
 										<span>Spent</span>
-										<span>
-											{currentBudget.monthlyLimit > 0
-												? Math.round(
-														(budgetStatus.spent / currentBudget.monthlyLimit) *
-															100,
-													)
-												: 0}
-											%
-										</span>
+										<span>{budgetSpentPercentage}%</span>
 									</div>
-									<div className="mt-1 h-2 overflow-hidden rounded-full bg-muted">
-										<div
-											className={`h-full rounded-full transition-all ${
-												budgetStatus.savingsHealth === "green"
-													? "bg-green-500"
-													: budgetStatus.savingsHealth === "yellow"
-														? "bg-yellow-500"
-														: "bg-red-500"
-											}`}
-											style={{
-												width: `${currentBudget.monthlyLimit > 0 ? Math.min(100, Math.round((budgetStatus.spent / currentBudget.monthlyLimit) * 100)) : 0}%`,
-											}}
-										/>
-									</div>
+									<Progress
+										value={budgetSpentPercentage}
+										className="mt-1 h-2 bg-muted"
+										indicatorClassName={getProgressBarColor(
+											budgetStatus.savingsHealth,
+										)}
+									/>
 								</div>
 								<div className="flex items-baseline justify-between text-sm">
 									<span className="text-muted-foreground">Limit</span>

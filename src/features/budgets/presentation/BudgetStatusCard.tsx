@@ -1,3 +1,4 @@
+import { Progress } from "@/components/ui/progress";
 import { formatCurrency } from "@/shared/utils/format";
 import { getProgressBarColor } from "../domain/services";
 import type { BudgetStatus } from "../domain/types";
@@ -46,12 +47,11 @@ export function BudgetStatusCard({
 						<span>Spent</span>
 						<span>{spentPercentage}%</span>
 					</div>
-					<div className="mt-1 h-2 overflow-hidden rounded-full bg-muted">
-						<div
-							className={`h-full rounded-full transition-all duration-500 ${getProgressBarColor(status.savingsHealth)}`}
-							style={{ width: `${spentPercentage}%` }}
-						/>
-					</div>
+					<Progress
+						value={spentPercentage}
+						className="mt-1 h-2 bg-muted"
+						indicatorClassName={`duration-500 ${getProgressBarColor(status.savingsHealth)}`}
+					/>
 				</div>
 
 				<div className="grid grid-cols-3 gap-3 pt-2">
@@ -81,12 +81,11 @@ export function BudgetStatusCard({
 							<span>Savings progress</span>
 							<span>{status.savingsProgress}%</span>
 						</div>
-						<div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
-							<div
-								className="h-full rounded-full bg-blue-500 transition-all duration-500"
-								style={{ width: `${status.savingsProgress}%` }}
-							/>
-						</div>
+						<Progress
+							value={status.savingsProgress}
+							className="mt-1 h-1.5 bg-muted"
+							indicatorClassName="bg-blue-500 duration-500"
+						/>
 					</div>
 				)}
 			</div>

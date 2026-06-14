@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useTracker } from "@/features/trackers/presentation/TrackerContext";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { StatCard } from "@/shared/ui/StatCard";
@@ -62,9 +63,7 @@ function BudgetPage() {
 					title="Budget workspace"
 					description="Set monthly budgets, track savings targets, and monitor spending health."
 				/>
-				<div className="animate-pulse space-y-4">
-					<div className="h-48 rounded-2xl bg-muted/50" />
-				</div>
+				<Skeleton className="h-48 rounded-2xl" />
 			</main>
 		);
 	}

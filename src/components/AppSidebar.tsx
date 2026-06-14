@@ -2,12 +2,23 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import {
 	BarChart3,
 	ChevronRight,
+	ChevronsUpDown,
 	CircleUserRound,
 	LayoutDashboard,
+	LogOut,
 	PiggyBank,
 	ReceiptText,
 	Settings2,
 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
 	authRepository,
 	useAuthSnapshot,
@@ -84,44 +95,58 @@ export default function AppSidebar() {
 				</div>
 
 				<div className="mt-auto px-3 pt-5">
-					<div className="rounded-xl border border-border/60 bg-muted/30 px-4 py-3">
-						<div className="flex items-center gap-3">
-							<Link
-								to="/profile"
-								className="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-linear-to-br from-amber-400/80 to-orange-500/80 ring-1 ring-border"
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<button
+								type="button"
+								className="flex w-full items-center gap-3 rounded-xl border border-border/60 bg-muted/30 px-4 py-3 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 							>
-								{user?.avatarDataUrl ? (
-									<img
-										src={user.avatarDataUrl}
-										alt={user.name}
-										className="h-full w-full object-cover"
-									/>
-								) : (
-									<CircleUserRound className="h-5 w-5 text-white" />
-								)}
-							</Link>
-							<div className="min-w-0 flex-1">
-								<Link to="/profile" className="block">
+								<Avatar className="h-10 w-10">
+									{user?.avatarDataUrl ? (
+										<AvatarImage src={user.avatarDataUrl} alt={user.name} />
+									) : null}
+									<AvatarFallback className="bg-linear-to-br from-amber-400/80 to-orange-500/80 text-white">
+										<CircleUserRound className="h-5 w-5" />
+									</AvatarFallback>
+								</Avatar>
+								<div className="min-w-0 flex-1">
 									<p className="m-0 truncate text-sm font-semibold text-foreground">
 										{user?.name ?? "Profile"}
 									</p>
 									<p className="m-0 truncate text-xs text-muted-foreground">
-										{user?.email ?? "View Profile"}
+										{user?.email ?? "View profile"}
 									</p>
+								</div>
+								<ChevronsUpDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+							</button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent
+							align="end"
+							side="top"
+							className="w-[--radix-dropdown-menu-trigger-width] min-w-56"
+						>
+							<DropdownMenuLabel className="truncate">
+								{user?.email ?? "Account"}
+							</DropdownMenuLabel>
+							<DropdownMenuSeparator />
+							<DropdownMenuItem asChild>
+								<Link to="/profile">
+									<CircleUserRound className="h-4 w-4" />
+									Profile
 								</Link>
-							</div>
-							<button
-								type="button"
-								onClick={async () => {
+							</DropdownMenuItem>
+							<DropdownMenuSeparator />
+							<DropdownMenuItem
+								onSelect={async () => {
 									await authRepository.signOut();
 									await navigate({ to: "/sign-in" });
 								}}
-								className="shrink-0 rounded-lg border border-border/60 bg-background px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted/30"
 							>
+								<LogOut className="h-4 w-4" />
 								Sign out
-							</button>
-						</div>
-					</div>
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
 				</div>
 			</div>
 		</aside>
