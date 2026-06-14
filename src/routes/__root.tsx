@@ -7,14 +7,12 @@ import {
 	Scripts,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
-import { useSyncExternalStore } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { useAuthSnapshot } from "@/features/auth/data/repository";
 import {
-	getTrackerOnboardingStatus,
-	subscribeTrackerOnboardingStatusChange,
-} from "@/features/trackers/data/onboarding";
-import { TrackerProvider } from "@/features/trackers/presentation/TrackerContext";
+	TrackerProvider,
+	useTracker,
+} from "@/features/trackers/presentation/TrackerContext";
 import { TrackerOnboarding } from "@/features/trackers/presentation/TrackerOnboarding";
 import { getLocale } from "@/paraglide/runtime";
 import AppSidebar from "../components/AppSidebar";
@@ -104,17 +102,24 @@ function RootDocument({ children }: Readonly<{ children: React.ReactNode }>) {
 
 function WorkspaceGate({ children }: Readonly<{ children: React.ReactNode }>) {
 	const auth = useAuthSnapshot();
-	const hasCompletedOnboarding = useSyncExternalStore(
-		subscribeTrackerOnboardingStatusChange,
-		getTrackerOnboardingStatus,
-		() => false,
-	);
+	const { hasTrackers, isLoading } = useTracker();
 
+	// Unauthenticated visitors see the auth screens (sign in / sign up).
 	if (!auth.isAuthenticated) {
 		return <>{children}</>;
 	}
 
-	if (!hasCompletedOnboarding) {
+	// Authenticated: decide onboarding vs. workspace on tracker existence. Wait
+	// for the trackers query so we never flash onboarding before they load.
+	if (isLoading) {
+		return (
+			<div className="grid min-h-screen place-items-center bg-background">
+				<p className="text-sm text-muted-foreground">Loading your workspace…</p>
+			</div>
+		);
+	}
+
+	if (!hasTrackers) {
 		return <TrackerOnboarding />;
 	}
 

@@ -4,14 +4,41 @@ import type { Tracker } from "../domain/types";
 const delay = (ms: number) =>
 	new Promise<void>((resolve) => setTimeout(resolve, ms));
 
+// Trackers are the one piece of mock state that must survive a refresh: the
+// workspace gate decides "onboard vs. dashboard" purely on whether any tracker
+// exists, so losing them on reload would bounce the user back to onboarding.
+const STORAGE_KEY = "spendrift.trackers";
+
+function isBrowser() {
+	return globalThis.window !== undefined;
+}
+
+function loadTrackers(): Tracker[] {
+	if (!isBrowser()) return [];
+	const raw = globalThis.window.localStorage.getItem(STORAGE_KEY);
+	if (!raw) return [];
+	try {
+		const parsed = JSON.parse(raw) as Tracker[];
+		return Array.isArray(parsed) ? parsed : [];
+	} catch {
+		return [];
+	}
+}
+
 function cloneTrackers(source: Tracker[]) {
 	return source.map((tracker) => ({ ...tracker }));
 }
 
-let trackers: Tracker[] = [];
+let trackers: Tracker[] = loadTrackers();
+
+function persist() {
+	if (!isBrowser()) return;
+	globalThis.window.localStorage.setItem(STORAGE_KEY, JSON.stringify(trackers));
+}
 
 export function resetTrackerMockData() {
 	trackers = [];
+	persist();
 }
 
 export const trackerRepository: TrackerRepository = {
@@ -34,6 +61,7 @@ export const trackerRepository: TrackerRepository = {
 			currency,
 		};
 		trackers = [...trackers, tracker];
+		persist();
 		return { ...tracker };
 	},
 
@@ -48,6 +76,7 @@ export const trackerRepository: TrackerRepository = {
 		trackers = trackers.map((tracker) =>
 			tracker.id === id ? updated : tracker,
 		);
+		persist();
 		return { ...updated };
 	},
 
@@ -56,6 +85,7 @@ export const trackerRepository: TrackerRepository = {
 		if (trackers.length <= 1) return false;
 		const before = trackers.length;
 		trackers = trackers.filter((tracker) => tracker.id !== id);
+		persist();
 		return trackers.length < before;
 	},
 };
