@@ -1,5 +1,3 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -10,20 +8,10 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { trackerRepository } from "../data/repository";
+import { useCreateTracker } from "./useTrackers";
 
 export function TrackerOnboarding() {
-	const queryClient = useQueryClient();
-	const createMutation = useMutation({
-		mutationFn: ({ name, currency }: { name: string; currency: string }) =>
-			trackerRepository.create(name, currency),
-		onSuccess: async () => {
-			await queryClient.invalidateQueries({ queryKey: ["trackers"] });
-		},
-		onError: () => {
-			toast.error("Could not create tracker. Please try again.");
-		},
-	});
+	const createMutation = useCreateTracker();
 
 	return (
 		<div className="min-h-screen bg-background px-4 py-6">

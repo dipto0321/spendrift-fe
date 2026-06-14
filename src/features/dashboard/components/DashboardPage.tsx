@@ -6,18 +6,10 @@ import {
 	ChartTooltip,
 	ChartTooltipContent,
 } from "@/components/ui/chart";
-import { budgetRepository } from "@/features/budgets/data/repository";
-import {
-	calculateBudgetStatus,
-	getCurrentMonth,
-} from "@/features/budgets/domain/services";
 import { SavingsHealthBadge } from "@/features/budgets/presentation/SavingsHealthBadge";
-import {
-	categoryRepository,
-	expenseRepository,
-} from "@/features/expenses/data/repository";
-import { calculateNeedsWantsSplit } from "@/features/expenses/domain/services";
+import { useCurrentBudgetStatus } from "@/features/budgets/presentation/useCurrentBudgetStatus";
 import type { Category } from "@/features/expenses/domain/types";
+import { useCategories } from "@/features/expenses/presentation/useCategories";
 import { groupByMonth } from "@/features/reports/domain/services";
 import { useTracker } from "@/features/trackers/presentation/TrackerContext";
 import { PageHeader } from "@/shared/ui/PageHeader";
@@ -41,39 +33,15 @@ export function DashboardPage() {
 		queryFn: getDashboardSummary,
 	});
 
-	const { data: expenses = [], isLoading: expensesLoading } = useQuery({
-		queryKey: ["expenses", trackerId],
-		queryFn: () => expenseRepository.getAll(trackerId as string),
-		enabled: Boolean(trackerId),
-	});
+	const { data: categories = [] } = useCategories(trackerId);
 
-	const { data: categories = [] } = useQuery({
-		queryKey: ["categories", trackerId],
-		queryFn: () => categoryRepository.getAll(trackerId as string),
-		enabled: Boolean(trackerId),
-	});
-
-	const { data: budgets = [] } = useQuery({
-		queryKey: ["budgets", trackerId],
-		queryFn: () => budgetRepository.getAll(trackerId as string),
-		enabled: Boolean(trackerId),
-	});
-
-	const currentMonth = getCurrentMonth();
-	const currentBudget = budgets.find((b) => b.month === currentMonth) ?? null;
-	const currentMonthExpenses = expenses.filter((e) =>
-		e.date.startsWith(currentMonth),
-	);
-
-	const budgetStatus = currentBudget
-		? calculateBudgetStatus(
-				currentBudget.monthlyLimit,
-				currentBudget.savingsTarget,
-				currentMonthExpenses,
-			)
-		: null;
-
-	const needsWantsSplit = calculateNeedsWantsSplit(currentMonthExpenses);
+	const {
+		expenses,
+		currentBudget,
+		status: budgetStatus,
+		needsWantsSplit,
+		expensesLoading,
+	} = useCurrentBudgetStatus(trackerId);
 
 	const monthlyData = groupByMonth(expenses)
 		.slice(-6)

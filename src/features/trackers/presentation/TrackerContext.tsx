@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import {
@@ -9,8 +8,8 @@ import {
 	useMemo,
 } from "react";
 import { getLastTrackerId, setLastTrackerId } from "../data/lastTracker";
-import { trackerRepository } from "../data/repository";
 import type { Tracker } from "../domain/types";
+import { useTrackers } from "./useTrackers";
 
 type TrackerContextValue = {
 	trackers: Tracker[];
@@ -42,10 +41,7 @@ export function TrackerProvider({
 	const search = useSearch({ strict: false }) as { tracker?: string };
 	const searchTrackerId = search.tracker;
 
-	const { data: trackers = [], isLoading } = useQuery({
-		queryKey: ["trackers"],
-		queryFn: () => trackerRepository.getAll(),
-	});
+	const { data: trackers = [], isLoading } = useTrackers();
 
 	const activeTracker = useMemo(
 		() => resolveActiveTracker(trackers, searchTrackerId),
