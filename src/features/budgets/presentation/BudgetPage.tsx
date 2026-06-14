@@ -1,93 +1,49 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { expenseRepository } from "@/features/expenses/data/repository";
-import { calculateNeedsWantsSplit } from "@/features/expenses/domain/services";
 import { useTracker } from "@/features/trackers/presentation/TrackerContext";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { StatCard } from "@/shared/ui/StatCard";
 import { formatCurrency } from "@/shared/utils/format";
-import { budgetRepository } from "../data/repository";
-import { calculateBudgetStatus, getCurrentMonth } from "../domain/services";
+import { calculateBudgetStatus } from "../domain/services";
 import type { Budget, BudgetCreateInput } from "../domain/types";
 import { BudgetForm } from "./BudgetForm";
 import { BudgetStatusCard } from "./BudgetStatusCard";
+import { useCreateBudget, useUpdateBudget } from "./useBudgets";
+import { useCurrentBudgetStatus } from "./useCurrentBudgetStatus";
 
 function BudgetPage() {
 	const { activeTracker } = useTracker();
 	const trackerId = activeTracker?.id;
 	const currency = activeTracker?.currency ?? "";
-	const queryClient = useQueryClient();
-	const currentMonth = getCurrentMonth();
 	const [showForm, setShowForm] = useState(false);
 	const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
 
-	const { data: budgets = [], isLoading: budgetsLoading } = useQuery({
-		queryKey: ["budgets", trackerId],
-		queryFn: () => budgetRepository.getAll(trackerId as string),
-		enabled: Boolean(trackerId),
-	});
+	const {
+		budgets,
+		expenses,
+		currentMonth,
+		currentBudget,
+		status,
+		needsWantsSplit,
+		budgetsLoading,
+	} = useCurrentBudgetStatus(trackerId);
 
-	const { data: expenses = [] } = useQuery({
-		queryKey: ["expenses", trackerId],
-		queryFn: () => expenseRepository.getAll(trackerId as string),
-		enabled: Boolean(trackerId),
-	});
-
-	const currentBudget = budgets.find((b) => b.month === currentMonth) ?? null;
-
-	const currentMonthExpenses = expenses.filter((e) =>
-		e.date.startsWith(currentMonth),
-	);
-
-	const status = currentBudget
-		? calculateBudgetStatus(
-				currentBudget.monthlyLimit,
-				currentBudget.savingsTarget,
-				currentMonthExpenses,
-			)
-		: null;
-
-	const needsWantsSplit = calculateNeedsWantsSplit(currentMonthExpenses);
-
-	const createMutation = useMutation({
-		mutationFn: (input: BudgetCreateInput) =>
-			budgetRepository.create(trackerId as string, input),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["budgets", trackerId] });
-			setShowForm(false);
-			toast.success("Budget created");
-		},
-		onError: () => {
-			toast.error("Could not create budget. Please try again.");
-		},
-	});
-
-	const updateMutation = useMutation({
-		mutationFn: ({
-			id,
-			patch,
-		}: {
-			id: string;
-			patch: Partial<BudgetCreateInput>;
-		}) => budgetRepository.update(trackerId as string, id, patch),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["budgets", trackerId] });
-			setShowForm(false);
-			setEditingBudget(null);
-			toast.success("Budget updated");
-		},
-		onError: () => {
-			toast.error("Could not update budget. Please try again.");
-		},
-	});
+	const createMutation = useCreateBudget(trackerId);
+	const updateMutation = useUpdateBudget(trackerId);
 
 	function handleFormSubmit(data: BudgetCreateInput) {
 		if (editingBudget) {
-			updateMutation.mutate({ id: editingBudget.id, patch: data });
+			updateMutation.mutate(
+				{ id: editingBudget.id, patch: data },
+				{
+					onSuccess: () => {
+						setShowForm(false);
+						setEditingBudget(null);
+					},
+				},
+			);
 		} else {
-			createMutation.mutate(data);
+			createMutation.mutate(data, { onSuccess: () => setShowForm(false) });
 		}
 	}
 

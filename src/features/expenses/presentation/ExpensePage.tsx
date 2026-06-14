@@ -1,10 +1,7 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { toast } from "sonner";
 import { useTracker } from "@/features/trackers/presentation/TrackerContext";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { formatCurrency } from "@/shared/utils/format";
-import { categoryRepository, expenseRepository } from "../data/repository";
 import {
 	calculateTotal,
 	filterExpenses,
@@ -18,12 +15,18 @@ import type {
 import { ExpenseModal } from "./ExpenseModal";
 import { ExpenseTable } from "./ExpenseTable";
 import { ExpenseToolbar } from "./ExpenseToolbar";
+import { useCategories } from "./useCategories";
+import {
+	useCreateExpense,
+	useDeleteExpense,
+	useExpenses,
+	useUpdateExpense,
+} from "./useExpenses";
 
 export function ExpensePage() {
 	const { activeTracker } = useTracker();
 	const trackerId = activeTracker?.id;
 	const currency = activeTracker?.currency ?? "";
-	const queryClient = useQueryClient();
 	const [filter, setFilter] = useState<ExpenseFilter>(() => ({
 		dateRange: getTodayRange(),
 	}));
@@ -36,60 +39,13 @@ export function ExpensePage() {
 		data: allExpenses = [],
 		isLoading: expensesLoading,
 		error: expensesError,
-	} = useQuery({
-		queryKey: ["expenses", trackerId],
-		queryFn: () => expenseRepository.getAll(trackerId as string),
-		enabled: Boolean(trackerId),
-	});
+	} = useExpenses(trackerId);
 
-	const { data: categories = [] } = useQuery({
-		queryKey: ["categories", trackerId],
-		queryFn: () => categoryRepository.getAll(trackerId as string),
-		enabled: Boolean(trackerId),
-	});
+	const { data: categories = [] } = useCategories(trackerId);
 
-	const createMutation = useMutation({
-		mutationFn: (input: ExpenseCreateInput) =>
-			expenseRepository.create(trackerId as string, input),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["expenses", trackerId] });
-			closeModal();
-			toast.success("Expense added");
-		},
-		onError: () => {
-			toast.error("Could not add expense. Please try again.");
-		},
-	});
-
-	const updateMutation = useMutation({
-		mutationFn: ({
-			id,
-			data,
-		}: {
-			id: string;
-			data: Partial<ExpenseCreateInput>;
-		}) => expenseRepository.update(trackerId as string, id, data),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["expenses", trackerId] });
-			closeModal();
-			toast.success("Expense updated");
-		},
-		onError: () => {
-			toast.error("Could not update expense. Please try again.");
-		},
-	});
-
-	const deleteMutation = useMutation({
-		mutationFn: (id: string) =>
-			expenseRepository.delete(trackerId as string, id),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["expenses", trackerId] });
-			toast.success("Expense deleted");
-		},
-		onError: () => {
-			toast.error("Could not delete expense. Please try again.");
-		},
-	});
+	const createMutation = useCreateExpense(trackerId);
+	const updateMutation = useUpdateExpense(trackerId);
+	const deleteMutation = useDeleteExpense(trackerId);
 
 	const filteredExpenses = filterExpenses(allExpenses, filter);
 	const filteredExpenseTotal = calculateTotal(filteredExpenses);
@@ -120,6 +76,9 @@ export function ExpensePage() {
 		} else {
 			await createMutation.mutateAsync(data);
 		}
+		// Reached only when the mutation resolves; on error mutateAsync throws
+		// (the hook already surfaced a toast) and the modal stays open.
+		closeModal();
 	}
 
 	const isFormSubmitting = createMutation.isPending || updateMutation.isPending;

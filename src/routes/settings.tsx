@@ -1,13 +1,20 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { toast } from "sonner";
 import { requireAuth } from "@/features/auth/presentation/routeGuards";
-import { categoryRepository } from "@/features/expenses/data/repository";
-import type { CategoryColor } from "@/features/expenses/domain/types";
 import { CategoryManager } from "@/features/expenses/presentation/CategoryManager";
-import { trackerRepository } from "@/features/trackers/data/repository";
+import {
+	useCategories,
+	useCreateCategory,
+	useDeleteCategory,
+	useUpdateCategory,
+} from "@/features/expenses/presentation/useCategories";
 import { useTracker } from "@/features/trackers/presentation/TrackerContext";
 import { TrackerManager } from "@/features/trackers/presentation/TrackerManager";
+import {
+	useCreateTracker,
+	useDeleteTracker,
+	useTrackers,
+	useUpdateTracker,
+} from "@/features/trackers/presentation/useTrackers";
 
 export const Route = createFileRoute("/settings")({
 	beforeLoad: requireAuth,
@@ -15,115 +22,21 @@ export const Route = createFileRoute("/settings")({
 });
 
 function SettingsPage() {
-	const queryClient = useQueryClient();
 	const { activeTracker, setActiveTrackerById } = useTracker();
 	const trackerId = activeTracker?.id;
 
-	const { data: categories = [] } = useQuery({
-		queryKey: ["categories", trackerId],
-		queryFn: () => categoryRepository.getAll(trackerId as string),
-		enabled: Boolean(trackerId),
-	});
-
-	const { data: trackers = [] } = useQuery({
-		queryKey: ["trackers"],
-		queryFn: () => trackerRepository.getAll(),
-	});
+	const { data: categories = [] } = useCategories(trackerId);
+	const { data: trackers = [] } = useTrackers();
 
 	const activeTrackerId = activeTracker?.id ?? trackers[0]?.id ?? "";
 
-	const createMutation = useMutation({
-		mutationFn: ({ name, color }: { name: string; color: string }) =>
-			categoryRepository.create(
-				trackerId as string,
-				name,
-				color as CategoryColor,
-			),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["categories", trackerId] });
-			toast.success("Category created");
-		},
-		onError: () => {
-			toast.error("Could not create category. Please try again.");
-		},
-	});
+	const createMutation = useCreateCategory(trackerId);
+	const updateMutation = useUpdateCategory(trackerId);
+	const deleteMutation = useDeleteCategory(trackerId);
 
-	const updateMutation = useMutation({
-		mutationFn: ({
-			id,
-			name,
-			color,
-		}: {
-			id: string;
-			name: string;
-			color: string;
-		}) =>
-			categoryRepository.update(trackerId as string, id, {
-				name,
-				color: color as CategoryColor,
-			}),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["categories", trackerId] });
-			toast.success("Category updated");
-		},
-		onError: () => {
-			toast.error("Could not update category. Please try again.");
-		},
-	});
-
-	const deleteMutation = useMutation({
-		mutationFn: (id: string) =>
-			categoryRepository.delete(trackerId as string, id, "uncategorized"),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["categories", trackerId] });
-			toast.success("Category deleted");
-		},
-		onError: () => {
-			toast.error("Could not delete category. Please try again.");
-		},
-	});
-
-	const createTrackerMutation = useMutation({
-		mutationFn: ({ name, currency }: { name: string; currency: string }) =>
-			trackerRepository.create(name, currency),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["trackers"] });
-			toast.success("Tracker created");
-		},
-		onError: () => {
-			toast.error("Could not create tracker. Please try again.");
-		},
-	});
-
-	const updateTrackerMutation = useMutation({
-		mutationFn: ({
-			id,
-			name,
-			currency,
-		}: {
-			id: string;
-			name: string;
-			currency: string;
-		}) => trackerRepository.update(id, { name, currency }),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["trackers"] });
-			toast.success("Tracker updated");
-		},
-		onError: () => {
-			toast.error("Could not update tracker. Please try again.");
-		},
-	});
-
-	const deleteTrackerMutation = useMutation({
-		mutationFn: (id: string) => trackerRepository.delete(id),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["trackers"] });
-			toast.success("Tracker deleted");
-		},
-		onError: () => {
-			toast.error("Could not delete tracker. Please try again.");
-		},
-	});
+	const createTrackerMutation = useCreateTracker();
+	const updateTrackerMutation = useUpdateTracker();
+	const deleteTrackerMutation = useDeleteTracker();
 
 	return (
 		<main className="page-wrap rise-in px-4 pb-14 pt-10 sm:pt-12">
