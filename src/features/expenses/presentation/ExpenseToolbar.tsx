@@ -1,6 +1,7 @@
 import { Plus, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
 	getThisMonthRange,
 	getTodayRange,
@@ -25,14 +26,6 @@ export function ExpenseToolbar({
 		onFilterChange({ ...filter, ...patch });
 	}
 
-	function toggleType(type: ExpenseType) {
-		const current = filter.types ?? [];
-		const updated = current.includes(type)
-			? current.filter((t) => t !== type)
-			: [...current, type];
-		updateFilter({ types: updated.length > 0 ? updated : undefined });
-	}
-
 	function clearFilter() {
 		onFilterChange({ dateRange: getTodayRange() });
 	}
@@ -45,6 +38,11 @@ export function ExpenseToolbar({
 	const thisMonthRange = getThisMonthRange();
 	const isTodaySelected = isSameDateRange(filter.dateRange, todayRange);
 	const isThisMonthSelected = isSameDateRange(filter.dateRange, thisMonthRange);
+
+	// Quick-range toggle value; empty when a custom date range is active.
+	let activeQuickRange = "";
+	if (isTodaySelected) activeQuickRange = "today";
+	else if (isThisMonthSelected) activeQuickRange = "month";
 
 	const hasActiveFilters =
 		filter.search ||
@@ -70,28 +68,28 @@ export function ExpenseToolbar({
 					/>
 				</div>
 
-				<div className="flex items-center gap-1 rounded-full border border-border/60 bg-muted/30 p-1">
-					<Button
-						type="button"
-						variant={isTodaySelected ? "default" : "secondary"}
-						size="sm"
-						aria-pressed={isTodaySelected}
-						onClick={() => setQuickRange(todayRange)}
-						className="rounded-full px-2.5 text-xs font-medium"
+				<ToggleGroup
+					type="single"
+					value={activeQuickRange}
+					onValueChange={(value) => {
+						if (value === "today") setQuickRange(todayRange);
+						else if (value === "month") setQuickRange(thisMonthRange);
+					}}
+					className="rounded-full border border-border/60 bg-muted/30 p-1"
+				>
+					<ToggleGroupItem
+						value="today"
+						className="rounded-full px-2.5 text-xs font-medium data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
 					>
 						Today
-					</Button>
-					<Button
-						type="button"
-						variant={isThisMonthSelected ? "default" : "secondary"}
-						size="sm"
-						aria-pressed={isThisMonthSelected}
-						onClick={() => setQuickRange(thisMonthRange)}
-						className="rounded-full px-2.5 text-xs font-medium"
+					</ToggleGroupItem>
+					<ToggleGroupItem
+						value="month"
+						className="rounded-full px-2.5 text-xs font-medium data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
 					>
 						This month
-					</Button>
-				</div>
+					</ToggleGroupItem>
+				</ToggleGroup>
 
 				<div className="flex items-center gap-1.5">
 					<Input
@@ -124,26 +122,29 @@ export function ExpenseToolbar({
 				</div>
 
 				<div className="flex flex-wrap items-center gap-1.5">
-					<div className="flex items-center gap-1">
-						<Button
-							type="button"
-							variant={filter.types?.includes("need") ? "default" : "ghost"}
-							size="sm"
-							onClick={() => toggleType("need")}
-							className="rounded-full px-2.5 py-0.5 text-xs font-medium"
+					<ToggleGroup
+						type="multiple"
+						value={filter.types ?? []}
+						onValueChange={(value) =>
+							updateFilter({
+								types: value.length > 0 ? (value as ExpenseType[]) : undefined,
+							})
+						}
+						className="flex items-center gap-1"
+					>
+						<ToggleGroupItem
+							value="need"
+							className="rounded-full px-2.5 py-0.5 text-xs font-medium data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
 						>
 							Need
-						</Button>
-						<Button
-							type="button"
-							variant={filter.types?.includes("want") ? "default" : "ghost"}
-							size="sm"
-							onClick={() => toggleType("want")}
-							className="rounded-full px-2.5 py-1 text-xs font-medium"
+						</ToggleGroupItem>
+						<ToggleGroupItem
+							value="want"
+							className="rounded-full px-2.5 py-0.5 text-xs font-medium data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
 						>
 							Want
-						</Button>
-					</div>
+						</ToggleGroupItem>
+					</ToggleGroup>
 
 					{userCategories.map((cat) => {
 						const isActive = filter.categoryIds?.includes(cat.id) ?? false;

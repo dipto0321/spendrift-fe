@@ -1,3 +1,4 @@
+import { Skeleton } from "@/components/ui/skeleton";
 import {
 	Table,
 	TableBody,
@@ -35,10 +36,7 @@ export function ExpenseTable({
 			<div className="rounded-2xl border border-border/60 bg-card/30 p-6">
 				<div className="space-y-3">
 					{[1, 2, 3].map((i) => (
-						<div
-							key={i}
-							className="h-12 animate-pulse rounded-lg bg-muted/50"
-						/>
+						<Skeleton key={i} className="h-12 rounded-lg" />
 					))}
 				</div>
 			</div>
