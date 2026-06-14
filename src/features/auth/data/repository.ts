@@ -2,6 +2,13 @@ import { useSyncExternalStore } from "react";
 import { resetBudgetsMockData } from "@/features/budgets/data/repository";
 import { resetExpensesMockData } from "@/features/expenses/data/repository";
 import { resetTrackerMockData } from "@/features/trackers/data/repository";
+import { ApiError, apiFetch, setOnAuthExpired } from "@/shared/api/client";
+import {
+	clearTokens,
+	getRefreshToken,
+	hasAccessToken,
+	setTokens,
+} from "@/shared/api/tokens";
 import type {
 	AuthUser,
 	SignInInput,
@@ -9,6 +16,7 @@ import type {
 	UpdatePasswordInput,
 	UpdateProfileInput,
 } from "../domain/types";
+import { mapUser, type TokenResponseDto, type UserResponseDto } from "./dto";
 
 type AuthSnapshot = {
 	user: AuthUser | null;
@@ -16,84 +24,40 @@ type AuthSnapshot = {
 	isAuthenticated: boolean;
 };
 
-const USERS_KEY = "spendrift.mock-auth.users";
-const SESSION_KEY = "spendrift.mock-auth.session";
-
 const listeners = new Set<() => void>();
-let snapshotCache: AuthSnapshot = {
-	user: null,
-	hasAccount: false,
-	isAuthenticated: false,
-};
+let cachedUser: AuthUser | null = null;
+// Tracks the in-flight bootstrap so we don't fetch /users/me repeatedly.
+let bootstrapPromise: Promise<void> | null = null;
 
-const delay = (ms: number) =>
-	new Promise<void>((resolve) => setTimeout(resolve, ms));
-
-function readUsers(): AuthUser[] {
-	if (globalThis.window === undefined) return [];
-	const raw = globalThis.window.localStorage.getItem(USERS_KEY);
-	if (!raw) return [];
-	try {
-		const parsed = JSON.parse(raw) as AuthUser[];
-		return Array.isArray(parsed) ? parsed : [];
-	} catch {
-		return [];
-	}
+function computeSnapshot(): AuthSnapshot {
+	const authed = hasAccessToken();
+	return {
+		user: cachedUser,
+		// With token-based auth there is no separate "an account exists" signal;
+		// it only matters whether the current session is authenticated.
+		hasAccount: authed,
+		isAuthenticated: authed,
+	};
 }
 
-function writeUsers(users: AuthUser[]) {
-	if (globalThis.window === undefined) return;
-	globalThis.window.localStorage.setItem(USERS_KEY, JSON.stringify(users));
-}
-
-function readSessionId() {
-	if (globalThis.window === undefined) return null;
-	return globalThis.window.localStorage.getItem(SESSION_KEY);
-}
-
-function writeSessionId(userId: string | null) {
-	if (globalThis.window === undefined) return;
-	if (userId) {
-		globalThis.window.localStorage.setItem(SESSION_KEY, userId);
-	} else {
-		globalThis.window.localStorage.removeItem(SESSION_KEY);
-	}
-}
+let snapshotCache: AuthSnapshot = computeSnapshot();
 
 function notify() {
-	snapshotCache = readSnapshot();
+	snapshotCache = computeSnapshot();
 	for (const listener of listeners) {
 		listener();
 	}
 }
 
-function readSnapshot(): AuthSnapshot {
-	const users = readUsers();
-	const user = getCurrentUser(users);
-	return {
-		user: user ? cloneUser(user) : null,
-		hasAccount: users.length > 0,
-		isAuthenticated: Boolean(user),
-	};
-}
-
-function getCurrentUser(users: AuthUser[]) {
-	const sessionId = readSessionId();
-	if (!sessionId) return null;
-	return users.find((user) => user.id === sessionId) ?? null;
-}
-
-function cloneUser(user: AuthUser): AuthUser {
-	return { ...user };
-}
-
-function persistCurrentUser(user: AuthUser) {
-	const users = readUsers();
-	const updatedUsers = users.map((item) => (item.id === user.id ? user : item));
-	writeUsers(updatedUsers);
-	writeSessionId(user.id);
+// When a token refresh fails for good, drop the session so the gate redirects.
+setOnAuthExpired(() => {
+	cachedUser = null;
 	notify();
-	return cloneUser(user);
+});
+
+async function fetchCurrentUser(): Promise<AuthUser> {
+	const dto = await apiFetch<UserResponseDto>("/users/me");
+	return mapUser(dto);
 }
 
 export const authRepository = {
@@ -107,112 +71,82 @@ export const authRepository = {
 	},
 
 	async signIn(input: SignInInput): Promise<AuthUser> {
-		await delay(220);
-		const users = readUsers();
-		const user = users.find(
-			(item) => item.email.toLowerCase() === input.email.toLowerCase(),
-		);
-		if (!user || user.password !== input.password) {
-			throw new Error("Invalid email or password.");
-		}
-		writeSessionId(user.id);
+		const tokens = await apiFetch<TokenResponseDto>("/auth/login", {
+			method: "POST",
+			skipAuth: true,
+			body: { email: input.email, password: input.password },
+		});
+		setTokens(tokens.access_token, tokens.refresh_token);
+		cachedUser = await fetchCurrentUser();
 		notify();
-		return cloneUser(user);
+		return cachedUser;
 	},
 
 	async signUp(input: SignUpInput): Promise<AuthUser> {
-		await delay(260);
-		const users = readUsers();
-		const existing = users.find(
-			(item) => item.email.toLowerCase() === input.email.toLowerCase(),
-		);
-		if (existing) {
-			throw new Error("An account with this email already exists.");
-		}
-		const now = new Date().toISOString();
-		const user: AuthUser = {
-			id: crypto.randomUUID(),
-			name: input.name,
-			email: input.email.toLowerCase(),
-			password: input.password,
-			avatarDataUrl: null,
-			createdAt: now,
-			updatedAt: now,
-		};
-		writeUsers([...users, user]);
+		const tokens = await apiFetch<TokenResponseDto>("/auth/register", {
+			method: "POST",
+			skipAuth: true,
+			body: { name: input.name, email: input.email, password: input.password },
+		});
+		setTokens(tokens.access_token, tokens.refresh_token);
+		cachedUser = await fetchCurrentUser();
+		// A fresh account starts with no data. The tracker/expense/budget repos
+		// are still mock until later phases, so clear them for a clean onboarding.
 		resetTrackerMockData();
 		resetExpensesMockData();
 		resetBudgetsMockData();
-		writeSessionId(user.id);
 		notify();
-		return cloneUser(user);
+		return cachedUser;
 	},
 
 	async signOut(): Promise<void> {
-		await delay(120);
-		writeSessionId(null);
+		const refreshToken = getRefreshToken();
+		try {
+			if (refreshToken) {
+				await apiFetch<void>("/auth/sign-out", {
+					method: "POST",
+					body: { refresh_token: refreshToken },
+				});
+			}
+		} catch {
+			// Best-effort: even if the server call fails, drop the local session.
+		}
+		clearTokens();
+		cachedUser = null;
 		notify();
 	},
 
-	async updateProfile(input: UpdateProfileInput): Promise<AuthUser> {
-		await delay(220);
-		const users = readUsers();
-		const current = getCurrentUser(users);
-		if (!current) {
-			throw new Error("No authenticated user.");
-		}
-		const emailTaken = users.some(
-			(item) =>
-				item.id !== current.id &&
-				item.email.toLowerCase() === input.email.toLowerCase(),
-		);
-		if (emailTaken) {
-			throw new Error("That email is already in use.");
-		}
-		const updated: AuthUser = {
-			...current,
-			name: input.name,
-			email: input.email.toLowerCase(),
-			updatedAt: new Date().toISOString(),
-		};
-		return persistCurrentUser(updated);
+	// Load the current user once on app start if a token is present. Resolves the
+	// session against the server; on failure the client clears tokens via the
+	// onAuthExpired handler.
+	async bootstrap(): Promise<void> {
+		if (!hasAccessToken() || cachedUser) return;
+		bootstrapPromise ??= (async () => {
+			try {
+				cachedUser = await fetchCurrentUser();
+				notify();
+			} catch {
+				// 401s are handled inside apiFetch (refresh + onAuthExpired).
+			} finally {
+				bootstrapPromise = null;
+			}
+		})();
+		return bootstrapPromise;
 	},
 
-	async updatePassword(input: UpdatePasswordInput): Promise<AuthUser> {
-		await delay(220);
-		const users = readUsers();
-		const current = getCurrentUser(users);
-		if (!current) {
-			throw new Error("No authenticated user.");
-		}
-		if (current.password !== input.currentPassword) {
-			throw new Error("Current password is incorrect.");
-		}
-		const updated: AuthUser = {
-			...current,
-			password: input.newPassword,
-			updatedAt: new Date().toISOString(),
-		};
-		return persistCurrentUser(updated);
+	// The API does not yet expose profile/password/avatar updates.
+	async updateProfile(_input: UpdateProfileInput): Promise<AuthUser> {
+		throw new ApiError(501, "Editing your profile isn't available yet.");
 	},
 
-	async updateAvatar(dataUrl: string | null): Promise<AuthUser> {
-		await delay(180);
-		const users = readUsers();
-		const current = getCurrentUser(users);
-		if (!current) {
-			throw new Error("No authenticated user.");
-		}
-		const updated: AuthUser = {
-			...current,
-			avatarDataUrl: dataUrl,
-			updatedAt: new Date().toISOString(),
-		};
-		return persistCurrentUser(updated);
+	async updatePassword(_input: UpdatePasswordInput): Promise<AuthUser> {
+		throw new ApiError(501, "Changing your password isn't available yet.");
+	},
+
+	async updateAvatar(_dataUrl: string | null): Promise<AuthUser> {
+		throw new ApiError(501, "Updating your avatar isn't available yet.");
 	},
 };
-
-snapshotCache = readSnapshot();
 
 export function useAuthSnapshot() {
 	return useSyncExternalStore(
