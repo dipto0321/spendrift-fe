@@ -4,9 +4,11 @@ import type { Tracker } from "../domain/types";
 const delay = (ms: number) =>
 	new Promise<void>((resolve) => setTimeout(resolve, ms));
 
-// Trackers are the one piece of mock state that must survive a refresh: the
-// workspace gate decides "onboard vs. dashboard" purely on whether any tracker
-// exists, so losing them on reload would bounce the user back to onboarding.
+// MOCK-PHASE CRUTCH — remove when the real API lands. Trackers are the one
+// piece of mock state that must survive a refresh: the workspace gate decides
+// "onboard vs. dashboard" purely on whether any tracker exists, so losing them
+// on reload would bounce the user back to onboarding. With a real backend the
+// API is the source of truth and React Query refetches, so this goes away.
 const STORAGE_KEY = "spendrift.trackers";
 
 function isBrowser() {
