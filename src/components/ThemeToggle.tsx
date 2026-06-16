@@ -4,13 +4,18 @@ import { Switch } from "@/components/ui/switch";
 
 type ThemeMode = "light" | "dark";
 
+// Dark-theme-first per the design philosophy: default to dark and only switch
+// to light when the user has explicitly chosen it (stored from the toggle). We
+// deliberately don't follow `prefers-color-scheme` — the media query reports
+// "light" for users with no OS preference, which would make light the de-facto
+// default and defeat dark-first. Must stay in sync with public/theme-init.js
+// (the pre-hydration script that prevents a flash of the wrong theme).
 function getInitialMode(): ThemeMode {
 	if (typeof window === "undefined") {
-		return "light";
+		return "dark";
 	}
 
-	const stored = window.localStorage.getItem("theme");
-	return stored === "dark" ? "dark" : "light";
+	return window.localStorage.getItem("theme") === "light" ? "light" : "dark";
 }
 
 function applyThemeMode(mode: ThemeMode) {
@@ -21,7 +26,7 @@ function applyThemeMode(mode: ThemeMode) {
 }
 
 export default function ThemeToggle() {
-	const [mode, setMode] = useState<ThemeMode>("light");
+	const [mode, setMode] = useState<ThemeMode>("dark");
 
 	useEffect(() => {
 		const initialMode = getInitialMode();
