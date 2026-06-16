@@ -50,7 +50,7 @@ export function ExpenseToolbar({
 		(filter.categoryIds && filter.categoryIds.length > 0) ||
 		(filter.types && filter.types.length > 0);
 
-	const userCategories = categories.filter((c) => c.id !== "uncategorized");
+	const userCategories = categories.filter((c) => c.name !== "Uncategorized");
 
 	return (
 		<div className="space-y-3">

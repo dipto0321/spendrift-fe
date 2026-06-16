@@ -75,8 +75,7 @@ export function ExpenseForm({
 	}
 
 	const selectableCategories = categories.filter(
-		(c) =>
-			c.id !== "uncategorized" || initialData?.categoryId === "uncategorized",
+		(c) => c.name !== "Uncategorized" || initialData?.categoryId === c.id,
 	);
 
 	return (
