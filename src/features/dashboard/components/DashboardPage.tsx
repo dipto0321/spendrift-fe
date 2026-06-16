@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
 import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
 import type { ChartConfig } from "@/components/ui/chart";
 import {
@@ -9,15 +8,15 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { getProgressBarColor } from "@/features/budgets/domain/services";
 import { SavingsHealthBadge } from "@/features/budgets/presentation/SavingsHealthBadge";
-import { useCurrentBudgetStatus } from "@/features/budgets/presentation/useCurrentBudgetStatus";
 import type { Category } from "@/features/expenses/domain/types";
 import { useCategories } from "@/features/expenses/presentation/useCategories";
+import { useExpenses } from "@/features/expenses/presentation/useExpenses";
 import { groupByMonth } from "@/features/reports/domain/services";
 import { useTracker } from "@/features/trackers/presentation/TrackerContext";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { StatCard } from "@/shared/ui/StatCard";
 import { formatCurrency, formatDate } from "@/shared/utils/format";
-import { getDashboardSummary } from "../api/mockDashboard";
+import { useDashboard } from "../presentation/useDashboard";
 
 const miniChartConfig = {
 	total: {
@@ -30,21 +29,14 @@ export function DashboardPage() {
 	const { activeTracker } = useTracker();
 	const trackerId = activeTracker?.id;
 	const currency = activeTracker?.currency ?? "";
-	const { data: summary, isLoading: summaryLoading } = useQuery({
-		queryKey: ["dashboard-summary"],
-		queryFn: getDashboardSummary,
-	});
 
+	const { data: summary, isLoading: summaryLoading } = useDashboard(trackerId);
 	const { data: categories = [] } = useCategories(trackerId);
+	const { data: expenses = [], isLoading: expensesLoading } =
+		useExpenses(trackerId);
 
-	const {
-		expenses,
-		currentBudget,
-		status: budgetStatus,
-		needsWantsSplit,
-		expensesLoading,
-	} = useCurrentBudgetStatus(trackerId);
-
+	// The dashboard endpoint summarizes the current month only; the multi-month
+	// cashflow trend and the recent-activity list come from the expenses list.
 	const monthlyData = groupByMonth(expenses)
 		.slice(-6)
 		.map((d) => ({
@@ -62,46 +54,43 @@ export function DashboardPage() {
 		.sort((a, b) => b.date.localeCompare(a.date))
 		.slice(0, 5);
 
+	const budget = summary?.budget ?? null;
+	const needsWants = summary?.needsWants;
 	const budgetSpentPercentage =
-		currentBudget && budgetStatus && currentBudget.monthlyLimit > 0
+		budget && budget.monthlyLimit > 0
 			? Math.min(
 					100,
-					Math.round((budgetStatus.spent / currentBudget.monthlyLimit) * 100),
+					Math.round((budget.status.spent / budget.monthlyLimit) * 100),
 				)
 			: 0;
+
+	const dash = (value: string) => (summaryLoading || !summary ? "—" : value);
 
 	return (
 		<main className="page-wrap rise-in px-4 pb-14 pt-10 sm:pt-12">
 			<PageHeader
 				kicker="Dashboard"
 				title="Spendrift overview"
-				description="Track what matters: cash position, monthly trends, and recent spending."
+				description="Track what matters: this month's spending, budget health, and recent activity."
 			/>
 
 			<section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
 				<StatCard
-					label="Total balance"
-					value={
-						summaryLoading || !summary
-							? "—"
-							: formatCurrency(summary.totalBalance, currency)
-					}
-				/>
-				<StatCard
 					label="This month spend"
-					value={
-						summaryLoading || !summary
-							? "—"
-							: formatCurrency(summary.monthSpend, currency)
-					}
+					value={dash(
+						summary ? formatCurrency(summary.totalSpent, currency) : "—",
+					)}
 				/>
 				<StatCard
-					label="This month income"
-					value={
-						summaryLoading || !summary
-							? "—"
-							: formatCurrency(summary.monthIncome, currency)
-					}
+					label="Expenses this month"
+					value={dash(summary ? String(summary.expenseCount) : "—")}
+				/>
+				<StatCard
+					label="Budget remaining"
+					value={dash(
+						budget ? formatCurrency(budget.status.remaining, currency) : "—",
+					)}
+					subtext={budget ? undefined : "No budget set"}
 				/>
 			</section>
 
@@ -162,11 +151,11 @@ export function DashboardPage() {
 							<div className="flex items-center justify-between text-sm">
 								<span className="text-foreground">Needs</span>
 								<span className="font-semibold tabular-nums text-foreground">
-									{formatCurrency(needsWantsSplit.needs, currency)}
+									{formatCurrency(needsWants?.needs ?? 0, currency)}
 								</span>
 							</div>
 							<Progress
-								value={needsWantsSplit.percentage.needs}
+								value={needsWants?.percentage.needs ?? 0}
 								className="mt-1 h-2 bg-muted"
 								indicatorClassName="bg-green-500"
 							/>
@@ -175,11 +164,11 @@ export function DashboardPage() {
 							<div className="flex items-center justify-between text-sm">
 								<span className="text-foreground">Wants</span>
 								<span className="font-semibold tabular-nums text-foreground">
-									{formatCurrency(needsWantsSplit.wants, currency)}
+									{formatCurrency(needsWants?.wants ?? 0, currency)}
 								</span>
 							</div>
 							<Progress
-								value={needsWantsSplit.percentage.wants}
+								value={needsWants?.percentage.wants ?? 0}
 								className="mt-1 h-2 bg-muted"
 								indicatorClassName="bg-orange-500"
 							/>
@@ -190,11 +179,11 @@ export function DashboardPage() {
 
 			<section className="mt-6 grid gap-6 lg:grid-cols-2">
 				<div className="min-w-0">
-					{currentBudget && budgetStatus ? (
+					{budget ? (
 						<section className="island-shell rounded-2xl p-6">
 							<div className="flex items-center justify-between gap-4">
 								<h2 className="island-kicker mb-0">Budget</h2>
-								<SavingsHealthBadge health={budgetStatus.savingsHealth} />
+								<SavingsHealthBadge health={budget.status.savingsHealth} />
 							</div>
 							<div className="mt-4 space-y-3">
 								<div className="flex items-baseline justify-between">
@@ -202,7 +191,7 @@ export function DashboardPage() {
 										Remaining
 									</span>
 									<span className="text-xl font-semibold tabular-nums text-foreground">
-										{formatCurrency(budgetStatus.remaining, currency)}
+										{formatCurrency(budget.status.remaining, currency)}
 									</span>
 								</div>
 								<div>
@@ -214,14 +203,14 @@ export function DashboardPage() {
 										value={budgetSpentPercentage}
 										className="mt-1 h-2 bg-muted"
 										indicatorClassName={getProgressBarColor(
-											budgetStatus.savingsHealth,
+											budget.status.savingsHealth,
 										)}
 									/>
 								</div>
 								<div className="flex items-baseline justify-between text-sm">
 									<span className="text-muted-foreground">Limit</span>
 									<span className="font-medium tabular-nums text-foreground">
-										{formatCurrency(currentBudget.monthlyLimit, currency)}
+										{formatCurrency(budget.monthlyLimit, currency)}
 									</span>
 								</div>
 							</div>
