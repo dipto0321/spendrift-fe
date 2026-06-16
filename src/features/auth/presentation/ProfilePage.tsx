@@ -68,9 +68,7 @@ export function ProfilePage() {
 
 					<div className="mt-6 space-y-3 text-xs text-muted-foreground">
 						<p>Avatar limit: 1 MB</p>
-						<p>
-							Only name, email, and password are stored in this mock profile.
-						</p>
+						<p>Only your name, email, and password are stored.</p>
 					</div>
 				</div>
 

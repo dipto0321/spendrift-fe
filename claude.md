@@ -70,7 +70,11 @@ src/
 - Separate UI from business logic
 - Build incrementally
 - Keep domains cohesive
-- Use mock data before backend integration
+- All features are backed by the real API (`Spendrift API`); each feature talks
+  to it through its `data/repository.ts` (the single swap seam) — never `fetch`
+  directly from pages/hooks. Map snake_case ↔ camelCase and Decimal-string money
+  ↔ `number` at the `data/dto.ts` boundary. Prototype new features behind a
+  repository so the seam stays consistent.
 - Avoid unnecessary complexity
 
 ---

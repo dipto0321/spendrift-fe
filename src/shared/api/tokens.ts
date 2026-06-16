@@ -1,7 +1,7 @@
-// JWT token storage for the real API. Phase 1 keeps tokens in localStorage:
-// simplest thing that works and matches the previous mock-auth pattern. The
-// trade-off is they are not readable during SSR and are exposed to XSS; the API
-// integration plan revisits an httpOnly-cookie strategy in the final phase.
+// JWT token storage for the real API. Tokens live in localStorage: the simplest
+// thing that works. The trade-off is they are not readable during SSR (so the
+// WorkspaceGate enforces auth on the client) and are exposed to XSS. Moving to
+// an httpOnly-cookie strategy is deferred until the backend supports it.
 
 const ACCESS_KEY = "spendrift.auth.access-token";
 const REFRESH_KEY = "spendrift.auth.refresh-token";
