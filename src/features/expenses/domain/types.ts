@@ -45,9 +45,12 @@ export type Category = {
 // trackerId until the repository stamps it on first access.
 export type CategorySeed = Omit<Category, "trackerId">;
 
+// Either bound may be omitted to express an open-ended range ("from X onward"
+// or "up to Y"). An absent bound means unbounded on that side — this replaces
+// the old "9999-12-31"/"1970-01-01" sentinels.
 export type DateRange = {
-	start: string;
-	end: string;
+	start?: string;
+	end?: string;
 };
 
 export type ExpenseFilter = {
