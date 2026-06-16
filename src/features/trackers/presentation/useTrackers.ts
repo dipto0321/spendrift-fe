@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useAuthSnapshot } from "@/features/auth/data/repository";
 import { trackerKeys } from "../data/queryKeys";
 import { trackerRepository } from "../data/repository";
 
@@ -7,9 +8,13 @@ import { trackerRepository } from "../data/repository";
 // can still pass a per-call `onSuccess` for navigation or UI side effects.
 
 export function useTrackers() {
+	// /trackers requires auth; the TrackerProvider also wraps the sign-in/up
+	// pages, so only fetch once authenticated to avoid a guaranteed 401.
+	const { isAuthenticated } = useAuthSnapshot();
 	return useQuery({
 		queryKey: trackerKeys.all,
 		queryFn: () => trackerRepository.getAll(),
+		enabled: isAuthenticated,
 	});
 }
 
