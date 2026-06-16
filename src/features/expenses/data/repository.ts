@@ -93,7 +93,7 @@ export const categoryRepository: CategoryRepository = {
 
 	async delete(trackerId, id) {
 		// The API refuses to delete a category that still has expenses, so move
-		// them to "Uncategorized" first (mirrors the previous mock behavior).
+		// them to "Uncategorized" first.
 		const categories = await apiFetch<CategoryResponseDto[]>(
 			categoriesPath(trackerId),
 		);

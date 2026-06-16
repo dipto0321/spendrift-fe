@@ -62,9 +62,9 @@ export function SignUpPage() {
 	const signUpMutation = useMutation({
 		mutationFn: authRepository.signUp,
 		onSuccess: async () => {
-			// signUp wipes mock data for the fresh account; drop any cached
-			// trackers/expenses so the workspace gate re-reads the empty state
-			// and routes the new user into onboarding.
+			// Drop any cached queries from a previous session so the new account
+			// starts from a clean slate and the workspace gate routes it into
+			// onboarding instead of flashing the old user's trackers.
 			queryClient.clear();
 			await navigate({ to: "/" });
 		},
