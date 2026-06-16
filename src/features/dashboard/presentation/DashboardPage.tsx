@@ -16,7 +16,7 @@ import { useTracker } from "@/features/trackers/presentation/TrackerContext";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { StatCard } from "@/shared/ui/StatCard";
 import { formatCurrency, formatDate } from "@/shared/utils/format";
-import { useDashboard } from "../presentation/useDashboard";
+import { useDashboard } from "./useDashboard";
 
 const miniChartConfig = {
 	total: {
