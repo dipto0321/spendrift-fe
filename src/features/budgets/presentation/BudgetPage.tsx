@@ -48,6 +48,13 @@ function BudgetPage() {
 		}
 	}
 
+	// Opening the form for an existing current-month budget must edit it, not
+	// create a second one (only one budget per tracker per month is allowed).
+	function handleOpenForm() {
+		if (currentBudget) setEditingBudget(currentBudget);
+		setShowForm(true);
+	}
+
 	function handleCancel() {
 		setShowForm(false);
 		setEditingBudget(null);
@@ -79,7 +86,7 @@ function BudgetPage() {
 			<div className="space-y-6">
 				{!showForm && !editingBudget && (
 					<div className="flex justify-end">
-						<Button type="button" onClick={() => setShowForm(true)}>
+						<Button type="button" onClick={handleOpenForm}>
 							{currentBudget ? "Edit Budget" : "Create Budget"}
 						</Button>
 					</div>
