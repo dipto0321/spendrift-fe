@@ -1,6 +1,5 @@
 import { useSyncExternalStore } from "react";
 import { resetBudgetsMockData } from "@/features/budgets/data/repository";
-import { resetExpensesMockData } from "@/features/expenses/data/repository";
 import { ApiError, apiFetch, setOnAuthExpired } from "@/shared/api/client";
 import {
 	clearTokens,
@@ -89,9 +88,8 @@ export const authRepository = {
 		});
 		setTokens(tokens.access_token, tokens.refresh_token);
 		cachedUser = await fetchCurrentUser();
-		// Trackers are now server-scoped per user. Expenses/budgets are still mock
-		// until later phases, so clear them so a fresh account onboards clean.
-		resetExpensesMockData();
+		// Trackers/expenses/categories are server-scoped per user now. Budgets are
+		// still mock until Phase 4, so clear them so a fresh account onboards clean.
 		resetBudgetsMockData();
 		notify();
 		return cachedUser;

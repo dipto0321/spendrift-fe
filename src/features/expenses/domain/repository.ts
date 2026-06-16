@@ -32,9 +32,5 @@ export interface CategoryRepository {
 		id: string,
 		patch: { name?: string; color?: CategoryColor },
 	): Promise<Category | null>;
-	delete(
-		trackerId: string,
-		id: string,
-		fallbackCategoryId: string,
-	): Promise<void>;
+	delete(trackerId: string, id: string): Promise<void>;
 }

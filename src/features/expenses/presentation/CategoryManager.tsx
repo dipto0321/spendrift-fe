@@ -42,7 +42,7 @@ export function CategoryManager({
 	const [newName, setNewName] = useState("");
 	const [newColor, setNewColor] = useState<CategoryColor>("#3B82F6");
 
-	const userCategories = categories.filter((c) => c.id !== "uncategorized");
+	const userCategories = categories.filter((c) => c.name !== "Uncategorized");
 
 	function startEdit(category: Category) {
 		setEditingId(category.id);

@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { UNCATEGORIZED_ID } from "../data/mock-data";
-import { categoryKeys } from "../data/queryKeys";
+import { categoryKeys, expenseKeys } from "../data/queryKeys";
 import { categoryRepository } from "../data/repository";
 import type { CategoryColor } from "../domain/types";
 
@@ -56,10 +55,14 @@ export function useDeleteCategory(trackerId: string | undefined) {
 	const queryClient = useQueryClient();
 	return useMutation({
 		mutationFn: (id: string) =>
-			categoryRepository.delete(trackerId as string, id, UNCATEGORIZED_ID),
+			categoryRepository.delete(trackerId as string, id),
 		onSuccess: () => {
 			queryClient.invalidateQueries({
 				queryKey: categoryKeys.all(trackerId as string),
+			});
+			// Deleting a category reassigns its expenses to Uncategorized.
+			queryClient.invalidateQueries({
+				queryKey: expenseKeys.all(trackerId as string),
 			});
 			toast.success("Category deleted");
 		},
