@@ -18,6 +18,11 @@ import {
 	CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { Tracker } from "../domain/types";
 
 type TrackerManagerProps = {
@@ -165,14 +170,19 @@ export function TrackerManager({
 											Use
 										</Button>
 									) : null}
-									<button
-										type="button"
-										onClick={() => startEdit(tracker)}
-										className="shrink-0 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-										aria-label={`Edit ${tracker.name}`}
-									>
-										<Pencil className="h-3.5 w-3.5" />
-									</button>
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<button
+												type="button"
+												onClick={() => startEdit(tracker)}
+												className="shrink-0 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+												aria-label={`Edit ${tracker.name}`}
+											>
+												<Pencil className="h-3.5 w-3.5" />
+											</button>
+										</TooltipTrigger>
+										<TooltipContent>Edit tracker</TooltipContent>
+									</Tooltip>
 									<AlertDialog>
 										<AlertDialogTrigger asChild>
 											<button

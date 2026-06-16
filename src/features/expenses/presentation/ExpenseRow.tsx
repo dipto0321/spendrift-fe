@@ -12,6 +12,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { TableCell, TableRow } from "@/components/ui/table";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { formatCurrency, formatDateShort } from "@/shared/utils/format";
 import { formatExpenseType } from "../domain/services";
 import type { Category, Expense } from "../domain/types";
@@ -66,16 +71,21 @@ export function ExpenseRow({
 			</TableCell>
 			<TableCell className="px-4 py-3 text-right">
 				<AlertDialog>
-					<AlertDialogTrigger asChild>
-						<button
-							type="button"
-							onClick={(e) => e.stopPropagation()}
-							className="opacity-0 group-hover:opacity-100 transition-opacity rounded-lg p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-							aria-label={`Delete expense: ${expense.description || categoryName}`}
-						>
-							<Trash2 className="h-4 w-4" />
-						</button>
-					</AlertDialogTrigger>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<AlertDialogTrigger asChild>
+								<button
+									type="button"
+									onClick={(e) => e.stopPropagation()}
+									className="opacity-0 group-hover:opacity-100 transition-opacity rounded-lg p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+									aria-label={`Delete expense: ${expense.description || categoryName}`}
+								>
+									<Trash2 className="h-4 w-4" />
+								</button>
+							</AlertDialogTrigger>
+						</TooltipTrigger>
+						<TooltipContent>Delete expense</TooltipContent>
+					</Tooltip>
 					<AlertDialogContent onClick={(e) => e.stopPropagation()}>
 						<AlertDialogHeader>
 							<AlertDialogTitle>Delete this expense?</AlertDialogTitle>

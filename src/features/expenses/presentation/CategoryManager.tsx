@@ -18,6 +18,11 @@ import {
 	CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { Category, CategoryColor } from "../domain/types";
 import { CategoryColorPicker } from "./CategoryColorPicker";
 
@@ -133,24 +138,34 @@ export function CategoryManager({
 									<span className="flex-1 truncate text-sm text-foreground">
 										{category.name}
 									</span>
-									<button
-										type="button"
-										onClick={() => startEdit(category)}
-										className="shrink-0 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-										aria-label={`Edit ${category.name}`}
-									>
-										<Pencil className="h-3.5 w-3.5" />
-									</button>
-									<AlertDialog>
-										<AlertDialogTrigger asChild>
+									<Tooltip>
+										<TooltipTrigger asChild>
 											<button
 												type="button"
-												className="shrink-0 rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-												aria-label={`Delete ${category.name}`}
+												onClick={() => startEdit(category)}
+												className="shrink-0 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+												aria-label={`Edit ${category.name}`}
 											>
-												<Trash2 className="h-3.5 w-3.5" />
+												<Pencil className="h-3.5 w-3.5" />
 											</button>
-										</AlertDialogTrigger>
+										</TooltipTrigger>
+										<TooltipContent>Edit category</TooltipContent>
+									</Tooltip>
+									<AlertDialog>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<AlertDialogTrigger asChild>
+													<button
+														type="button"
+														className="shrink-0 rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+														aria-label={`Delete ${category.name}`}
+													>
+														<Trash2 className="h-3.5 w-3.5" />
+													</button>
+												</AlertDialogTrigger>
+											</TooltipTrigger>
+											<TooltipContent>Delete category</TooltipContent>
+										</Tooltip>
 										<AlertDialogContent>
 											<AlertDialogHeader>
 												<AlertDialogTitle>

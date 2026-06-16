@@ -11,6 +11,7 @@ import {
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { useEffect, useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import {
 	authRepository,
 	useAuthSnapshot,
@@ -95,23 +96,25 @@ function RootDocument({ children }: Readonly<{ children: React.ReactNode }>) {
 			</head>
 			<body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-primary/20">
 				<TanStackQueryProvider>
-					<TrackerProvider>
-						<WorkspaceGate>{children}</WorkspaceGate>
-						{import.meta.env.DEV ? (
-							<TanStackDevtools
-								config={{
-									position: "bottom-right",
-								}}
-								plugins={[
-									{
-										name: "Tanstack Router",
-										render: <TanStackRouterDevtoolsPanel />,
-									},
-									TanStackQueryDevtools,
-								]}
-							/>
-						) : null}
-					</TrackerProvider>
+					<TooltipProvider delayDuration={300}>
+						<TrackerProvider>
+							<WorkspaceGate>{children}</WorkspaceGate>
+							{import.meta.env.DEV ? (
+								<TanStackDevtools
+									config={{
+										position: "bottom-right",
+									}}
+									plugins={[
+										{
+											name: "Tanstack Router",
+											render: <TanStackRouterDevtoolsPanel />,
+										},
+										TanStackQueryDevtools,
+									]}
+								/>
+							) : null}
+						</TrackerProvider>
+					</TooltipProvider>
 				</TanStackQueryProvider>
 				<Toaster position="top-right" richColors />
 				<Scripts />
