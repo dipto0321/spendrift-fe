@@ -39,7 +39,8 @@ export function BudgetForm({
 			name: initialData?.name ?? "",
 			monthlyLimit: initialData?.monthlyLimit?.toString() ?? "",
 			savingsTarget: initialData?.savingsTarget?.toString() ?? "",
-			month: initialData?.month ?? getCurrentMonth(),
+			// Budgets are always for the current month (the picker was removed).
+			month: getCurrentMonth(),
 		},
 	});
 
@@ -123,20 +124,6 @@ export function BudgetForm({
 						)}
 					/>
 				</div>
-
-				<FormField
-					control={form.control}
-					name="month"
-					render={({ field }) => (
-						<FormItem>
-							<FormLabel>Month {requiredMark}</FormLabel>
-							<FormControl>
-								<Input type="month" {...field} />
-							</FormControl>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
 
 				<div className="flex justify-end gap-2 pt-2">
 					<Button

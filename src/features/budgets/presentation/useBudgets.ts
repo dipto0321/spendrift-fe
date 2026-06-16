@@ -14,6 +14,20 @@ export function useBudgets(trackerId: string | undefined) {
 	});
 }
 
+// Server-computed status (spent/remaining/health) for one budget. Only runs
+// when both ids are known (i.e. a budget exists for the period).
+export function useBudgetStatus(
+	trackerId: string | undefined,
+	budgetId: string | undefined,
+) {
+	return useQuery({
+		queryKey: budgetKeys.status(trackerId as string, budgetId as string),
+		queryFn: () =>
+			budgetRepository.getStatus(trackerId as string, budgetId as string),
+		enabled: Boolean(trackerId) && Boolean(budgetId),
+	});
+}
+
 export function useCreateBudget(trackerId: string | undefined) {
 	const queryClient = useQueryClient();
 	return useMutation({

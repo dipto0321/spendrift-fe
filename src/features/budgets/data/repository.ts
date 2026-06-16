@@ -1,80 +1,62 @@
+import { apiFetch } from "@/shared/api/client";
 import type { BudgetRepository } from "../domain/repository";
-import type {
-	Budget,
-	BudgetCreateInput,
-	BudgetUpdateInput,
-} from "../domain/types";
+import {
+	type BudgetResponseDto,
+	type BudgetStatusResponseDto,
+	mapBudget,
+	mapBudgetStatus,
+	toBudgetBody,
+} from "./dto";
 
-const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
-
-// Budgets are scoped per tracker; a tracker starts with none.
-const budgetsByTracker = new Map<string, Budget[]>();
-
-function getBudgets(trackerId: string): Budget[] {
-	let list = budgetsByTracker.get(trackerId);
-	if (!list) {
-		list = [];
-		budgetsByTracker.set(trackerId, list);
-	}
-	return list;
-}
-
-export function resetBudgetsMockData() {
-	budgetsByTracker.clear();
+function budgetsPath(trackerId: string) {
+	return `/trackers/${trackerId}/budgets`;
 }
 
 export const budgetRepository: BudgetRepository = {
-	async getAll(trackerId: string): Promise<Budget[]> {
-		await delay(200);
-		return getBudgets(trackerId).map((b) => ({ ...b }));
+	async getAll(trackerId) {
+		const dtos = await apiFetch<BudgetResponseDto[]>(budgetsPath(trackerId));
+		return dtos.map(mapBudget);
 	},
 
-	async getByMonth(trackerId: string, month: string): Promise<Budget | null> {
-		await delay(150);
-		const found = getBudgets(trackerId).find((b) => b.month === month);
-		return found ? { ...found } : null;
+	async getByMonth(trackerId, month) {
+		const budgets = await this.getAll(trackerId);
+		return budgets.find((b) => b.month === month) ?? null;
 	},
 
-	async getById(trackerId: string, id: string): Promise<Budget | null> {
-		await delay(100);
-		const found = getBudgets(trackerId).find((b) => b.id === id);
-		return found ? { ...found } : null;
-	},
-
-	async create(trackerId: string, input: BudgetCreateInput): Promise<Budget> {
-		await delay(250);
-		const budget: Budget = {
-			...input,
-			id: crypto.randomUUID(),
-			trackerId,
-			createdAt: new Date().toISOString().split("T")[0],
-		};
-		budgetsByTracker.set(trackerId, [...getBudgets(trackerId), budget]);
-		return { ...budget };
-	},
-
-	async update(
-		trackerId: string,
-		id: string,
-		patch: BudgetUpdateInput,
-	): Promise<Budget | null> {
-		await delay(250);
-		const budgets = getBudgets(trackerId);
-		const idx = budgets.findIndex((b) => b.id === id);
-		if (idx === -1) return null;
-		const updated: Budget = { ...budgets[idx], ...patch };
-		budgetsByTracker.set(
-			trackerId,
-			budgets.map((b) => (b.id === id ? updated : b)),
+	async getById(trackerId, id) {
+		const dto = await apiFetch<BudgetResponseDto>(
+			`${budgetsPath(trackerId)}/${id}`,
 		);
-		return { ...updated };
+		return mapBudget(dto);
 	},
 
-	async delete(trackerId: string, id: string): Promise<boolean> {
-		await delay(200);
-		const budgets = getBudgets(trackerId);
-		const next = budgets.filter((b) => b.id !== id);
-		budgetsByTracker.set(trackerId, next);
-		return next.length < budgets.length;
+	async getStatus(trackerId, id) {
+		const dto = await apiFetch<BudgetStatusResponseDto>(
+			`${budgetsPath(trackerId)}/${id}/status`,
+		);
+		return mapBudgetStatus(dto);
+	},
+
+	async create(trackerId, input) {
+		const dto = await apiFetch<BudgetResponseDto>(budgetsPath(trackerId), {
+			method: "POST",
+			body: toBudgetBody(input),
+		});
+		return mapBudget(dto);
+	},
+
+	async update(trackerId, id, patch) {
+		const dto = await apiFetch<BudgetResponseDto>(
+			`${budgetsPath(trackerId)}/${id}`,
+			{ method: "PATCH", body: toBudgetBody(patch) },
+		);
+		return mapBudget(dto);
+	},
+
+	async delete(trackerId, id) {
+		await apiFetch<void>(`${budgetsPath(trackerId)}/${id}`, {
+			method: "DELETE",
+		});
+		return true;
 	},
 };
