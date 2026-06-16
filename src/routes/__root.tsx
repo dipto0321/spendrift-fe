@@ -21,7 +21,7 @@ import {
 } from "@/features/trackers/presentation/TrackerContext";
 import { TrackerOnboarding } from "@/features/trackers/presentation/TrackerOnboarding";
 import { getLocale } from "@/paraglide/runtime";
-import AppSidebar from "../components/AppSidebar";
+import AppSidebar from "@/shared/ui/AppSidebar";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import TanStackQueryProvider from "../integrations/tanstack-query/root-provider";
 import appCss from "../styles.css?url";
