@@ -1,7 +1,6 @@
 import { useSyncExternalStore } from "react";
 import { resetBudgetsMockData } from "@/features/budgets/data/repository";
 import { resetExpensesMockData } from "@/features/expenses/data/repository";
-import { resetTrackerMockData } from "@/features/trackers/data/repository";
 import { ApiError, apiFetch, setOnAuthExpired } from "@/shared/api/client";
 import {
 	clearTokens,
@@ -90,9 +89,8 @@ export const authRepository = {
 		});
 		setTokens(tokens.access_token, tokens.refresh_token);
 		cachedUser = await fetchCurrentUser();
-		// A fresh account starts with no data. The tracker/expense/budget repos
-		// are still mock until later phases, so clear them for a clean onboarding.
-		resetTrackerMockData();
+		// Trackers are now server-scoped per user. Expenses/budgets are still mock
+		// until later phases, so clear them so a fresh account onboards clean.
 		resetExpensesMockData();
 		resetBudgetsMockData();
 		notify();
