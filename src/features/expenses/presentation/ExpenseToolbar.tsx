@@ -99,8 +99,8 @@ export function ExpenseToolbar({
 						onChange={(e) =>
 							updateFilter({
 								dateRange: {
-									start: e.target.value,
-									end: filter.dateRange?.end ?? "9999-12-31",
+									start: e.target.value || undefined,
+									end: filter.dateRange?.end,
 								},
 							})
 						}
@@ -113,8 +113,8 @@ export function ExpenseToolbar({
 						onChange={(e) =>
 							updateFilter({
 								dateRange: {
-									start: filter.dateRange?.start ?? "1970-01-01",
-									end: e.target.value,
+									start: filter.dateRange?.start,
+									end: e.target.value || undefined,
 								},
 							})
 						}

@@ -20,12 +20,11 @@ export function filterExpenses(
 }
 
 function matchesDateRange(expense: Expense, filter: ExpenseFilter): boolean {
-	if (!filter.dateRange) return true;
-
-	return (
-		expense.date >= filter.dateRange.start &&
-		expense.date <= filter.dateRange.end
-	);
+	const range = filter.dateRange;
+	if (!range) return true;
+	if (range.start && expense.date < range.start) return false;
+	if (range.end && expense.date > range.end) return false;
+	return true;
 }
 
 function matchesCategoryFilter(
@@ -101,12 +100,8 @@ export function getThisMonthRange(referenceDate = new Date()): DateRange {
 }
 
 export function isSameDateRange(left?: DateRange, right?: DateRange): boolean {
-	return (
-		Boolean(left) &&
-		Boolean(right) &&
-		left.start === right.start &&
-		left.end === right.end
-	);
+	if (!left || !right) return false;
+	return left.start === right.start && left.end === right.end;
 }
 
 export function calculateNeedsWantsSplit(expenses: Expense[]): NeedsWantsSplit {
@@ -147,7 +142,9 @@ export function buildCategoryMap(
 }
 
 export function isWithinDateRange(date: string, range: DateRange): boolean {
-	return date >= range.start && date <= range.end;
+	if (range.start && date < range.start) return false;
+	if (range.end && date > range.end) return false;
+	return true;
 }
 
 export function getMonthRange(year: number, month: number): DateRange {
