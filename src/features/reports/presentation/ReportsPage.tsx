@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { DateRange as PickerDateRange } from "react-day-picker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,25 +13,22 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { calculateNeedsWantsSplit } from "@/features/expenses/domain/services";
-import { useCategories } from "@/features/expenses/presentation/useCategories";
-import { useExpenses } from "@/features/expenses/presentation/useExpenses";
 import { useTracker } from "@/features/trackers/presentation/TrackerContext";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { StatCard } from "@/shared/ui/StatCard";
 import { formatCurrency } from "@/shared/utils/format";
-import {
-	computeAnalytics,
-	computeCategoryBreakdown,
-	groupByMonth,
-	groupByWeek,
-	groupByYear,
-	multiYearComparison,
-} from "../domain/services";
-import type { PeriodData, ReportPeriod } from "../domain/types";
+import type { ReportRange } from "../data/queryKeys";
+import type { ReportPeriod } from "../domain/types";
 import { CategoryBreakdownChart } from "./CategoryBreakdownChart";
 import { NeedsVsWantsPie } from "./NeedsVsWantsPie";
 import { SpendingChart } from "./SpendingChart";
+import {
+	useCategoryBreakdown,
+	useReportNeedsWants,
+	useReportSummary,
+	useSpending,
+	useYearComparison,
+} from "./useReports";
 import { YearComparisonChart } from "./YearComparisonChart";
 
 function formatCalendarDate(date: Date) {
@@ -51,26 +48,16 @@ function getRangeLabel(range: PickerDateRange | undefined) {
 	return `${fromLabel} - ${toLabel}`;
 }
 
-function isExpenseWithinRange(
-	expenseDate: string,
-	range: PickerDateRange | undefined,
-) {
-	if (!range?.from && !range?.to) return true;
-
-	const expenseTime = new Date(`${expenseDate}T12:00:00`).getTime();
-
-	if (range.from) {
-		const startTime = new Date(range.from).setHours(0, 0, 0, 0);
-		if (expenseTime < startTime) return false;
-	}
-
-	if (range.to) {
-		const endTime = new Date(range.to).setHours(23, 59, 59, 999);
-		if (expenseTime > endTime) return false;
-	}
-
-	return true;
+// Local `YYYY-MM-DD` (avoids the UTC day-shift of `toISOString`). Matches the
+// date format the API expects for `start_date` / `end_date`.
+function toApiDate(date: Date): string {
+	const year = date.getFullYear();
+	const month = String(date.getMonth() + 1).padStart(2, "0");
+	const day = String(date.getDate()).padStart(2, "0");
+	return `${year}-${month}-${day}`;
 }
+
+const EMPTY_ANALYTICS = { total: 0, min: 0, max: 0, avg: 0, count: 0 };
 
 function ReportsPage() {
 	const { activeTracker } = useTracker();
@@ -82,34 +69,26 @@ function ReportsPage() {
 	const [customRangeSelectionStarted, setCustomRangeSelectionStarted] =
 		useState(false);
 
-	const { data: expenses = [], isLoading } = useExpenses(trackerId);
-	const { data: categories = [] } = useCategories(trackerId);
-
-	const filteredExpenses = expenses.filter((expense) =>
-		isExpenseWithinRange(expense.date, customRange),
+	const range = useMemo<ReportRange>(
+		() => ({
+			startDate: customRange?.from ? toApiDate(customRange.from) : undefined,
+			endDate: customRange?.to ? toApiDate(customRange.to) : undefined,
+		}),
+		[customRange?.from, customRange?.to],
 	);
 
-	const analytics = computeAnalytics(filteredExpenses);
-
-	let periodData: PeriodData[];
-	switch (period) {
-		case "weekly":
-			periodData = groupByWeek(filteredExpenses);
-			break;
-		case "monthly":
-			periodData = groupByMonth(filteredExpenses);
-			break;
-		case "yearly":
-			periodData = groupByYear(filteredExpenses);
-			break;
-	}
-
-	const yearComparison = multiYearComparison(filteredExpenses);
-	const categoryBreakdown = computeCategoryBreakdown(
-		filteredExpenses,
-		categories,
+	const { data: analytics = EMPTY_ANALYTICS, isLoading } = useReportSummary(
+		trackerId,
+		range,
 	);
-	const needsWantsSplit = calculateNeedsWantsSplit(filteredExpenses);
+	const { data: periodData = [] } = useSpending(trackerId, period, range);
+	const { data: categoryBreakdown = [] } = useCategoryBreakdown(
+		trackerId,
+		range,
+	);
+	const { data: needsWantsSplit } = useReportNeedsWants(trackerId, range);
+	const { data: yearComparison = [] } = useYearComparison(trackerId);
+
 	const rangeLabel = getRangeLabel(customRange);
 	const isCustomRangeActive = customRangeOpen || Boolean(customRange);
 
@@ -309,23 +288,23 @@ function ReportsPage() {
 						Needs vs Wants
 					</h2>
 					<NeedsVsWantsPie
-						needs={needsWantsSplit.needs}
-						wants={needsWantsSplit.wants}
-						needsPercentage={needsWantsSplit.percentage.needs}
-						wantsPercentage={needsWantsSplit.percentage.wants}
+						needs={needsWantsSplit?.needs ?? 0}
+						wants={needsWantsSplit?.wants ?? 0}
+						needsPercentage={needsWantsSplit?.percentage.needs ?? 0}
+						wantsPercentage={needsWantsSplit?.percentage.wants ?? 0}
 						currency={currency}
 					/>
 					<div className="mt-4 grid grid-cols-2 gap-4">
 						<div>
 							<p className="m-0 text-xs text-muted-foreground">Needs</p>
 							<p className="m-0 mt-1 text-lg font-semibold tabular-nums text-foreground">
-								{formatCurrency(needsWantsSplit.needs, currency)}
+								{formatCurrency(needsWantsSplit?.needs ?? 0, currency)}
 							</p>
 						</div>
 						<div>
 							<p className="m-0 text-xs text-muted-foreground">Wants</p>
 							<p className="m-0 mt-1 text-lg font-semibold tabular-nums text-foreground">
-								{formatCurrency(needsWantsSplit.wants, currency)}
+								{formatCurrency(needsWantsSplit?.wants ?? 0, currency)}
 							</p>
 						</div>
 					</div>
