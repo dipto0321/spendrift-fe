@@ -139,34 +139,56 @@ export function ProfilePage() {
 						<h2 className="m-0 text-base font-semibold text-foreground">
 							Profile picture
 						</h2>
-						<div className="mt-4 grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-							<div className="grid gap-2">
-								<Label htmlFor="avatar-image">Avatar image</Label>
-								<Input
-									id="avatar-image"
-									type="file"
-									accept="image/*"
-									onChange={async (event) => {
-										setAvatarError(null);
-										const file = event.currentTarget.files?.[0];
-										if (!file) return;
-										if (file.size > MAX_AVATAR_SIZE) {
-											setAvatarError("Avatar must be 1 MB or smaller.");
-											event.currentTarget.value = "";
-											return;
-										}
-										await updateAvatarMutation.mutateAsync(file);
-										event.currentTarget.value = "";
-									}}
-								/>
-							</div>
-							<Button
-								type="button"
-								variant="outline"
-								onClick={async () => updateAvatarMutation.mutateAsync(null)}
-							>
-								Remove image
-							</Button>
+						<div className="mt-4">
+							{user.avatarDataUrl ? (
+								<div className="flex items-center gap-4">
+									<img
+										src={user.avatarDataUrl}
+										alt="Current avatar"
+										className="h-16 w-16 rounded-full object-cover ring-1 ring-border/60"
+									/>
+									<div className="flex flex-col gap-2">
+										<p className="text-sm text-muted-foreground">
+											Remove the current image to upload a new one.
+										</p>
+										<Button
+											type="button"
+											variant="outline"
+											disabled={updateAvatarMutation.isPending}
+											onClick={async () => {
+												setAvatarError(null);
+												await updateAvatarMutation.mutateAsync(null);
+											}}
+										>
+											{updateAvatarMutation.isPending ? "Removing…" : "Remove image"}
+										</Button>
+									</div>
+								</div>
+							) : (
+								<div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+									<div className="grid gap-2">
+										<Label htmlFor="avatar-image">Avatar image</Label>
+										<Input
+											id="avatar-image"
+											type="file"
+											accept="image/*"
+											disabled={updateAvatarMutation.isPending}
+											onChange={async (event) => {
+												setAvatarError(null);
+												const file = event.currentTarget.files?.[0];
+												if (!file) return;
+												if (file.size > MAX_AVATAR_SIZE) {
+													setAvatarError("Avatar must be 1 MB or smaller.");
+													event.currentTarget.value = "";
+													return;
+												}
+												await updateAvatarMutation.mutateAsync(file);
+												event.currentTarget.value = "";
+											}}
+										/>
+									</div>
+								</div>
+							)}
 						</div>
 						{avatarError ? (
 							<p className="mt-3 text-sm text-destructive">{avatarError}</p>
