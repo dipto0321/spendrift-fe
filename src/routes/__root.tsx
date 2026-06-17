@@ -7,7 +7,7 @@ import {
 	useNavigate,
 	useRouterState,
 } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import {
@@ -84,6 +84,15 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 	shellComponent: RootDocument,
 });
 
+// Completely bypass loading the Devtools Panel in production
+const DevtoolsPanel = import.meta.env.PROD
+	? () => null
+	: React.lazy(() =>
+			import("@/shared/ui/DevtoolsPanel").then((m) => ({
+				default: m.DevtoolsPanel,
+			})),
+		);
+
 function RootDocument({ children }: Readonly<{ children: React.ReactNode }>) {
 	return (
 		<html lang={getLocale()} suppressHydrationWarning>
@@ -91,11 +100,14 @@ function RootDocument({ children }: Readonly<{ children: React.ReactNode }>) {
 				<script src="/theme-init.js" />
 				<HeadContent />
 			</head>
-			<body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-primary/20">
+			<body className="font-sans antialiased wrap-anywhere selection:bg-primary/20">
 				<TanStackQueryProvider>
 					<TooltipProvider delayDuration={300}>
 						<TrackerProvider>
 							<WorkspaceGate>{children}</WorkspaceGate>
+							<React.Suspense fallback={null}>
+								<DevtoolsPanel />
+							</React.Suspense>
 						</TrackerProvider>
 					</TooltipProvider>
 				</TanStackQueryProvider>
