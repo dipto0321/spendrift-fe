@@ -1,4 +1,3 @@
-import { TanStackDevtools } from "@tanstack/react-devtools";
 import type { QueryClient } from "@tanstack/react-query";
 import {
 	createRootRouteWithContext,
@@ -8,7 +7,6 @@ import {
 	useNavigate,
 	useRouterState,
 } from "@tanstack/react-router";
-import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { useEffect, useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -23,7 +21,6 @@ import {
 import { TrackerOnboarding } from "@/features/trackers/presentation/TrackerOnboarding";
 import { getLocale } from "@/paraglide/runtime";
 import AppSidebar from "@/shared/ui/AppSidebar";
-import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import TanStackQueryProvider from "../integrations/tanstack-query/root-provider";
 import appCss from "../styles.css?url";
 
@@ -99,20 +96,6 @@ function RootDocument({ children }: Readonly<{ children: React.ReactNode }>) {
 					<TooltipProvider delayDuration={300}>
 						<TrackerProvider>
 							<WorkspaceGate>{children}</WorkspaceGate>
-							{import.meta.env.DEV ? (
-								<TanStackDevtools
-									config={{
-										position: "bottom-right",
-									}}
-									plugins={[
-										{
-											name: "Tanstack Router",
-											render: <TanStackRouterDevtoolsPanel />,
-										},
-										TanStackQueryDevtools,
-									]}
-								/>
-							) : null}
 						</TrackerProvider>
 					</TooltipProvider>
 				</TanStackQueryProvider>
