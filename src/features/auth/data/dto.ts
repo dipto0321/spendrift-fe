@@ -14,19 +14,19 @@ export type UserResponseDto = {
 	name: string;
 	email: string;
 	is_active: boolean;
+	avatar_url: string | null;
 	created_at: string;
+	updated_at: string;
 };
 
-// The API has no password/avatar/updatedAt; fill domain-only fields with safe
-// defaults so the existing AuthUser-shaped UI keeps working.
 export function mapUser(dto: UserResponseDto): AuthUser {
 	return {
 		id: dto.id,
 		name: dto.name,
 		email: dto.email,
 		password: "",
-		avatarDataUrl: null,
+		avatarDataUrl: dto.avatar_url,
 		createdAt: dto.created_at,
-		updatedAt: dto.created_at,
+		updatedAt: dto.updated_at,
 	};
 }

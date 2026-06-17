@@ -126,17 +126,37 @@ export const authRepository = {
 		return bootstrapPromise;
 	},
 
-	// The API does not yet expose profile/password/avatar updates.
-	async updateProfile(_input: UpdateProfileInput): Promise<AuthUser> {
-		throw new ApiError(501, "Editing your profile isn't available yet.");
+	async updateProfile(input: UpdateProfileInput): Promise<AuthUser> {
+		const dto = await apiFetch<UserResponseDto>("/users/me", {
+			method: "PATCH",
+			body: { name: input.name, email: input.email },
+		});
+		cachedUser = mapUser(dto);
+		notify();
+		return cachedUser;
 	},
 
-	async updatePassword(_input: UpdatePasswordInput): Promise<AuthUser> {
-		throw new ApiError(501, "Changing your password isn't available yet.");
+	async updatePassword(input: UpdatePasswordInput): Promise<AuthUser> {
+		const dto = await apiFetch<UserResponseDto>("/users/me/password", {
+			method: "PATCH",
+			body: {
+				current_password: input.currentPassword,
+				new_password: input.newPassword,
+			},
+		});
+		cachedUser = mapUser(dto);
+		notify();
+		return cachedUser;
 	},
 
-	async updateAvatar(_dataUrl: string | null): Promise<AuthUser> {
-		throw new ApiError(501, "Updating your avatar isn't available yet.");
+	async updateAvatar(dataUrl: string | null): Promise<AuthUser> {
+		const dto = await apiFetch<UserResponseDto>("/users/me/avatar", {
+			method: "PATCH",
+			body: { avatar_url: dataUrl },
+		});
+		cachedUser = mapUser(dto);
+		notify();
+		return cachedUser;
 	},
 };
 
