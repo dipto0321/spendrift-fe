@@ -75,7 +75,12 @@ async function refreshAccessToken(): Promise<boolean> {
 
 function buildHeaders(options: ApiFetchOptions): Headers {
 	const headers = new Headers(options.headers);
-	if (options.body !== undefined && !headers.has("Content-Type")) {
+	// Let the browser set Content-Type for FormData (it must include the boundary).
+	if (
+		options.body !== undefined &&
+		!(options.body instanceof FormData) &&
+		!headers.has("Content-Type")
+	) {
 		headers.set("Content-Type", "application/json");
 	}
 	if (!options.skipAuth) {
@@ -87,10 +92,16 @@ function buildHeaders(options: ApiFetchOptions): Headers {
 
 function rawFetch(path: string, options: ApiFetchOptions): Promise<Response> {
 	const { body, skipAuth: _skipAuth, headers: _headers, ...init } = options;
+	const serializedBody =
+		body === undefined
+			? undefined
+			: body instanceof FormData
+				? body
+				: JSON.stringify(body);
 	return fetch(`${BASE_URL}${path}`, {
 		...init,
 		headers: buildHeaders(options),
-		body: body === undefined ? undefined : JSON.stringify(body),
+		body: serializedBody,
 	});
 }
 

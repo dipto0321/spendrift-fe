@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { ApiError, apiFetch, setOnAuthExpired } from "@/shared/api/client";
+import { apiFetch, setOnAuthExpired } from "@/shared/api/client";
 import {
 	clearTokens,
 	getRefreshToken,
@@ -149,11 +149,20 @@ export const authRepository = {
 		return cachedUser;
 	},
 
-	async updateAvatar(dataUrl: string | null): Promise<AuthUser> {
-		const dto = await apiFetch<UserResponseDto>("/users/me/avatar", {
-			method: "PATCH",
-			body: { avatar_url: dataUrl },
-		});
+	async updateAvatar(file: File | null): Promise<AuthUser> {
+		let dto: UserResponseDto;
+		if (file === null) {
+			dto = await apiFetch<UserResponseDto>("/users/me/avatar", {
+				method: "DELETE",
+			});
+		} else {
+			const form = new FormData();
+			form.append("file", file);
+			dto = await apiFetch<UserResponseDto>("/users/me/avatar", {
+				method: "POST",
+				body: form,
+			});
+		}
 		cachedUser = mapUser(dto);
 		notify();
 		return cachedUser;

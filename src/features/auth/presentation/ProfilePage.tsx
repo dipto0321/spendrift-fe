@@ -155,8 +155,7 @@ export function ProfilePage() {
 											event.currentTarget.value = "";
 											return;
 										}
-										const dataUrl = await readFileAsDataUrl(file);
-										await updateAvatarMutation.mutateAsync(dataUrl);
+										await updateAvatarMutation.mutateAsync(file);
 										event.currentTarget.value = "";
 									}}
 								/>
@@ -266,19 +265,4 @@ export function ProfilePage() {
 			</section>
 		</main>
 	);
-}
-
-function readFileAsDataUrl(file: File): Promise<string> {
-	return new Promise((resolve, reject) => {
-		const reader = new FileReader();
-		reader.onload = () => {
-			if (typeof reader.result === "string") {
-				resolve(reader.result);
-			} else {
-				reject(new Error("Unable to read image file."));
-			}
-		};
-		reader.onerror = () => reject(new Error("Unable to read image file."));
-		reader.readAsDataURL(file);
-	});
 }
