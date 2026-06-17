@@ -142,12 +142,7 @@ export function ProfilePage() {
 						<div className="mt-4">
 							{user.avatarDataUrl ? (
 								<div className="flex items-center gap-4">
-									<img
-										src={user.avatarDataUrl}
-										alt="Current avatar"
-										className="h-16 w-16 rounded-full object-cover ring-1 ring-border/60"
-									/>
-									<div className="flex flex-col gap-2">
+									<div className="flex items-center gap-2">
 										<p className="text-sm text-muted-foreground">
 											Remove the current image to upload a new one.
 										</p>
