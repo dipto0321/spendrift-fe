@@ -199,7 +199,12 @@ The frontend follows a feature-based architecture to keep the codebase scalable 
 * SQLAlchemy
 * Alembic
 
-The backend is being designed using modular architecture principles with future SaaS scalability in mind.
+The backend (a tracker-scoped REST API with JWT auth) is built and **fully
+integrated** — every feature (trackers, expenses, budgets, dashboard, reports)
+is server-backed. The frontend reaches it through one repository seam per
+feature, mapping the API's `snake_case` and Decimal-string money to the domain
+model at the `dto.ts` boundary. It follows modular architecture principles with
+future SaaS scalability in mind.
 
 ---
 

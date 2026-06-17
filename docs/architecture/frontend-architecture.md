@@ -22,12 +22,22 @@ The frontend follows:
 
 # Main Structure
 
-```bash
+```text
 src/
- ├── app/
- ├── features/
- ├── shared/
- └── styles/
+ ├── features/        # dashboard, expenses, budgets, reports, trackers
+ ├── shared/          # api, ui, hooks, utils
+ ├── components/ui/   # ShadCN-generated primitives (CLI-owned)
+ ├── routes/          # TanStack Start file-based routes
+ └── styles.css
+```
+
+Each feature is split into three layers:
+
+```text
+features/<feature>/
+ ├── domain/        # types + pure business logic (services.ts)
+ ├── data/          # repository.ts, dto.ts, queryKeys.ts
+ └── presentation/  # pages + React Query hooks (use*.ts)
 ```
 
 ---
@@ -88,15 +98,18 @@ Responsible for:
 
 # Shared Layer
 
+## shared/api
+
+The API client: `apiFetch` (base URL, auth header, JSON, single-flight
+refresh-on-401, error normalization) and JWT token storage. Every feature
+repository calls through here.
+
+---
+
 ## shared/ui
 
-Reusable UI primitives:
-
-- Button
-- Card
-- Input
-- Modal
-- Badge
+Reusable, app-level UI (composed from the ShadCN primitives in
+`components/ui`): `AppSidebar`, `StatCard`, `ThemeToggle`, `PageHeader`, …
 
 ---
 
@@ -106,38 +119,35 @@ Reusable hooks.
 
 ---
 
-## shared/lib
-
-Utilities and helper libraries.
-
----
-
 ## shared/utils
 
-Pure helper functions.
+Pure helper functions (e.g. currency/date formatting).
 
 ---
 
 # State Management Philosophy
 
-Initially:
+- **Server state** lives in **TanStack Query** — per-feature `use*` hooks own
+  fetching, caching, and invalidation (keyed by `trackerId`).
+- **UI/local state** stays in component `useState`; global app state is kept
+  minimal.
 
-- Local component state
-- Minimal global state
-
-Avoid introducing complex state libraries too early.
+Avoid introducing complex client-state libraries — most "state" here is server
+state, which the query cache already manages.
 
 ---
 
-# Mock Data Strategy
+# Data / API Strategy
 
-Frontend should initially use:
+All features are backed by the real **Spendrift API**. Each feature reaches it
+through its `data/repository.ts` — the single swap seam — with `data/dto.ts`
+mapping `snake_case ↔ camelCase` and Decimal-money strings `↔ number`. Pages and
+hooks never call `fetch` directly. See
+[`docs/patterns/repository-pattern.md`](../patterns/repository-pattern.md).
 
-- mock services
-- local fake data
-- static fixtures
-
-Before backend integration.
+> The project started mock-first (in-memory repositories + fixtures) before the
+> backend existed; that scaffolding has been removed now that every feature is
+> server-backed.
 
 ---
 
