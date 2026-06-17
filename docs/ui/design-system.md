@@ -19,40 +19,38 @@ Inspired by:
 
 # Theme Strategy
 
-Dark theme first.
+**Dark theme first.** Both dark and light variants ship; the default is dark and
+an explicit user choice (stored) wins. We intentionally don't follow
+`prefers-color-scheme` (it reports "light" for no-preference, which would defeat
+dark-first).
 
-Light theme later.
-
----
-
-# Dark Theme Colors
-
-## Background
-
-- Primary: #0B0F14
-- Secondary: #121821
-- Card: #161C24
+Colors are defined as **`oklch` design tokens** in `src/styles.css` (a `:root`
+light block and a `.dark` block), not hardcoded hex. The values below are
+approximate references — `styles.css` is the source of truth.
 
 ---
 
-## Text
+# Palette
 
-- Primary: #E6EDF3
-- Secondary: #9DA7B3
+## Accent / Brand
+
+- **Emerald** — `oklch(~0.68 0.13 162)` (light) / `oklch(~0.78 0.13 162)` (dark),
+  exposed as `--primary`.
 
 ---
 
-## Accent
+## Surfaces (dark)
 
-- Blue: #4F8CFF
+- Background, card, and surface tokens are emerald-tinted neutrals
+  (`--background`, `--card`, `--surface-strong`).
 
 ---
 
 ## Status Colors
 
-- Success: Green
-- Danger: Red
-- Warning: Yellow
+- Success / on-track: Green
+- Danger / over-budget: Red
+- Warning / caution: Yellow
 
 ---
 
@@ -90,7 +88,10 @@ Light theme later.
 
 ---
 
-# Mobile Philosophy
+# Mobile Philosophy (planned)
+
+The current layout is a responsive **sidebar** workspace. A dedicated mobile
+treatment is future work:
 
 - Bottom navigation
 - Stacked layouts
