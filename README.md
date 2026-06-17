@@ -1,246 +1,291 @@
-Welcome to your new TanStack Start app! 
+# 💰 Spendrift
 
-# Getting Started
+A modern, minimal personal finance tracking application built with a focus on clarity, scalability, and AI-assisted development.
 
-To run this application:
+---
+
+## 🚀 Overview
+
+Spendrift helps users track:
+
+- Daily expenses
+- Monthly budgets
+- Savings goals
+- Financial reports (weekly / monthly / yearly)
+- Multi-year spending comparisons
+- Needs vs Wants classification
+
+The app is designed as a **tracker-based system**, where each tracker represents an independent financial workspace (e.g., Bangladesh Tracker, Europe Tracker).
+
+---
+
+## 🎯 Project Goals
+
+- Build a clean and intuitive finance tracking experience
+- Maintain strong UX with minimal cognitive load
+- Enable multi-currency tracking via separate trackers
+- Learn modern frontend architecture using real-world patterns
+- Experiment with AI-assisted engineering workflows
+
+---
+
+## 🧱 Tech Stack
+
+### Frontend
+
+- TanStack Start
+- React
+- TypeScript
+- TailwindCSS
+- ShadCN UI
+
+---
+
+## 🏗️ Architecture
+
+Spendrift follows a **Domain-Driven, Feature-Based Architecture (DDD)**.
+
+Each domain is isolated and self-contained:
+
+```
+src/features/
+ ├── dashboard/
+ ├── expenses/
+ ├── budgets/
+ ├── reports/
+ └── trackers/
+```
+
+### Key Principles
+
+- Feature-based structure
+- Separation of UI and business logic
+- Mock-first development (before backend integration)
+- Incremental feature building
+- Maintainable and scalable design
+
+---
+
+## 🌍 Tracker System
+
+Each tracker represents an independent financial context:
+
+Example:
+
+- 🇧🇩 Bangladesh Tracker (BDT)
+- 🇪🇺 Europe Tracker (EUR)
+
+Each tracker contains:
+
+- Expenses
+- Budgets
+- Reports
+- Future investments (planned)
+- Loan tracking (planned)
+
+---
+
+## 💸 Core Features
+
+### Expense Tracking
+
+- Add / edit / delete expenses
+- Tag as:
+  - Needs
+  - Wants
+- Filter and group expenses
+- View expense history
+
+---
+
+### Budget Management
+
+- Monthly budget setup
+- Savings target configuration
+- Remaining balance tracking
+- Budget health indicator
+
+---
+
+### Financial Reports
+
+- Weekly reports
+- Monthly reports
+- Yearly reports
+- Multi-year comparison
+- Analytics:
+  - Total spending
+  - Min / Max / Average expense
+
+---
+
+## 📊 UI / UX Philosophy
+
+Spendrift is designed to feel:
+
+- Minimal
+- Calm
+- Modern
+- Data-focused
+
+Inspired by:
+
+- Linear
+- Notion
+- Modern fintech dashboards
+
+---
+
+### Design Principles
+
+- Dark theme first
+- High readability
+- Clear hierarchy
+- Meaningful colors (not decorative)
+- Reduced visual noise
+
+---
+
+## 🌑 Theme System
+
+### Dark Theme (Primary)
+
+- Background: `#0B0F14`
+- Surface: `#121821`
+- Card: `#161C24`
+- Text: `#E6EDF3`
+- Secondary text: `#9DA7B3`
+- Accent: `#4F8CFF`
+
+---
+
+## 📈 Charts
+
+All charts are built using **ShadCN Chart components**.
+
+Installed via:
 
 ```bash
-pnpm install
-pnpm dev
+pnpm dlx shadcn@latest add chart
 ```
 
-# Building For Production
+---
 
-To build this application for production:
+## 🧠 Development Philosophy
 
-```bash
-pnpm build
+This project is built with a strong focus on:
+
+- Learning by building
+- AI-assisted development (Claude-driven workflow)
+- Step-by-step feature implementation
+- Avoiding over-engineering
+- Understanding system design deeply
+
+---
+
+## 🔁 Development Workflow
+
+1. Plan feature structure first
+2. Break into small steps
+3. Implement incrementally
+4. Review architecture
+5. Commit using conventional commits
+
+Example:
+
+```
+feat(expenses): add expense list UI
+fix(budget): correct remaining balance calculation
+chore(ui): setup shadcn chart components
 ```
 
-## Testing
+---
 
-This project uses [Vitest](https://vitest.dev/) for testing. You can run the tests with:
+## 🧪 Current Status
 
-```bash
-pnpm test
+- ✅ Frontend setup complete
+- ⏳ Expense module (in progress)
+- ⏳ Budget system (planned)
+- ⏳ Reports system (planned)
+- ⏳ Backend integration (future phase)
+
+---
+
+## 🚧 Future Improvements
+
+- Investment tracking
+- Loan management
+- AI-powered financial insights
+- Multi-user SaaS support
+- Mobile optimization
+- Backend integration (FastAPI + PostgreSQL)
+
+---
+
+## 📁 Project Structure
+
+```
+src/
+ ├── app/
+ ├── features/
+ │   ├── dashboard/
+ │   ├── expenses/
+ │   ├── budgets/
+ │   ├── reports/
+ │   └── trackers/
+ │
+ ├── shared/
+ │   ├── ui/
+ │   ├── hooks/
+ │   ├── lib/
+ │   └── utils/
+ │
+ └── styles/
 ```
 
-## Styling
+---
 
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
+## 🤖 AI-Assisted Development
 
-### Removing Tailwind CSS
+This project heavily uses AI tools for:
 
-If you prefer not to use Tailwind CSS:
+- Architecture planning
+- Code explanation
+- UI design exploration
+- Refactoring suggestions
 
-1. Remove the demo pages in `src/routes/demo/`
-2. Replace the Tailwind import in `src/styles.css` with your own styles
-3. Remove `tailwindcss()` from the plugins array in `vite.config.ts`
-4. Uninstall the packages: `pnpm add @tailwindcss/vite tailwindcss --dev`
+However, AI is used as:
 
-## Linting & Formatting
+> A mentor and assistant — not an autopilot.
 
-This project uses [Biome](https://biomejs.dev/) for linting and formatting. The following scripts are available:
+The goal is **learning by building**, not blind generation.
 
+---
 
-```bash
-pnpm lint
-pnpm format
-pnpm check
-```
+## 📌 Key Learnings
 
+- Simplicity scales better than complexity
+- Feature-based architecture improves maintainability
+- UI clarity is more important than feature count
+- AI is most powerful when used for reasoning, not replacement
 
-## Setting up Neon
+---
 
-When running the `dev` command, the `@neondatabase/vite-plugin-postgres` will identify there is not a database setup. It will then create and seed a claimable database.
+## 📜 License
 
-It is the same process as [Neon Launchpad](https://neon.new).
+Personal project (not licensed yet).
 
-> [!IMPORTANT]  
-> Claimable databases expire in 72 hours.
+---
 
+## ✨ Author
 
-# Paraglide i18n
+Dipto Karmakar
 
-This add-on wires up ParaglideJS for localized routing and message formatting.
+Senior Frontend Engineer specializing in:
 
-- Messages live in `project.inlang/messages`.
-- URLs are localized through the Paraglide Vite plugin and router `rewrite` hooks.
-- Run the dev server or build to regenerate the `src/paraglide` outputs.
+- React / TypeScript / modern frontend architecture
+- Domain-driven design systems
+- High-performance UI engineering
+- AI-assisted development workflows
 
-
-## Shadcn
-
-Add components using the latest version of [Shadcn](https://ui.shadcn.com/).
-
-```bash
-pnpm dlx shadcn@latest add button
-```
-
-
-## T3Env
-
-- You can use T3Env to add type safety to your environment variables.
-- Add Environment variables to the `src/env.mjs` file.
-- Use the environment variables in your code.
-
-### Usage
-
-```ts
-import { env } from "#/env";
-
-console.log(env.VITE_APP_TITLE);
-```
-
-
-## Routing
-
-This project uses [TanStack Router](https://tanstack.com/router) with file-based routing. Routes are managed as files in `src/routes`.
-
-### Adding A Route
-
-To add a new route to your application just add a new file in the `./src/routes` directory.
-
-TanStack will automatically generate the content of the route file for you.
-
-Now that you have two routes you can use a `Link` component to navigate between them.
-
-### Adding Links
-
-To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/react-router`.
-
-```tsx
-import { Link } from "@tanstack/react-router";
-```
-
-Then anywhere in your JSX you can use it like so:
-
-```tsx
-<Link to="/about">About</Link>
-```
-
-This will create a link that will navigate to the `/about` route.
-
-More information on the `Link` component can be found in the [Link documentation](https://tanstack.com/router/v1/docs/framework/react/api/router/linkComponent).
-
-### Using A Layout
-
-In the File Based Routing setup the layout is located in `src/routes/__root.tsx`. Anything you add to the root route will appear in all the routes. The route content will appear in the JSX where you render `{children}` in the `shellComponent`.
-
-Here is an example layout that includes a header:
-
-```tsx
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
-
-export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      { charSet: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'My App' },
-    ],
-  }),
-  shellComponent: ({ children }) => (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        <header>
-          <nav>
-            <Link to="/">Home</Link>
-            <Link to="/about">About</Link>
-          </nav>
-        </header>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  ),
-})
-```
-
-More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
-
-## Server Functions
-
-TanStack Start provides server functions that allow you to write server-side code that seamlessly integrates with your client components.
-
-```tsx
-import { createServerFn } from '@tanstack/react-start'
-
-const getServerTime = createServerFn({
-  method: 'GET',
-}).handler(async () => {
-  return new Date().toISOString()
-})
-
-// Use in a component
-function MyComponent() {
-  const [time, setTime] = useState('')
-  
-  useEffect(() => {
-    getServerTime().then(setTime)
-  }, [])
-  
-  return <div>Server time: {time}</div>
-}
-```
-
-## API Routes
-
-You can create API routes by using the `server` property in your route definitions:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { json } from '@tanstack/react-start'
-
-export const Route = createFileRoute('/api/hello')({
-  server: {
-    handlers: {
-      GET: () => json({ message: 'Hello, World!' }),
-    },
-  },
-})
-```
-
-## Data Fetching
-
-There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
-
-For example:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-
-export const Route = createFileRoute('/people')({
-  loader: async () => {
-    const response = await fetch('https://swapi.dev/api/people')
-    return response.json()
-  },
-  component: PeopleComponent,
-})
-
-function PeopleComponent() {
-  const data = Route.useLoaderData()
-  return (
-    <ul>
-      {data.results.map((person) => (
-        <li key={person.name}>{person.name}</li>
-      ))}
-    </ul>
-  )
-}
-```
-
-Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
-
-# Demo files
-
-Files prefixed with `demo` can be safely deleted. They are there to provide a starting point for you to play around with the features you've installed.
-
-# Learn More
-
-You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
-
-For TanStack Start specific documentation, visit [TanStack Start](https://tanstack.com/start).
+This project is a personal initiative to explore modern fintech UX and scalable SaaS architecture.

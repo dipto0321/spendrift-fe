@@ -1,0 +1,154 @@
+import { Link, useNavigate } from "@tanstack/react-router";
+import {
+	BarChart3,
+	ChevronRight,
+	ChevronsUpDown,
+	CircleUserRound,
+	LayoutDashboard,
+	LogOut,
+	PiggyBank,
+	ReceiptText,
+	Settings2,
+} from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+	authRepository,
+	useAuthSnapshot,
+} from "@/features/auth/data/repository";
+import { TrackerSelector } from "@/features/trackers/presentation/TrackerSelector";
+import ThemeToggle from "./ThemeToggle";
+
+const navItems = [
+	{ to: "/", label: "Dashboard", icon: LayoutDashboard },
+	{ to: "/expenses", label: "Expenses", icon: ReceiptText },
+	{ to: "/budget", label: "Budget", icon: PiggyBank },
+	{ to: "/reports", label: "Reports", icon: BarChart3 },
+	{ to: "/settings", label: "Settings", icon: Settings2 },
+] as const;
+
+export default function AppSidebar() {
+	const navigate = useNavigate();
+	const auth = useAuthSnapshot();
+	const user = auth.user;
+
+	return (
+		<aside className="w-full lg:w-70 lg:shrink-0 lg:sticky lg:top-3 lg:h-[calc(100vh-1.5rem)]">
+			<div className="flex h-full min-h-80 flex-col rounded-2xl border border-border/60 bg-card/50 shadow-sm backdrop-blur-sm dark:shadow-none">
+				<div className="flex items-center gap-3 px-4 pt-5 pb-6">
+					<div className="grid h-10 w-10 place-items-center rounded-xl bg-linear-to-br from-emerald-500 to-teal-400 shadow-lg shadow-emerald-500/25">
+						<span className="text-lg font-bold tracking-tighter text-white">
+							S
+						</span>
+					</div>
+					<div className="min-w-0">
+						<p className="m-0 text-base font-bold tracking-tight text-foreground">
+							Spendrift
+						</p>
+						<p className="m-0 text-xs text-muted-foreground">
+							Personal Finance
+						</p>
+					</div>
+				</div>
+
+				<TrackerSelector />
+
+				<nav className="space-y-1 px-3 pt-2">
+					{navItems.map(({ to, label, icon: Icon }) => (
+						<Link
+							key={to}
+							to={to}
+							className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-accent hover:text-foreground"
+							activeProps={{
+								className:
+									"flex items-center gap-3 rounded-xl bg-primary/10 px-3 py-2.5 text-sm font-medium text-primary shadow-sm ring-1 ring-primary/20",
+							}}
+						>
+							<Icon className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground group-[&.active]:text-primary" />
+							<span className="flex-1">{label}</span>
+							<ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5" />
+						</Link>
+					))}
+				</nav>
+
+				<div className="px-3 pt-5">
+					<div className="rounded-xl border border-border/60 bg-muted/30 px-4 py-3">
+						<div className="flex items-center justify-between gap-4">
+							<div>
+								<p className="m-0 text-sm font-semibold text-foreground">
+									Theme
+								</p>
+								<p className="m-0 text-xs text-muted-foreground">
+									Light or dark mode
+								</p>
+							</div>
+							<ThemeToggle />
+						</div>
+					</div>
+				</div>
+
+				<div className="mt-auto px-3 pt-5">
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<button
+								type="button"
+								className="flex w-full items-center gap-3 rounded-xl border border-border/60 bg-muted/30 px-4 py-3 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+							>
+								<Avatar className="h-10 w-10">
+									{user?.avatarDataUrl ? (
+										<AvatarImage src={user.avatarDataUrl} alt={user.name} />
+									) : null}
+									<AvatarFallback className="bg-linear-to-br from-amber-400/80 to-orange-500/80 text-white">
+										<CircleUserRound className="h-5 w-5" />
+									</AvatarFallback>
+								</Avatar>
+								<div className="min-w-0 flex-1">
+									<p className="m-0 truncate text-sm font-semibold text-foreground">
+										{user?.name ?? "Profile"}
+									</p>
+									<p className="m-0 truncate text-xs text-muted-foreground">
+										{user?.email ?? "View profile"}
+									</p>
+								</div>
+								<ChevronsUpDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+							</button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent
+							align="end"
+							side="top"
+							className="w-[--radix-dropdown-menu-trigger-width] min-w-56"
+						>
+							<DropdownMenuLabel className="truncate">
+								{user?.email ?? "Account"}
+							</DropdownMenuLabel>
+							<DropdownMenuSeparator />
+							<DropdownMenuItem asChild>
+								<Link to="/profile">
+									<CircleUserRound className="h-4 w-4" />
+									Profile
+								</Link>
+							</DropdownMenuItem>
+							<DropdownMenuSeparator />
+							<DropdownMenuItem
+								onSelect={async () => {
+									await authRepository.signOut();
+									await navigate({ to: "/sign-in" });
+								}}
+							>
+								<LogOut className="h-4 w-4" />
+								Sign out
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</div>
+			</div>
+		</aside>
+	);
+}
