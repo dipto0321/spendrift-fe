@@ -1,4 +1,3 @@
-import { TanStackDevtools } from "@tanstack/react-devtools";
 import type { QueryClient } from "@tanstack/react-query";
 import {
 	createRootRouteWithContext,
@@ -8,8 +7,7 @@ import {
 	useNavigate,
 	useRouterState,
 } from "@tanstack/react-router";
-import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import {
@@ -23,7 +21,6 @@ import {
 import { TrackerOnboarding } from "@/features/trackers/presentation/TrackerOnboarding";
 import { getLocale } from "@/paraglide/runtime";
 import AppSidebar from "@/shared/ui/AppSidebar";
-import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import TanStackQueryProvider from "../integrations/tanstack-query/root-provider";
 import appCss from "../styles.css?url";
 
@@ -87,6 +84,15 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 	shellComponent: RootDocument,
 });
 
+// Completely bypass loading the Devtools Panel in production
+const DevtoolsPanel = import.meta.env.PROD
+	? () => null
+	: React.lazy(() =>
+			import("@/shared/ui/DevtoolsPanel").then((m) => ({
+				default: m.DevtoolsPanel,
+			})),
+		);
+
 function RootDocument({ children }: Readonly<{ children: React.ReactNode }>) {
 	return (
 		<html lang={getLocale()} suppressHydrationWarning>
@@ -94,25 +100,14 @@ function RootDocument({ children }: Readonly<{ children: React.ReactNode }>) {
 				<script src="/theme-init.js" />
 				<HeadContent />
 			</head>
-			<body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-primary/20">
+			<body className="font-sans antialiased wrap-anywhere selection:bg-primary/20">
 				<TanStackQueryProvider>
 					<TooltipProvider delayDuration={300}>
 						<TrackerProvider>
 							<WorkspaceGate>{children}</WorkspaceGate>
-							{import.meta.env.DEV ? (
-								<TanStackDevtools
-									config={{
-										position: "bottom-right",
-									}}
-									plugins={[
-										{
-											name: "Tanstack Router",
-											render: <TanStackRouterDevtoolsPanel />,
-										},
-										TanStackQueryDevtools,
-									]}
-								/>
-							) : null}
+							<React.Suspense fallback={null}>
+								<DevtoolsPanel />
+							</React.Suspense>
 						</TrackerProvider>
 					</TooltipProvider>
 				</TanStackQueryProvider>

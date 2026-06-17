@@ -8,266 +8,230 @@ A modern, minimal personal finance tracking application built with a focus on cl
 
 Spendrift helps users track:
 
-- Daily expenses
-- Monthly budgets
-- Savings goals
+- Daily expenses (Needs vs Wants)
+- Monthly budgets and savings targets
 - Financial reports (weekly / monthly / yearly)
 - Multi-year spending comparisons
-- Needs vs Wants classification
+- Category breakdowns and analytics
 
-The app is designed as a **tracker-based system**, where each tracker represents an independent financial workspace (e.g., Bangladesh Tracker, Europe Tracker).
+The app is designed as a **tracker-based system**, where each tracker represents an independent financial workspace with its own currency (e.g., Bangladesh Tracker in BDT, Europe Tracker in EUR).
 
----
-
-## 🎯 Project Goals
-
-- Build a clean and intuitive finance tracking experience
-- Maintain strong UX with minimal cognitive load
-- Enable multi-currency tracking via separate trackers
-- Learn modern frontend architecture using real-world patterns
-- Experiment with AI-assisted engineering workflows
+All features are backed by the real **Spendrift API** (FastAPI) — see [Getting Started](#-getting-started).
 
 ---
 
 ## 🧱 Tech Stack
 
-### Frontend
+- **TanStack Start** — full-stack React framework (SSR + file-based routing)
+- **React + TypeScript**
+- **TailwindCSS** + **ShadCN UI** (Radix primitives)
+- **TanStack Query** — server-state, caching, and invalidation
+- **Zod + React Hook Form** — schema validation
+- **Recharts** (via ShadCN charts), **Sonner** (toasts)
+- **Biome** — formatter + linter
+- **Vitest** — unit tests
+- **Sentry** — error monitoring
 
-- TanStack Start
-- React
-- TypeScript
-- TailwindCSS
-- ShadCN UI
+---
+
+## ⚡ Getting Started
+
+### Prerequisites
+
+- **Node.js** 20+ and **pnpm**
+- A running **Spendrift API** (FastAPI). The frontend expects it at `http://localhost:8000` with the base path `/api/v1`. Interactive API docs live at `http://localhost:8000/docs`.
+
+### Setup
+
+```bash
+# 1. Install dependencies
+pnpm install
+
+# 2. Create your local env file
+cp .env.example .env.local
+# then set VITE_API_BASE_URL (default: http://localhost:8000/api/v1)
+
+# 3. Start the dev server (http://localhost:3000)
+pnpm dev
+```
+
+### Environment variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `VITE_API_BASE_URL` | ✅ | Base URL of the Spendrift API, **including** the `/api/v1` prefix. |
+| `VITE_APP_TITLE` | optional | App title override. |
+| `VITE_SENTRY_*` / `SENTRY_*` | optional | Sentry monitoring (see `.env.example`). |
+
+### Scripts
+
+```bash
+pnpm dev      # start the dev server on :3000
+pnpm test     # run the Vitest unit suite
+pnpm check    # Biome lint + format check
+pnpm build    # production build
+pnpm start    # serve the production build
+```
 
 ---
 
 ## 🏗️ Architecture
 
-Spendrift follows a **Domain-Driven, Feature-Based Architecture (DDD)**.
+Spendrift follows a **Domain-Driven, Feature-Based Architecture**. Each feature is self-contained and split into three layers:
 
-Each domain is isolated and self-contained:
-
-```
-src/features/
- ├── dashboard/
- ├── expenses/
- ├── budgets/
- ├── reports/
- └── trackers/
+```text
+src/features/<feature>/
+ ├── domain/        # types + pure business logic (services.ts)
+ ├── data/          # repository.ts (API calls), dto.ts (wire mapping), queryKeys.ts
+ └── presentation/  # pages + React Query hooks (use*.ts)
 ```
 
-### Key Principles
+### Data flow & the repository seam
 
-- Feature-based structure
-- Separation of UI and business logic
-- Mock-first development (before backend integration)
-- Incremental feature building
-- Maintainable and scalable design
+Pages and hooks **never call `fetch` directly**. Every feature talks to the API through its `data/repository.ts`, which is the single swap seam:
+
+```text
+Page → presentation/use*.ts (TanStack Query) → data/repository.ts → shared/api/client.ts
+```
+
+Two impedance mismatches are handled at the `data/dto.ts` boundary so the domain stays clean:
+
+- **Money** is a Decimal **string** on the wire (e.g. `"1267.42"`) ↔ `number` in the domain.
+- **Casing**: API is `snake_case` ↔ domain is `camelCase`.
+
+### Auth
+
+JWT access + refresh tokens (stored in `localStorage`) with a single-flight **refresh-on-401** retry in `shared/api/client.ts`. Because tokens aren't readable during SSR, a client-side `WorkspaceGate` (in `routes/__root.tsx`) is the auth source of truth.
+
+### Key principles
+
+- Feature-based structure, cohesive domains
+- Separation of UI from business logic
+- Repositories as the single API seam
+- Composition over abstraction; avoid premature optimization
 
 ---
 
 ## 🌍 Tracker System
 
-Each tracker represents an independent financial context:
-
-Example:
+Each tracker is an independent financial context with its own currency:
 
 - 🇧🇩 Bangladesh Tracker (BDT)
 - 🇪🇺 Europe Tracker (EUR)
 
-Each tracker contains:
-
-- Expenses
-- Budgets
-- Reports
-- Future investments (planned)
-- Loan tracking (planned)
+Each tracker owns its expenses, categories, budgets, dashboard, and reports. The active tracker is carried in the URL as `?tracker=<id>`.
 
 ---
 
-## 💸 Core Features
+## 💸 Features
 
 ### Expense Tracking
 
 - Add / edit / delete expenses
-- Tag as:
-  - Needs
-  - Wants
-- Filter and group expenses
-- View expense history
+- Needs vs Wants tagging
+- Search, date-range, type, and category filtering
+- Per-category management (with safe "reassign to Uncategorized" on delete)
 
----
+### Budgeting
 
-### Budget Management
+- One budget per tracker per **current** month
+- Monthly limit + savings target
+- Remaining balance and a savings-health indicator (green / yellow / red)
+- Previous months become read-only history
 
-- Monthly budget setup
-- Savings target configuration
-- Remaining balance tracking
-- Budget health indicator
+### Dashboard
 
----
+- Current-month spend, expense count, and budget remaining
+- Needs-vs-Wants split and top categories
+- Cashflow trend + recent expenses
 
-### Financial Reports
+### Reports
 
-- Weekly reports
-- Monthly reports
-- Yearly reports
-- Multi-year comparison
-- Analytics:
-  - Total spending
-  - Min / Max / Average expense
+- Weekly / monthly / yearly spending
+- Category breakdown and Needs-vs-Wants
+- Year-over-year comparison
+- Total / min / max / average analytics
+- Custom calendar date ranges
 
 ---
 
 ## 📊 UI / UX Philosophy
 
-Spendrift is designed to feel:
+Spendrift is designed to feel **minimal, calm, modern, and data-focused** — inspired by Linear, Notion, and modern fintech dashboards.
 
-- Minimal
-- Calm
-- Modern
-- Data-focused
-
-Inspired by:
-
-- Linear
-- Notion
-- Modern fintech dashboards
-
----
-
-### Design Principles
+### Design principles
 
 - Dark theme first
-- High readability
-- Clear hierarchy
+- High readability and clear hierarchy
 - Meaningful colors (not decorative)
 - Reduced visual noise
 
----
+### Theme
 
-## 🌑 Theme System
-
-### Dark Theme (Primary)
-
-- Background: `#0B0F14`
-- Surface: `#121821`
-- Card: `#161C24`
-- Text: `#E6EDF3`
-- Secondary text: `#9DA7B3`
-- Accent: `#4F8CFF`
+An **emerald-forward** palette defined as `oklch` design tokens in `src/styles.css` (light and dark variants). The default is dark; a stored preference wins. Charts use ShadCN's chart components.
 
 ---
 
-## 📈 Charts
+## 🧪 Testing
 
-All charts are built using **ShadCN Chart components**.
-
-Installed via:
+Unit tests cover the pure `domain/services` functions (budgets, expenses, reports) with **Vitest**:
 
 ```bash
-pnpm dlx shadcn@latest add chart
+pnpm test
 ```
 
----
-
-## 🧠 Development Philosophy
-
-This project is built with a strong focus on:
-
-- Learning by building
-- AI-assisted development (Claude-driven workflow)
-- Step-by-step feature implementation
-- Avoiding over-engineering
-- Understanding system design deeply
-
----
-
-## 🔁 Development Workflow
-
-1. Plan feature structure first
-2. Break into small steps
-3. Implement incrementally
-4. Review architecture
-5. Commit using conventional commits
-
-Example:
-
-```
-feat(expenses): add expense list UI
-fix(budget): correct remaining balance calculation
-chore(ui): setup shadcn chart components
-```
-
----
-
-## 🧪 Current Status
-
-- ✅ Frontend setup complete
-- ⏳ Expense module (in progress)
-- ⏳ Budget system (planned)
-- ⏳ Reports system (planned)
-- ⏳ Backend integration (future phase)
-
----
-
-## 🚧 Future Improvements
-
-- Investment tracking
-- Loan management
-- AI-powered financial insights
-- Multi-user SaaS support
-- Mobile optimization
-- Backend integration (FastAPI + PostgreSQL)
+Tests run in an isolated `vitest.config.ts` (node environment, `@/` alias) so they skip the full app plugin chain.
 
 ---
 
 ## 📁 Project Structure
 
-```
+```text
 src/
- ├── app/
- ├── features/
- │   ├── dashboard/
- │   ├── expenses/
- │   ├── budgets/
- │   ├── reports/
- │   └── trackers/
- │
+ ├── features/          # dashboard, expenses, budgets, reports, trackers
+ │   └── <feature>/     # domain/ · data/ · presentation/
  ├── shared/
- │   ├── ui/
+ │   ├── api/           # apiFetch client + token storage
+ │   ├── ui/            # shared UI (AppSidebar, StatCard, ThemeToggle…)
  │   ├── hooks/
- │   ├── lib/
  │   └── utils/
- │
- └── styles/
+ ├── components/ui/     # ShadCN-generated primitives
+ ├── routes/            # TanStack Start file-based routes
+ └── styles.css
+```
+
+---
+
+## 🔁 Development Workflow
+
+1. Plan the feature structure first
+2. Break it into small steps
+3. Implement incrementally behind the repository seam
+4. Verify (tests + run the app)
+5. Commit using conventional commits
+
+```text
+feat(expenses): add expense list UI
+fix(budget): correct remaining balance calculation
+refactor(api): back reports with the real API
 ```
 
 ---
 
 ## 🤖 AI-Assisted Development
 
-This project heavily uses AI tools for:
-
-- Architecture planning
-- Code explanation
-- UI design exploration
-- Refactoring suggestions
-
-However, AI is used as:
-
-> A mentor and assistant — not an autopilot.
-
-The goal is **learning by building**, not blind generation.
+This project leans on AI for architecture planning, code explanation, UI exploration, and refactoring — used as **a mentor and assistant, not an autopilot**. The goal is *learning by building*, not blind generation.
 
 ---
 
-## 📌 Key Learnings
+## 🚧 Roadmap
 
-- Simplicity scales better than complexity
-- Feature-based architecture improves maintainability
-- UI clarity is more important than feature count
-- AI is most powerful when used for reasoning, not replacement
+- Investment tracking
+- Loan management
+- AI-powered financial insights
+- Multi-user SaaS support
+- Mobile optimization
+- SSR auth via httpOnly cookies (currently a client-side gate)
 
 ---
 
@@ -279,13 +243,4 @@ Personal project (not licensed yet).
 
 ## ✨ Author
 
-Dipto Karmakar
-
-Senior Frontend Engineer specializing in:
-
-- React / TypeScript / modern frontend architecture
-- Domain-driven design systems
-- High-performance UI engineering
-- AI-assisted development workflows
-
-This project is a personal initiative to explore modern fintech UX and scalable SaaS architecture.
+**Dipto Karmakar** — Frontend engineer focused on React / TypeScript, domain-driven design, high-performance UI, and AI-assisted workflows. Spendrift is a personal initiative to explore modern fintech UX and scalable SaaS architecture.
