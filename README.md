@@ -235,9 +235,49 @@ This project leans on AI for architecture planning, code explanation, UI explora
 
 ---
 
+## 🖼️ Screenshots
+
+### Sign In
+
+![Sign In](docs/screenshots/sign-in.png)
+
+### Sign Up
+
+![Sign Up](docs/screenshots/sign-up.png)
+
+### Dashboard
+
+![Dashboard](docs/screenshots/dashboard.png)
+
+### Expense List
+
+![Expenses](docs/screenshots/expenses.png)
+
+### Budget
+
+![Budget](docs/screenshots/budget.png)
+
+### Reports
+
+![Reports](docs/screenshots/reports.png)
+
+---
+
 ## 📜 License
 
-Personal project (not licensed yet).
+Copyright (c) 2026 Dipto Karmakar
+
+Licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.
+See the [LICENSE](LICENSE) file for full terms.
+
+**In plain English:**
+
+- You may study and use this code for personal/educational purposes
+- If you modify and distribute it, you must open-source your version under AGPL-3.0
+- You may **not** use this in a commercial product or SaaS without written permission from the author
+- You **must** credit the original author (Dipto Karmakar) in any derivative work
+
+For commercial licensing inquiries: [diptokmk47@gmail.com](mailto:diptokmk47@gmail.com)
 
 ---
 
