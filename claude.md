@@ -183,24 +183,45 @@ Avoid unnecessary chart abstraction.
 
 use `pnpm dlx shadcn@latest add <component-name>` to create new components. follow official documentation for usage and customization. avoid creating custom components if existing ones can be composed to achieve the desired UI.
 
-# Git Workflow Rules
+# Git & GitHub Workflow Rules
 
-After every meaningful implementation:
+This project uses **GitHub Flow**. There is no `dev` branch. `main` is always deployable.
 
-- Suggest a conventional commit
-- Keep commits focused
-- Auto-detect commit type
+## Branching
+
+- Cut every branch directly from `main`
+- Branch naming: `feat/<short-description>`, `fix/<short-description>`, `chore/<short-description>`, `refactor/<short-description>`, `docs/<short-description>`
+- Keep branches short-lived — merge within days, not weeks
+- Delete the branch immediately after merging
 
 Examples:
+```
+feat/expense-filter
+fix/budget-calculation
+chore/update-deps
+refactor/dashboard-components
+docs/api-integration
+```
 
-- feat:
-- fix:
-- chore:
-- refactor:
-- docs:
+## Pull Requests
+
+- Open a PR to merge into `main` — never push directly to `main` for features
+- PR title should follow conventional commit format: `feat(expenses): add filter by category`
+- Squash-merge or merge-commit both acceptable; keep the history readable
+
+## Commits
+
+After every meaningful implementation, suggest a conventional commit:
+
+- `feat(scope): what was added`
+- `fix(scope): what was fixed`
+- `chore(scope): maintenance or tooling`
+- `refactor(scope): code restructure, no behavior change`
+- `docs(scope): documentation only`
+
+Keep commits focused — one logical change per commit.
 
 Example:
-
 ```bash
 feat(expenses): add expense list component
 ```
