@@ -26,15 +26,10 @@ export function ProfilePage() {
 	const [email, setEmail] = useState(user?.email ?? "");
 	const [avatarError, setAvatarError] = useState<string | null>(null);
 	const [profileError, setProfileError] = useState<string | null>(null);
-	const [passwordError, setPasswordError] = useState<string | null>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	const updateProfileMutation = useMutation({
 		mutationFn: authRepository.updateProfile,
-	});
-
-	const updatePasswordMutation = useMutation({
-		mutationFn: authRepository.updatePassword,
 	});
 
 	const updateAvatarMutation = useMutation({
@@ -59,7 +54,6 @@ export function ProfilePage() {
 					description="Manage your personal account information and preferences."
 				/>
 
-				{/* Account card: avatar + name/email fields in one unit */}
 				<Card>
 					<form
 						onSubmit={async (event) => {
@@ -86,7 +80,6 @@ export function ProfilePage() {
 							</CardDescription>
 						</CardHeader>
 						<CardContent className="flex flex-col gap-6">
-							{/* Avatar row */}
 							<div className="flex items-center gap-4">
 								<Avatar className="size-16">
 									{user.avatarDataUrl ? (
@@ -156,7 +149,6 @@ export function ProfilePage() {
 								</div>
 							</div>
 
-							{/* Name + email fields */}
 							<div className="grid gap-4 sm:grid-cols-2">
 								<div className="grid gap-2">
 									<Label htmlFor="profile-name">Full name</Label>
@@ -191,93 +183,6 @@ export function ProfilePage() {
 							<Button type="submit" disabled={updateProfileMutation.isPending}>
 								<Save className="size-4" />
 								{updateProfileMutation.isPending ? "Saving…" : "Save changes"}
-							</Button>
-						</CardFooter>
-					</form>
-				</Card>
-
-				{/* Change password card */}
-				<Card>
-					<form
-						onSubmit={async (event) => {
-							event.preventDefault();
-							setPasswordError(null);
-							const form = event.currentTarget;
-							const data = new FormData(form);
-							const currentPassword = (
-								(data.get("currentPassword") as string | null) ?? ""
-							).trim();
-							const newPassword = (
-								(data.get("newPassword") as string | null) ?? ""
-							).trim();
-							const confirmPassword = (
-								(data.get("confirmPassword") as string | null) ?? ""
-							).trim();
-							if (newPassword !== confirmPassword) {
-								setPasswordError("New password and confirmation do not match.");
-								return;
-							}
-							try {
-								await updatePasswordMutation.mutateAsync({
-									currentPassword,
-									newPassword,
-								});
-								form.reset();
-							} catch (error) {
-								setPasswordError(
-									error instanceof Error
-										? error.message
-										: "Unable to update password.",
-								);
-							}
-						}}
-					>
-						<CardHeader>
-							<CardTitle>Change password</CardTitle>
-							<CardDescription>
-								Choose a strong password you don&apos;t use elsewhere.
-							</CardDescription>
-						</CardHeader>
-						<CardContent className="grid gap-4 sm:grid-cols-3">
-							<div className="grid gap-2">
-								<Label htmlFor="current-password">Current password</Label>
-								<Input
-									id="current-password"
-									name="currentPassword"
-									type="password"
-									autoComplete="current-password"
-									required
-								/>
-							</div>
-							<div className="grid gap-2">
-								<Label htmlFor="new-password">New password</Label>
-								<Input
-									id="new-password"
-									name="newPassword"
-									type="password"
-									autoComplete="new-password"
-									required
-								/>
-							</div>
-							<div className="grid gap-2">
-								<Label htmlFor="confirm-password">Confirm password</Label>
-								<Input
-									id="confirm-password"
-									name="confirmPassword"
-									type="password"
-									autoComplete="new-password"
-									required
-								/>
-							</div>
-							{passwordError ? (
-								<p className="col-span-full text-sm text-destructive">
-									{passwordError}
-								</p>
-							) : null}
-						</CardContent>
-						<CardFooter className="justify-end border-t border-border">
-							<Button type="submit" disabled={updatePasswordMutation.isPending}>
-								{updatePasswordMutation.isPending ? "Updating…" : "Update password"}
 							</Button>
 						</CardFooter>
 					</form>

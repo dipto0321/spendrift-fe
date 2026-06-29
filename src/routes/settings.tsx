@@ -1,14 +1,20 @@
+import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
 	CardDescription,
+	CardFooter,
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import { authRepository } from "@/features/auth/data/repository";
 import { requireAuth } from "@/features/auth/presentation/routeGuards";
 import { CategoryManager } from "@/features/expenses/presentation/CategoryManager";
 import {
@@ -82,6 +88,11 @@ function SettingsPage() {
 	const [prefs, setPrefs] = useState<Record<PreferenceKey, boolean>>(
 		PREFERENCE_DEFAULTS,
 	);
+	const [passwordError, setPasswordError] = useState<string | null>(null);
+
+	const updatePasswordMutation = useMutation({
+		mutationFn: authRepository.updatePassword,
+	});
 
 	function togglePref(key: PreferenceKey) {
 		setPrefs((p) => ({ ...p, [key]: !p[key] }));
@@ -133,7 +144,7 @@ function SettingsPage() {
 					<CardContent className="flex flex-col gap-1">
 						{PREFERENCES.map((pref, i) => (
 							<div key={pref.key}>
-								{i > 0 && <Separator />}
+								{i > 0 ? <Separator /> : null}
 								<div className="flex items-center justify-between gap-4 py-3">
 									<div className="flex flex-col gap-0.5">
 										<span className="text-sm font-medium text-foreground">
@@ -152,6 +163,92 @@ function SettingsPage() {
 							</div>
 						))}
 					</CardContent>
+				</Card>
+
+				<Card>
+					<form
+						onSubmit={async (event) => {
+							event.preventDefault();
+							setPasswordError(null);
+							const form = event.currentTarget;
+							const data = new FormData(form);
+							const currentPassword = (
+								(data.get("currentPassword") as string | null) ?? ""
+							).trim();
+							const newPassword = (
+								(data.get("newPassword") as string | null) ?? ""
+							).trim();
+							const confirmPassword = (
+								(data.get("confirmPassword") as string | null) ?? ""
+							).trim();
+							if (newPassword !== confirmPassword) {
+								setPasswordError("New password and confirmation do not match.");
+								return;
+							}
+							try {
+								await updatePasswordMutation.mutateAsync({
+									currentPassword,
+									newPassword,
+								});
+								form.reset();
+							} catch (error) {
+								setPasswordError(
+									error instanceof Error
+										? error.message
+										: "Unable to update password.",
+								);
+							}
+						}}
+					>
+						<CardHeader>
+							<CardTitle>Change password</CardTitle>
+							<CardDescription>
+								Choose a strong password you don&apos;t use elsewhere.
+							</CardDescription>
+						</CardHeader>
+						<CardContent className="grid gap-4 sm:grid-cols-3">
+							<div className="grid gap-2">
+								<Label htmlFor="current-password">Current password</Label>
+								<Input
+									id="current-password"
+									name="currentPassword"
+									type="password"
+									autoComplete="current-password"
+									required
+								/>
+							</div>
+							<div className="grid gap-2">
+								<Label htmlFor="new-password">New password</Label>
+								<Input
+									id="new-password"
+									name="newPassword"
+									type="password"
+									autoComplete="new-password"
+									required
+								/>
+							</div>
+							<div className="grid gap-2">
+								<Label htmlFor="confirm-password">Confirm password</Label>
+								<Input
+									id="confirm-password"
+									name="confirmPassword"
+									type="password"
+									autoComplete="new-password"
+									required
+								/>
+							</div>
+							{passwordError ? (
+								<p className="col-span-full text-sm text-destructive">
+									{passwordError}
+								</p>
+							) : null}
+						</CardContent>
+						<CardFooter className="justify-end border-t border-border">
+							<Button type="submit" disabled={updatePasswordMutation.isPending}>
+								{updatePasswordMutation.isPending ? "Updating…" : "Update password"}
+							</Button>
+						</CardFooter>
+					</form>
 				</Card>
 			</div>
 		</main>

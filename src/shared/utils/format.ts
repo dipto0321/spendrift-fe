@@ -1,20 +1,17 @@
-export function formatCurrency(amount: number, currency: string) {
-	if (currency?.trim().length !== 3) {
-		return new Intl.NumberFormat(undefined, {
-			maximumFractionDigits: 2,
-		}).format(amount);
-	}
+import { getCurrencyDecimals, getCurrencySymbol } from "./currency";
 
-	try {
-		return new Intl.NumberFormat(undefined, {
-			style: "currency",
-			currency: currency.toUpperCase(),
-		}).format(amount);
-	} catch {
-		return new Intl.NumberFormat(undefined, {
-			maximumFractionDigits: 2,
-		}).format(amount);
+export function formatCurrency(amount: number, currency: string) {
+	const code = currency?.trim();
+	if (code?.length !== 3) {
+		return new Intl.NumberFormat("en", { maximumFractionDigits: 2 }).format(amount);
 	}
+	const symbol = getCurrencySymbol(code);
+	const decimals = getCurrencyDecimals(code);
+	const formatted = new Intl.NumberFormat("en", {
+		minimumFractionDigits: decimals,
+		maximumFractionDigits: decimals,
+	}).format(amount);
+	return `${symbol}${formatted}`;
 }
 
 export function formatDate(isoDate: string) {
