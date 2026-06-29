@@ -1,47 +1,92 @@
-import { Progress } from "@/components/ui/progress";
+import { Pie, PieChart } from "recharts";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import {
+	ChartContainer,
+	ChartLegend,
+	ChartLegendContent,
+	ChartTooltip,
+	ChartTooltipContent,
+	type ChartConfig,
+} from "@/components/ui/chart";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { NeedsWantsSplit } from "@/features/expenses/domain/types";
-import { formatCurrency } from "@/shared/utils/format";
+
+const chartConfig = {
+	needs: { label: "Needs", color: "var(--chart-2)" },
+	wants: { label: "Wants", color: "var(--chart-4)" },
+} satisfies ChartConfig;
 
 type NeedsVsWantsCardProps = {
-	needsWants: NeedsWantsSplit | undefined;
-	currency: string;
+	readonly needsWants: NeedsWantsSplit | undefined;
 };
 
 export function NeedsVsWantsCard({
 	needsWants,
-	currency,
 }: NeedsVsWantsCardProps) {
+	const hasData = needsWants && (needsWants.needs > 0 || needsWants.wants > 0);
+
+	const chartData = [
+		{
+			name: "needs",
+			value: needsWants?.needs ?? 0,
+			fill: "var(--color-needs)",
+		},
+		{
+			name: "wants",
+			value: needsWants?.wants ?? 0,
+			fill: "var(--color-wants)",
+		},
+	];
+
 	return (
-		<section className="island-shell rounded-2xl p-6">
-			<h2 className="island-kicker mb-4">Needs vs Wants</h2>
-			<div className="space-y-3">
-				<div>
-					<div className="flex items-center justify-between text-sm">
-						<span className="text-foreground">Needs</span>
-						<span className="font-semibold tabular-nums text-foreground">
-							{formatCurrency(needsWants?.needs ?? 0, currency)}
-						</span>
-					</div>
-					<Progress
-						value={needsWants?.percentage.needs ?? 0}
-						className="mt-1 h-2 bg-muted"
-						indicatorClassName="bg-green-500"
-					/>
-				</div>
-				<div>
-					<div className="flex items-center justify-between text-sm">
-						<span className="text-foreground">Wants</span>
-						<span className="font-semibold tabular-nums text-foreground">
-							{formatCurrency(needsWants?.wants ?? 0, currency)}
-						</span>
-					</div>
-					<Progress
-						value={needsWants?.percentage.wants ?? 0}
-						className="mt-1 h-2 bg-muted"
-						indicatorClassName="bg-orange-500"
-					/>
-				</div>
-			</div>
-		</section>
+		<Card>
+			<CardHeader>
+				<CardTitle>Needs vs Wants</CardTitle>
+				<CardDescription>Spending split this month</CardDescription>
+			</CardHeader>
+			<CardContent>
+				{hasData ? (
+					<ChartContainer config={chartConfig} className="h-[260px] w-full">
+						<PieChart>
+							<ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
+							<Pie
+								data={chartData}
+								dataKey="value"
+								nameKey="name"
+								innerRadius="55%"
+								outerRadius="80%"
+								paddingAngle={3}
+							/>
+							<ChartLegend
+								content={<ChartLegendContent nameKey="name" />}
+								className="mt-2"
+							/>
+						</PieChart>
+					</ChartContainer>
+				) : (
+					<p className="text-sm text-muted-foreground">No expenses yet.</p>
+				)}
+			</CardContent>
+		</Card>
+	);
+}
+
+export function NeedsVsWantsCardSkeleton() {
+	return (
+		<Card>
+			<CardHeader>
+				<Skeleton className="h-5 w-32" />
+				<Skeleton className="h-4 w-44" />
+			</CardHeader>
+			<CardContent>
+				<Skeleton className="h-[260px] w-full rounded-full" />
+			</CardContent>
+		</Card>
 	);
 }

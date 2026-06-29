@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
-interface StatCardProps {
+export interface StatCardProps {
 	readonly label: string;
 	readonly value: React.ReactNode;
 	readonly icon: LucideIcon;

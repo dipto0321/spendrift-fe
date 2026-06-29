@@ -1,74 +1,97 @@
+import { Receipt } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { Category, Expense } from "@/features/expenses/domain/types";
-import { formatCurrency, formatDate } from "@/shared/utils/format";
+import { EmptyState } from "@/shared/ui/EmptyState";
+import { MoneyText } from "@/shared/ui/MoneyText";
+import { NeedsWantsTag } from "@/shared/ui/NeedsWantsTag";
+import { formatDate } from "@/shared/utils/format";
 
 type RecentExpensesProps = {
-	expenses: Expense[];
-	categoryMap: Map<string, Category>;
-	currency: string;
-	isLoading: boolean;
+	readonly expenses: Expense[];
+	readonly categoryMap: Map<string, Category>;
+	readonly currency: string;
+	readonly isLoading: boolean;
 };
 
-export function RecentExpenses({
-	expenses,
-	categoryMap,
-	currency,
-	isLoading,
-}: RecentExpensesProps) {
-	return (
-		<section
-			className="island-shell rounded-2xl p-6"
-			aria-labelledby="recent-expenses-heading"
-		>
-			<h2 id="recent-expenses-heading" className="island-kicker mb-4">
-				Recent expenses
-			</h2>
-			<RecentExpensesList
-				expenses={expenses}
-				categoryMap={categoryMap}
-				currency={currency}
-				isLoading={isLoading}
-			/>
-		</section>
-	);
-}
+const SKELETON_KEYS = ["a", "b", "c", "d", "e", "f"] as const;
 
-function RecentExpensesList({
+function RecentExpensesContent({
 	expenses,
 	categoryMap,
 	currency,
 	isLoading,
 }: RecentExpensesProps) {
 	if (isLoading) {
-		return <p className="m-0 text-sm text-muted-foreground">Loading…</p>;
-	}
-	if (expenses.length === 0) {
 		return (
-			<p className="m-0 text-sm text-muted-foreground">No expenses yet.</p>
+			<ul className="space-y-3 p-0 m-0 list-none">
+				{SKELETON_KEYS.map((k) => (
+					<li key={k} className="flex items-center justify-between gap-2 py-1">
+						<div className="flex flex-col gap-1">
+							<Skeleton className="h-4 w-28" />
+							<Skeleton className="h-3 w-20" />
+						</div>
+						<Skeleton className="h-4 w-16" />
+					</li>
+				))}
+			</ul>
 		);
 	}
+
+	if (expenses.length === 0) {
+		return (
+			<EmptyState
+				icon={Receipt}
+				title="No expenses yet"
+				description="Start tracking your spending to see recent activity here."
+			/>
+		);
+	}
+
 	return (
-		<ul className="m-0 list-none space-y-3 p-0">
+		<ul className="space-y-1 p-0 m-0 list-none">
 			{expenses.map((expense) => {
 				const cat = categoryMap.get(expense.categoryId);
 				return (
 					<li
 						key={expense.id}
-						className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border pb-3 last:border-none last:pb-0"
+						className="flex items-center justify-between gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-muted/40"
 					>
-						<div className="min-w-0">
-							<p className="m-0 font-semibold text-foreground">
+						<div className="min-w-0 flex-1">
+							<p className="m-0 truncate text-sm font-medium text-foreground">
 								{cat?.name ?? "Uncategorized"}
 							</p>
-							<p className="m-0 text-sm text-muted-foreground">
+							<p className="m-0 text-xs text-muted-foreground">
 								{formatDate(expense.date)}
 							</p>
 						</div>
-						<span className="shrink-0 font-medium tabular-nums text-foreground">
-							{formatCurrency(expense.amount, currency)}
-						</span>
+						<div className="flex shrink-0 items-center gap-2">
+							<NeedsWantsTag type={expense.type} />
+							<MoneyText
+								amount={expense.amount}
+								currency={currency}
+								className="text-sm font-semibold"
+							/>
+						</div>
 					</li>
 				);
 			})}
 		</ul>
+	);
+}
+
+export function RecentExpenses(props: RecentExpensesProps) {
+	return (
+		<Card>
+			<CardHeader className="flex flex-row items-center gap-2">
+				<span className="flex size-7 items-center justify-center rounded-md bg-secondary">
+					<Receipt className="size-4 text-muted-foreground" />
+				</span>
+				<CardTitle>Recent expenses</CardTitle>
+			</CardHeader>
+			<CardContent>
+				<RecentExpensesContent {...props} />
+			</CardContent>
+		</Card>
 	);
 }
