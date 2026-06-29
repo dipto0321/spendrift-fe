@@ -1,4 +1,4 @@
-import { Plus, Search, X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -13,14 +13,12 @@ type ExpenseToolbarProps = {
 	filter: ExpenseFilter;
 	categories: Category[];
 	onFilterChange: (filter: ExpenseFilter) => void;
-	onAddExpense: () => void;
 };
 
 export function ExpenseToolbar({
 	filter,
 	categories,
 	onFilterChange,
-	onAddExpense,
 }: Readonly<ExpenseToolbarProps>) {
 	function updateFilter(patch: Partial<ExpenseFilter>) {
 		onFilterChange({ ...filter, ...patch });
@@ -182,15 +180,6 @@ export function ExpenseToolbar({
 						Clear
 					</Button>
 				)}
-
-				<Button
-					type="button"
-					onClick={onAddExpense}
-					className="ml-auto flex items-center gap-1.5"
-				>
-					<Plus className="h-4 w-4" />
-					Add Expense
-				</Button>
 			</div>
 		</div>
 	);

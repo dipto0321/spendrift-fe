@@ -1,3 +1,5 @@
+import { ArrowUpDown, Receipt, SearchX } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	Table,
@@ -6,76 +8,152 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { cn } from "@/lib/utils";
+import { EmptyState } from "@/shared/ui/EmptyState";
 import { buildCategoryMap } from "../domain/services";
 import type { Category, Expense } from "../domain/types";
 import { ExpenseRow } from "./ExpenseRow";
 
+export type SortKey = "date" | "category" | "description" | "amount";
+export type SortState = { key: SortKey; dir: "asc" | "desc" };
+
+type SortHeaderProps = {
+	readonly label: string;
+	readonly sortKey: SortKey;
+	readonly sort: SortState;
+	readonly onSort: (key: SortKey) => void;
+	readonly className?: string;
+};
+
+function SortHeader({ label, sortKey, sort, onSort, className }: SortHeaderProps) {
+	const active = sort.key === sortKey;
+	return (
+		<TableHead className={className}>
+			<button
+				type="button"
+				onClick={() => onSort(sortKey)}
+				className={cn(
+					"inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider transition-colors hover:text-foreground",
+					active ? "text-foreground" : "text-muted-foreground",
+				)}
+			>
+				{label}
+				<ArrowUpDown className="size-3" />
+			</button>
+		</TableHead>
+	);
+}
+
+const SKELETON_ROWS = ["a", "b", "c", "d", "e", "f", "g", "h"] as const;
+
 type ExpenseTableProps = {
-	expenses: Expense[];
-	categories: Category[];
-	currency: string;
-	onEdit: (expense: Expense) => void;
-	onDelete: (id: string) => void;
-	isLoading?: boolean;
+	readonly expenses: Expense[];
+	readonly categories: Category[];
+	readonly currency: string;
+	readonly sort: SortState;
+	readonly onSort: (key: SortKey) => void;
+	readonly onEdit: (expense: Expense) => void;
+	readonly onDelete: (id: string) => void;
+	readonly isLoading?: boolean;
+	readonly isFiltered?: boolean;
+	readonly onAddExpense?: () => void;
+	readonly onClearFilters?: () => void;
 };
 
 export function ExpenseTable({
 	expenses,
 	categories,
 	currency,
+	sort,
+	onSort,
 	onEdit,
 	onDelete,
 	isLoading,
+	isFiltered,
+	onAddExpense,
+	onClearFilters,
 }: ExpenseTableProps) {
 	const categoryMap = buildCategoryMap(categories);
 
-	const sorted = [...expenses].sort((a, b) => b.date.localeCompare(a.date));
-
 	if (isLoading) {
 		return (
-			<div className="rounded-2xl border border-border/60 bg-card/30 p-6">
-				<div className="space-y-3">
-					{[1, 2, 3].map((i) => (
-						<Skeleton key={i} className="h-12 rounded-lg" />
+			<div className="overflow-hidden rounded-xl border border-border">
+				<div className="flex flex-col">
+					{SKELETON_ROWS.map((k) => (
+						<div
+							key={k}
+							className="flex items-center gap-4 border-b border-border px-4 py-3.5 last:border-b-0"
+						>
+							<Skeleton className="h-4 w-20" />
+							<Skeleton className="h-5 w-24 rounded-full" />
+							<Skeleton className="h-4 flex-1" />
+							<Skeleton className="hidden h-5 w-16 rounded-full sm:block" />
+							<Skeleton className="h-4 w-16 text-right" />
+						</div>
 					))}
 				</div>
 			</div>
 		);
 	}
 
-	if (sorted.length === 0) {
+	if (expenses.length === 0) {
 		return (
-			<div className="rounded-2xl border border-border/60 bg-card/30 p-12 text-center">
-				<p className="m-0 text-sm text-muted-foreground">No expenses found.</p>
-			</div>
+			<EmptyState
+				icon={isFiltered ? SearchX : Receipt}
+				title={isFiltered ? "No matching expenses" : "No expenses yet"}
+				description={
+					isFiltered
+						? "Try adjusting your filters or search terms."
+						: "Add your first expense to start tracking your spending."
+				}
+				action={
+					isFiltered ? (
+						<Button variant="outline" size="sm" onClick={onClearFilters}>
+							Clear filters
+						</Button>
+					) : (
+						<Button size="sm" onClick={onAddExpense}>
+							Add expense
+						</Button>
+					)
+				}
+			/>
 		);
 	}
 
 	return (
-		<div className="overflow-hidden rounded-2xl border border-border/60 bg-card/30">
+		<div className="overflow-hidden rounded-xl border border-border">
 			<Table>
 				<TableHeader>
-					<TableRow>
-						<TableHead className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-							Date
-						</TableHead>
-						<TableHead className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-							Category
-						</TableHead>
-						<TableHead className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-							Description
-						</TableHead>
-						<TableHead className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+					<TableRow className="bg-muted/40 hover:bg-muted/40">
+						<SortHeader label="Date" sortKey="date" sort={sort} onSort={onSort} />
+						<SortHeader
+							label="Category"
+							sortKey="category"
+							sort={sort}
+							onSort={onSort}
+						/>
+						<SortHeader
+							label="Description"
+							sortKey="description"
+							sort={sort}
+							onSort={onSort}
+						/>
+						<TableHead className="whitespace-nowrap px-4 text-xs text-muted-foreground">
 							Type
 						</TableHead>
-						<TableHead className="whitespace-nowrap px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-							Amount
-						</TableHead>
-						<TableHead className="w-10 px-4 py-3" />
+						<SortHeader
+							label="Amount"
+							sortKey="amount"
+							sort={sort}
+							onSort={onSort}
+							className="text-right"
+						/>
+						<TableHead className="w-12 px-4" />
 					</TableRow>
 				</TableHeader>
 				<TableBody>
-					{sorted.map((expense) => (
+					{expenses.map((expense) => (
 						<ExpenseRow
 							key={expense.id}
 							expense={expense}
