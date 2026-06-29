@@ -11,13 +11,16 @@ import { useBudgetStatus, useBudgets } from "./useBudgets";
 // truth — it sums every expense even when the client list is paginated. While
 // that request is in flight we fall back to the identical client-side calc so
 // the card never flashes empty.
-export function useCurrentBudgetStatus(trackerId: string | undefined) {
+export function useCurrentBudgetStatus(
+	trackerId: string | undefined,
+	month?: string,
+) {
 	const { data: budgets = [], isLoading: budgetsLoading } =
 		useBudgets(trackerId);
 	const { data: expenses = [], isLoading: expensesLoading } =
 		useExpenses(trackerId);
 
-	const currentMonth = getCurrentMonth();
+	const currentMonth = month ?? getCurrentMonth();
 	const currentBudget = budgets.find((b) => b.month === currentMonth) ?? null;
 	const currentMonthExpenses = expenses.filter((e) =>
 		e.date.startsWith(currentMonth),

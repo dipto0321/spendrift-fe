@@ -27,7 +27,7 @@ export function BudgetStatusCard({
 	currency,
 }: BudgetStatusCardProps) {
 	return (
-		<Card>
+		<Card className="h-full">
 			<CardHeader>
 				<div className="flex items-center justify-between gap-2">
 					<div>

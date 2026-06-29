@@ -1,6 +1,5 @@
+import { ShoppingBag, TrendingDown } from "lucide-react";
 import { useState } from "react";
-import { Pencil, Plus, ShoppingBag, TrendingDown } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
@@ -12,11 +11,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useTracker } from "@/features/trackers/presentation/TrackerContext";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { MoneyText } from "@/shared/ui/MoneyText";
+import { useMonth } from "@/shared/ui/MonthContext";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { StatCard, StatCardSkeleton } from "@/shared/ui/StatCard";
 import { formatCurrency } from "@/shared/utils/format";
-import { calculateBudgetStatus } from "../domain/services";
-import type { Budget, BudgetCreateInput, BudgetStatus } from "../domain/types";
+import { calculateBudgetStatus, getCurrentMonth } from "../domain/services";
+import type { BudgetCreateInput, BudgetStatus } from "../domain/types";
 import { BudgetForm } from "./BudgetForm";
 import { BudgetStatusCard } from "./BudgetStatusCard";
 import { useCreateBudget, useUpdateBudget } from "./useBudgets";
@@ -34,73 +34,69 @@ function BudgetPage() {
 	const { activeTracker } = useTracker();
 	const trackerId = activeTracker?.id;
 	const currency = activeTracker?.currency ?? "";
-	const [showForm, setShowForm] = useState(false);
-	const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
+
+	const { selectedMonth } = useMonth();
+	const isPastMonth = selectedMonth < getCurrentMonth();
 
 	const {
 		budgets,
 		expenses,
-		currentMonth,
 		currentBudget,
 		status,
 		needsWantsSplit,
 		budgetsLoading,
-	} = useCurrentBudgetStatus(trackerId);
+	} = useCurrentBudgetStatus(trackerId, selectedMonth);
 
 	const createMutation = useCreateBudget(trackerId);
 	const updateMutation = useUpdateBudget(trackerId);
+	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	function handleFormSubmit(data: BudgetCreateInput) {
-		if (editingBudget) {
+		setIsSubmitting(true);
+		if (currentBudget) {
 			updateMutation.mutate(
-				{ id: editingBudget.id, patch: data },
-				{
-					onSuccess: () => {
-						setShowForm(false);
-						setEditingBudget(null);
-					},
-				},
+				{ id: currentBudget.id, patch: data },
+				{ onSettled: () => setIsSubmitting(false) },
 			);
 		} else {
-			createMutation.mutate(data, { onSuccess: () => setShowForm(false) });
+			createMutation.mutate(data, { onSettled: () => setIsSubmitting(false) });
 		}
 	}
 
-	function handleOpenForm() {
-		if (currentBudget) setEditingBudget(currentBudget);
-		setShowForm(true);
-	}
-
-	function handleCancel() {
-		setShowForm(false);
-		setEditingBudget(null);
-	}
-
-	const isFormSubmitting = createMutation.isPending || updateMutation.isPending;
-	const isFormOpen = showForm || Boolean(editingBudget);
 	const totalSpent = needsWantsSplit.needs + needsWantsSplit.wants;
-	const hasPreviousBudgets = budgets.some((b) => b.month !== currentMonth);
+	const otherBudgets = budgets.filter((b) => b.month !== selectedMonth);
 
-	let budgetStatusContent: React.ReactNode = null;
-	if (budgetsLoading) {
-		budgetStatusContent = <Skeleton className="h-56 rounded-xl" />;
-	} else if (status && currentBudget) {
+	const selectedMonthLabel = new Date(`${selectedMonth}-01`).toLocaleDateString(
+		"en",
+		{ month: "long", year: "numeric" },
+	);
+
+	let budgetStatusContent = (
+		<Skeleton className="h-full min-h-64 rounded-xl" />
+	);
+	if (!budgetsLoading && status && currentBudget) {
 		budgetStatusContent = (
 			<BudgetStatusCard
-				budgetName={currentBudget.name}
+				budgetName={selectedMonthLabel}
 				monthlyLimit={currentBudget.monthlyLimit}
 				savingsTarget={currentBudget.savingsTarget}
 				status={status}
 				currency={currency}
 			/>
 		);
-	} else if (!isFormOpen) {
+	} else if (!budgetsLoading) {
 		budgetStatusContent = (
-			<EmptyState
-				icon={Plus}
-				title="No budget for this month"
-				description='Click "Create budget" above to set your monthly limit and savings goal.'
-			/>
+			<Card className="flex h-full min-h-48 items-center justify-center">
+				<EmptyState
+					icon={TrendingDown}
+					title={`No budget for ${selectedMonthLabel}`}
+					description={
+						isPastMonth
+							? "No budget was set for this month."
+							: "Fill in the form to create a budget for this month."
+					}
+				/>
+			</Card>
 		);
 	}
 
@@ -109,45 +105,42 @@ function BudgetPage() {
 			<PageHeader
 				title="Budget"
 				description="Set monthly budgets, track savings targets, and monitor spending health."
-				actions={
-					<Button onClick={handleOpenForm} disabled={isFormOpen}>
-						{currentBudget ? (
-							<>
-								<Pencil className="size-4" />
-								Edit budget
-							</>
-						) : (
-							<>
-								<Plus className="size-4" />
-								Create budget
-							</>
-						)}
-					</Button>
-				}
 			/>
 
-			{isFormOpen && (
-				<Card>
-					<CardHeader>
-						<CardTitle>
-							{editingBudget ? "Edit budget" : "Create budget"}
-						</CardTitle>
-						<CardDescription>
-							Set your monthly spending limit and savings goal.
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<BudgetForm
-							initialData={editingBudget ?? undefined}
-							onSubmit={handleFormSubmit}
-							onCancel={handleCancel}
-							isSubmitting={isFormSubmitting}
-						/>
-					</CardContent>
-				</Card>
-			)}
+			<div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-5">
+				<div className="lg:col-span-2">
+					<Card className="h-full">
+						<CardHeader>
+							<CardTitle>Monthly setup</CardTitle>
+							<CardDescription>
+								{isPastMonth
+									? `Viewing ${selectedMonthLabel} — read only.`
+									: "Set your spending budget and savings goal for this tracker."}
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							{budgetsLoading ? (
+								<div className="space-y-4">
+									<Skeleton className="h-10 rounded-lg" />
+									<Skeleton className="h-10 rounded-lg" />
+									<Skeleton className="h-10 rounded-lg" />
+								</div>
+							) : (
+								<BudgetForm
+									initialData={currentBudget ?? undefined}
+									month={selectedMonth}
+									currency={currency}
+									onSubmit={handleFormSubmit}
+									isSubmitting={isSubmitting}
+									readOnly={isPastMonth}
+								/>
+							)}
+						</CardContent>
+					</Card>
+				</div>
 
-			{budgetStatusContent}
+				<div className="lg:col-span-3">{budgetStatusContent}</div>
+			</div>
 
 			<div className="grid gap-4 sm:grid-cols-3">
 				{budgetsLoading ? (
@@ -180,14 +173,13 @@ function BudgetPage() {
 				)}
 			</div>
 
-			{hasPreviousBudgets && (
+			{otherBudgets.length > 0 ? (
 				<Card>
 					<CardHeader>
 						<CardTitle>Previous budgets</CardTitle>
 					</CardHeader>
 					<CardContent className="space-y-2">
-						{budgets
-							.filter((b) => b.month !== currentMonth)
+						{otherBudgets
 							.sort((a, b) => b.month.localeCompare(a.month))
 							.map((budget) => {
 								const monthExpenses = expenses.filter((e) =>
@@ -201,6 +193,12 @@ function BudgetPage() {
 								const label = prevStatus.isOverBudget
 									? "Over"
 									: `${formatCurrency(prevStatus.remaining, currency)} left`;
+								const monthLabel = new Date(
+									`${budget.month}-01`,
+								).toLocaleDateString("en", {
+									month: "short",
+									year: "numeric",
+								});
 								return (
 									<div
 										key={budget.id}
@@ -208,7 +206,7 @@ function BudgetPage() {
 									>
 										<div>
 											<p className="m-0 text-sm font-medium text-foreground">
-												{budget.name}
+												{budget.name || monthLabel}
 											</p>
 											<p className="m-0 text-xs text-muted-foreground">
 												Spent {formatCurrency(prevStatus.spent, currency)} of{" "}
@@ -225,7 +223,7 @@ function BudgetPage() {
 							})}
 					</CardContent>
 				</Card>
-			)}
+			) : null}
 		</main>
 	);
 }

@@ -36,7 +36,6 @@ import {
 	useAuthSnapshot,
 } from "@/features/auth/data/repository";
 import { TrackerSwitcher } from "@/features/trackers/presentation/TrackerSwitcher";
-import ThemeToggle from "./ThemeToggle";
 
 const NAV_ITEMS = [
 	{ to: "/", label: "Dashboard", icon: LayoutDashboard, exact: true },
@@ -103,11 +102,6 @@ export default function AppSidebar() {
 			</SidebarContent>
 
 			<SidebarFooter className="gap-2 p-3">
-				<div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/30 px-3 py-2">
-					<span className="text-xs text-muted-foreground">Theme</span>
-					<ThemeToggle />
-				</div>
-
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
 						<button
