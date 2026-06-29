@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useTracker } from "@/features/trackers/presentation/TrackerContext";
 import { MoneyText } from "@/shared/ui/MoneyText";
 import { PageHeader } from "@/shared/ui/PageHeader";
+import { getCurrencySymbol } from "@/shared/utils/currency";
 import {
 	calculateTotal,
 	filterExpenses,
@@ -126,7 +127,7 @@ export function ExpensePage() {
 		<main className="flex flex-col gap-6 px-4 pb-14 pt-6">
 			<PageHeader
 				title="Expenses"
-				description={`All transactions for ${activeTracker?.name ?? "your tracker"}.`}
+				description={`All transactions for ${activeTracker?.name ?? "your tracker"}, in ${getCurrencySymbol(currency)}.`}
 				actions={
 					<Button onClick={openAddModal}>
 						<Plus className="size-4" />
