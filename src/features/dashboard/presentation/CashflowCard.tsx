@@ -28,7 +28,7 @@ type CashflowCardProps = {
 
 export function CashflowCard({ data, currency }: CashflowCardProps) {
 	return (
-		<Card>
+		<Card className="h-full">
 			<CardHeader>
 				<CardTitle>Spending trend</CardTitle>
 				<CardDescription>Monthly spending over the last 6 months</CardDescription>

@@ -44,11 +44,11 @@ export function DashboardPage() {
 				isLoading={summaryLoading}
 			/>
 
-			<div className="grid gap-6 lg:grid-cols-3">
-				<div className="lg:col-span-2">
+			<div className="grid items-stretch gap-6 lg:grid-cols-3">
+				<div className="h-full lg:col-span-2">
 					<CashflowCard data={monthlyData} currency={currency} />
 				</div>
-				<NeedsVsWantsCard needsWants={summary?.needsWants} />
+				<NeedsVsWantsCard needsWants={summary?.needsWants} currency={currency} />
 			</div>
 
 			<RecentExpenses
