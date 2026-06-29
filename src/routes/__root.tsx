@@ -8,6 +8,8 @@ import {
 	useRouterState,
 } from "@tanstack/react-router";
 import React, { useEffect, useState } from "react";
+import { Separator } from "@/components/ui/separator";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import {
@@ -120,6 +122,16 @@ function RootDocument({ children }: Readonly<{ children: React.ReactNode }>) {
 
 const AUTH_PATHS = new Set(["/sign-in", "/sign-up"]);
 
+const PAGE_TITLES: Record<string, string> = {
+	"/": "Dashboard",
+	"/expenses": "Expenses",
+	"/budget": "Budget",
+	"/reports": "Reports",
+	"/settings": "Settings",
+	"/profile": "Profile",
+	"/ai": "AI Settings",
+};
+
 function FullScreenMessage({
 	children,
 }: Readonly<{ children: React.ReactNode }>) {
@@ -196,14 +208,21 @@ function WorkspaceGate({ children }: Readonly<{ children: React.ReactNode }>) {
 		return <TrackerOnboarding />;
 	}
 
+	const pageTitle = PAGE_TITLES[pathname] ?? "Spendrift";
+
 	return (
-		<div className="min-h-screen bg-background">
-			<div className="flex min-h-[calc(100vh-1.5rem)] w-full max-w-[1560px] flex-col gap-3 p-3 lg:flex-row lg:gap-4 lg:p-4">
-				<AppSidebar />
-				<main className="min-w-0 h-auto flex-1 overflow-hidden rounded-2xl border border-border/60 bg-card/30 backdrop-blur-sm">
-					{children}
-				</main>
-			</div>
-		</div>
+		<SidebarProvider>
+			<AppSidebar />
+			<SidebarInset>
+				<header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-background/80 px-4 backdrop-blur">
+					<SidebarTrigger className="-ml-1" />
+					<Separator orientation="vertical" className="mr-1 h-5" />
+					<span className="text-sm font-semibold text-foreground">
+						{pageTitle}
+					</span>
+				</header>
+				<div className="flex flex-1 flex-col">{children}</div>
+			</SidebarInset>
+		</SidebarProvider>
 	);
 }
