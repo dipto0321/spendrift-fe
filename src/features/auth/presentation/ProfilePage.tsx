@@ -1,5 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { Save, Trash2, Upload } from "lucide-react";
+import { useRef, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,9 +21,13 @@ const MAX_AVATAR_SIZE = 1_000_000;
 export function ProfilePage() {
 	const auth = useAuthSnapshot();
 	const user = auth.user;
+
+	const [name, setName] = useState(user?.name ?? "");
+	const [email, setEmail] = useState(user?.email ?? "");
 	const [avatarError, setAvatarError] = useState<string | null>(null);
 	const [profileError, setProfileError] = useState<string | null>(null);
 	const [passwordError, setPasswordError] = useState<string | null>(null);
+	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	const updateProfileMutation = useMutation({
 		mutationFn: authRepository.updateProfile,
@@ -38,7 +43,7 @@ export function ProfilePage() {
 
 	if (!user) return null;
 
-	const initials = user.name
+	const initials = name
 		.split(" ")
 		.map((p) => p[0])
 		.filter(Boolean)
@@ -51,20 +56,20 @@ export function ProfilePage() {
 			<div className="mx-auto w-full max-w-3xl flex flex-col gap-6">
 				<PageHeader
 					title="Profile"
-					description="Update your name, email, password, and profile picture."
+					description="Manage your personal account information and preferences."
 				/>
 
+				{/* Account card: avatar + name/email fields in one unit */}
 				<Card>
 					<form
 						onSubmit={async (event) => {
 							event.preventDefault();
 							setProfileError(null);
-							const form = event.currentTarget;
-							const data = new FormData(form);
-							const name = ((data.get("name") as string | null) ?? "").trim();
-							const email = ((data.get("email") as string | null) ?? "").trim();
 							try {
-								await updateProfileMutation.mutateAsync({ name, email });
+								await updateProfileMutation.mutateAsync({
+									name: name.trim(),
+									email: email.trim(),
+								});
 							} catch (error) {
 								setProfileError(
 									error instanceof Error
@@ -75,120 +80,123 @@ export function ProfilePage() {
 						}}
 					>
 						<CardHeader>
+							<CardTitle>Account</CardTitle>
+							<CardDescription>
+								This information is shown across your Spendrift account.
+							</CardDescription>
+						</CardHeader>
+						<CardContent className="flex flex-col gap-6">
+							{/* Avatar row */}
 							<div className="flex items-center gap-4">
 								<Avatar className="size-16">
 									{user.avatarDataUrl ? (
-										<AvatarImage src={user.avatarDataUrl} alt={user.name} />
+										<AvatarImage src={user.avatarDataUrl} alt={name} />
 									) : null}
-									<AvatarFallback className="bg-linear-to-br from-amber-400/80 to-orange-500/80 text-white text-lg">
-										{initials || user.name.slice(0, 1).toUpperCase()}
+									<AvatarFallback className="bg-linear-to-br from-amber-400/80 to-orange-500/80 text-lg text-white">
+										{initials || name.slice(0, 1).toUpperCase() || "U"}
 									</AvatarFallback>
 								</Avatar>
-								<div>
-									<CardTitle>{user.name}</CardTitle>
-									<CardDescription>{user.email}</CardDescription>
+								<div className="flex flex-col gap-2">
+									<div className="flex flex-col gap-0.5">
+										<span className="text-sm font-medium text-foreground">
+											{name || "Your name"}
+										</span>
+										<span className="text-xs text-muted-foreground">{email}</span>
+									</div>
+									<div className="flex gap-2">
+										<Button
+											type="button"
+											variant="outline"
+											size="sm"
+											disabled={updateAvatarMutation.isPending}
+											onClick={() => {
+												setAvatarError(null);
+												fileInputRef.current?.click();
+											}}
+										>
+											<Upload className="size-3.5" />
+											{user.avatarDataUrl ? "Change" : "Upload"}
+										</Button>
+										{user.avatarDataUrl ? (
+											<Button
+												type="button"
+												variant="ghost"
+												size="sm"
+												disabled={updateAvatarMutation.isPending}
+												onClick={async () => {
+													setAvatarError(null);
+													await updateAvatarMutation.mutateAsync(null);
+												}}
+											>
+												<Trash2 className="size-3.5" />
+												{updateAvatarMutation.isPending ? "Removing…" : "Remove"}
+											</Button>
+										) : null}
+										<input
+											ref={fileInputRef}
+											type="file"
+											accept="image/*"
+											className="hidden"
+											onChange={async (event) => {
+												const file = event.currentTarget.files?.[0];
+												if (!file) return;
+												if (file.size > MAX_AVATAR_SIZE) {
+													setAvatarError("Avatar must be 1 MB or smaller.");
+													event.currentTarget.value = "";
+													return;
+												}
+												await updateAvatarMutation.mutateAsync(file);
+												event.currentTarget.value = "";
+											}}
+										/>
+									</div>
+									{avatarError ? (
+										<p className="text-xs text-destructive">{avatarError}</p>
+									) : null}
 								</div>
 							</div>
-						</CardHeader>
-						<CardContent className="grid gap-4 sm:grid-cols-2">
-							<div className="grid gap-2">
-								<Label htmlFor="profile-name">Name</Label>
-								<Input
-									id="profile-name"
-									name="name"
-									type="text"
-									defaultValue={user.name}
-									required
-								/>
+
+							{/* Name + email fields */}
+							<div className="grid gap-4 sm:grid-cols-2">
+								<div className="grid gap-2">
+									<Label htmlFor="profile-name">Full name</Label>
+									<Input
+										id="profile-name"
+										type="text"
+										autoComplete="name"
+										value={name}
+										onChange={(e) => setName(e.target.value)}
+										required
+									/>
+								</div>
+								<div className="grid gap-2">
+									<Label htmlFor="profile-email">Email</Label>
+									<Input
+										id="profile-email"
+										type="email"
+										autoComplete="email"
+										value={email}
+										onChange={(e) => setEmail(e.target.value)}
+										required
+									/>
+								</div>
+								{profileError ? (
+									<p className="col-span-full text-sm text-destructive">
+										{profileError}
+									</p>
+								) : null}
 							</div>
-							<div className="grid gap-2">
-								<Label htmlFor="profile-email">Email</Label>
-								<Input
-									id="profile-email"
-									name="email"
-									type="email"
-									defaultValue={user.email}
-									required
-								/>
-							</div>
-							{profileError ? (
-								<p className="col-span-full text-sm text-destructive">
-									{profileError}
-								</p>
-							) : null}
 						</CardContent>
 						<CardFooter className="justify-end border-t border-border">
 							<Button type="submit" disabled={updateProfileMutation.isPending}>
-								{updateProfileMutation.isPending ? "Saving…" : "Save profile"}
+								<Save className="size-4" />
+								{updateProfileMutation.isPending ? "Saving…" : "Save changes"}
 							</Button>
 						</CardFooter>
 					</form>
 				</Card>
 
-				<Card>
-					<CardHeader>
-						<CardTitle>Profile picture</CardTitle>
-						<CardDescription>
-							Upload an image up to 1 MB. Only you can see it.
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						{user.avatarDataUrl ? (
-							<div className="flex items-center gap-4">
-								<Avatar className="size-12">
-									<AvatarImage src={user.avatarDataUrl} alt={user.name} />
-									<AvatarFallback>{initials}</AvatarFallback>
-								</Avatar>
-								<div className="flex flex-col gap-1">
-									<p className="text-sm text-muted-foreground">
-										Remove the current image to upload a new one.
-									</p>
-									<Button
-										type="button"
-										variant="outline"
-										size="sm"
-										className="w-fit"
-										disabled={updateAvatarMutation.isPending}
-										onClick={async () => {
-											setAvatarError(null);
-											await updateAvatarMutation.mutateAsync(null);
-										}}
-									>
-										{updateAvatarMutation.isPending
-											? "Removing…"
-											: "Remove image"}
-									</Button>
-								</div>
-							</div>
-						) : (
-							<div className="grid gap-2 sm:max-w-xs">
-								<Label htmlFor="avatar-image">Avatar image</Label>
-								<Input
-									id="avatar-image"
-									type="file"
-									accept="image/*"
-									disabled={updateAvatarMutation.isPending}
-									onChange={async (event) => {
-										setAvatarError(null);
-										const file = event.currentTarget.files?.[0];
-										if (!file) return;
-										if (file.size > MAX_AVATAR_SIZE) {
-											setAvatarError("Avatar must be 1 MB or smaller.");
-											event.currentTarget.value = "";
-											return;
-										}
-										await updateAvatarMutation.mutateAsync(file);
-										event.currentTarget.value = "";
-									}}
-								/>
-							</div>
-						)}
-						{avatarError ? (
-							<p className="mt-3 text-sm text-destructive">{avatarError}</p>
-						) : null}
-					</CardContent>
-				</Card>
-
+				{/* Change password card */}
 				<Card>
 					<form
 						onSubmit={async (event) => {
@@ -206,9 +214,7 @@ export function ProfilePage() {
 								(data.get("confirmPassword") as string | null) ?? ""
 							).trim();
 							if (newPassword !== confirmPassword) {
-								setPasswordError(
-									"New password and confirmation do not match.",
-								);
+								setPasswordError("New password and confirmation do not match.");
 								return;
 							}
 							try {
@@ -229,7 +235,7 @@ export function ProfilePage() {
 						<CardHeader>
 							<CardTitle>Change password</CardTitle>
 							<CardDescription>
-								Choose a strong password you don't use elsewhere.
+								Choose a strong password you don&apos;t use elsewhere.
 							</CardDescription>
 						</CardHeader>
 						<CardContent className="grid gap-4 sm:grid-cols-3">
@@ -270,13 +276,8 @@ export function ProfilePage() {
 							) : null}
 						</CardContent>
 						<CardFooter className="justify-end border-t border-border">
-							<Button
-								type="submit"
-								disabled={updatePasswordMutation.isPending}
-							>
-								{updatePasswordMutation.isPending
-									? "Updating…"
-									: "Update password"}
+							<Button type="submit" disabled={updatePasswordMutation.isPending}>
+								{updatePasswordMutation.isPending ? "Updating…" : "Update password"}
 							</Button>
 						</CardFooter>
 					</form>
