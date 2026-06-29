@@ -3,7 +3,13 @@ import type { DateRange as PickerDateRange } from "react-day-picker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import {
 	Dialog,
 	DialogContent,
@@ -14,7 +20,10 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { getCurrentMonth } from "@/features/budgets/domain/services";
+import { useCurrentBudgetStatus } from "@/features/budgets/presentation/useCurrentBudgetStatus";
 import { useTracker } from "@/features/trackers/presentation/TrackerContext";
+import { BudgetProgress } from "@/shared/ui/BudgetProgress";
 import { MoneyText } from "@/shared/ui/MoneyText";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { formatCurrency } from "@/shared/utils/format";
@@ -93,6 +102,26 @@ function ReportsPage() {
 	);
 	const { data: needsWantsSplit } = useReportNeedsWants(trackerId, range);
 	const { data: yearComparison = [] } = useYearComparison(trackerId);
+
+	// Category budgets — always current month, independent of the custom range
+	const currentMonth = useMemo(() => getCurrentMonth(), []);
+	const currentMonthRange = useMemo<ReportRange>(() => {
+		const [year, month] = currentMonth.split("-").map(Number);
+		return {
+			startDate: `${currentMonth}-01`,
+			endDate: toApiDate(new Date(year, month, 0)),
+		};
+	}, [currentMonth]);
+	const { data: catBudgetData = [] } = useCategoryBreakdown(
+		trackerId,
+		currentMonthRange,
+	);
+	const { currentBudget } = useCurrentBudgetStatus(trackerId);
+	const monthlyLimit = currentBudget?.monthlyLimit ?? 0;
+	const perCategoryBudget =
+		catBudgetData.length > 0 && monthlyLimit > 0
+			? monthlyLimit / catBudgetData.length
+			: 0;
 
 	const rangeLabel = getRangeLabel(customRange);
 	const isCustomRangeActive = customRangeOpen || Boolean(customRange);
@@ -333,6 +362,30 @@ function ReportsPage() {
 					</CardContent>
 				</Card>
 			)}
+
+			{catBudgetData.length > 0 && monthlyLimit > 0 ? (
+				<Card>
+					<CardHeader>
+						<CardTitle>Category budgets</CardTitle>
+						<CardDescription>
+							Budget vs actual spending per category this month.
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<div className="grid gap-x-8 gap-y-6 sm:grid-cols-2">
+							{catBudgetData.map((cat) => (
+								<BudgetProgress
+									key={cat.categoryId}
+									label={cat.categoryName}
+									budget={perCategoryBudget}
+									actual={cat.total}
+									currency={currency}
+								/>
+							))}
+						</div>
+					</CardContent>
+				</Card>
+			) : null}
 		</main>
 	);
 }
