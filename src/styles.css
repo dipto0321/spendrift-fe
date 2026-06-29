@@ -46,6 +46,13 @@
   --sidebar-accent-foreground: oklch(0.35 0.05 162);
   --sidebar-border: oklch(0.91 0.006 150);
   --sidebar-ring: oklch(0.68 0.1 162);
+
+  /* Design tokens used by current components */
+  --surface-strong: var(--card);
+  --line: color-mix(in oklab, var(--border) 78%, transparent 22%);
+  --inset-glint: color-mix(in oklab, white 60%, transparent 40%);
+  --kicker: color-mix(in oklab, var(--foreground) 45%, var(--muted-foreground) 55%);
+  --brand-strong: var(--primary);
 }
 
 .dark {
@@ -86,6 +93,13 @@
   --sidebar-accent-foreground: oklch(0.92 0.02 162);
   --sidebar-border: oklch(0.28 0.008 165);
   --sidebar-ring: oklch(0.74 0.1 162);
+
+  /* Design tokens used by current components */
+  --surface-strong: var(--card);
+  --line: color-mix(in oklab, var(--border) 78%, transparent 22%);
+  --inset-glint: color-mix(in oklab, white 8%, transparent 92%);
+  --kicker: color-mix(in oklab, var(--foreground) 45%, var(--muted-foreground) 55%);
+  --brand-strong: var(--primary);
 }
 
 @theme inline {
