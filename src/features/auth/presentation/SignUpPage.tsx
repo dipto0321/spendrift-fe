@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Globe, PieChart, TrendingUp, Wallet } from "lucide-react";
+import type { ElementType } from "react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,6 +39,28 @@ function createHumanChallenge(): HumanChallenge {
 	return { left, right, operator, answer };
 }
 
+function BrandMark() {
+	return (
+		<div className="flex items-center gap-2">
+			<div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+				<Wallet className="size-4" />
+			</div>
+			<span className="text-lg font-semibold">Spendrift</span>
+		</div>
+	);
+}
+
+function FeatureLine({ icon: Icon, text }: { icon: ElementType; text: string }) {
+	return (
+		<li className="flex items-center gap-3">
+			<span className="flex size-8 items-center justify-center rounded-md bg-sidebar-accent text-sidebar-accent-foreground">
+				<Icon className="size-4" />
+			</span>
+			{text}
+		</li>
+	);
+}
+
 export function SignUpPage() {
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
@@ -47,47 +70,56 @@ export function SignUpPage() {
 	const [confirmPassword, setConfirmPassword] = useState("");
 	const [showPassword, setShowPassword] = useState(false);
 	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-	// Generated after mount, not in the initializer: createHumanChallenge() uses
-	// Math.random(), so seeding it during render makes the server and client
-	// disagree and triggers a hydration mismatch.
-	const [humanChallenge, setHumanChallenge] = useState<HumanChallenge | null>(
-		null,
-	);
+	// Generated after mount — Math.random() during render causes hydration mismatch
+	const [humanChallenge, setHumanChallenge] = useState<HumanChallenge | null>(null);
 	const [humanAnswer, setHumanAnswer] = useState("");
 	const [localError, setLocalError] = useState<string | null>(null);
 
 	useEffect(() => {
 		setHumanChallenge(createHumanChallenge());
 	}, []);
+
 	const signUpMutation = useMutation({
 		mutationFn: authRepository.signUp,
 		onSuccess: async () => {
-			// Drop any cached queries from a previous session so the new account
-			// starts from a clean slate and the workspace gate routes it into
-			// onboarding instead of flashing the old user's trackers.
 			queryClient.clear();
 			await navigate({ to: "/" });
 		},
 	});
 
 	return (
-		<div className="min-h-screen bg-background px-4 py-6">
-			<div className="mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-3xl items-center">
-				<Card className="w-full overflow-hidden rounded-4xl border-border/60 bg-card/60 shadow-2xl shadow-black/10 backdrop-blur-sm">
-					<CardHeader className="space-y-3 border-b border-border/50 px-6 py-8 sm:px-8">
-						<p className="island-kicker mb-0">Create account</p>
-						<CardTitle className="display-title m-0 text-3xl font-semibold text-foreground sm:text-4xl">
-							Sign up
-						</CardTitle>
-						<CardDescription className="max-w-xl text-sm leading-6 text-muted-foreground sm:text-base">
-							Create your account first, then we will ask you to create your
-							first tracker.
+		<div className="grid min-h-svh lg:grid-cols-2">
+			<div className="relative hidden flex-col justify-between bg-sidebar p-10 text-sidebar-foreground lg:flex">
+				<BrandMark />
+				<div className="flex flex-col gap-6">
+					<h1 className="text-pretty text-3xl font-semibold leading-tight">
+						Track every expense across every currency, in one calm place.
+					</h1>
+					<ul className="flex flex-col gap-4 text-sm text-sidebar-foreground/80">
+						<FeatureLine icon={Globe} text="Separate trackers per country and currency" />
+						<FeatureLine icon={TrendingUp} text="Cashflow and savings health at a glance" />
+						<FeatureLine icon={PieChart} text="Needs vs wants breakdown and reports" />
+					</ul>
+				</div>
+				<p className="text-xs text-sidebar-foreground/60">
+					&copy; 2026 Spendrift. A personal finance companion.
+				</p>
+			</div>
+
+			<div className="flex items-center justify-center p-6 md:p-10">
+				<Card className="w-full max-w-sm border-0 shadow-none sm:border sm:shadow-sm">
+					<CardHeader>
+						<div className="mb-2 lg:hidden">
+							<BrandMark />
+						</div>
+						<CardTitle className="text-xl">Create your account</CardTitle>
+						<CardDescription>
+							Start tracking your spending in minutes.
 						</CardDescription>
 					</CardHeader>
-
-					<CardContent className="px-6 py-6 sm:px-8 sm:py-8">
+					<CardContent>
 						<form
-							className="space-y-4"
+							className="grid gap-4"
 							onSubmit={async (event) => {
 								event.preventDefault();
 								setLocalError(null);
@@ -96,15 +128,10 @@ export function SignUpPage() {
 								const cleanEmail = email.trim();
 								const cleanPassword = password.trim();
 								const cleanConfirmPassword = confirmPassword.trim();
-								const cleanHumanAnswer = Number.parseInt(
-									humanAnswer.trim(),
-									10,
-								);
+								const cleanHumanAnswer = Number.parseInt(humanAnswer.trim(), 10);
 
 								if (!cleanName || !cleanEmail || !cleanPassword) {
-									setLocalError(
-										"Fill in every field before creating an account.",
-									);
+									setLocalError("Fill in every field before creating an account.");
 									return;
 								}
 
@@ -133,17 +160,16 @@ export function SignUpPage() {
 							}}
 						>
 							<div className="grid gap-2">
-								<Label htmlFor="name">Name</Label>
+								<Label htmlFor="name">Full name</Label>
 								<Input
 									id="name"
 									type="text"
 									autoComplete="name"
 									value={name}
-									onChange={(event) => setName(event.target.value)}
+									onChange={(e) => setName(e.target.value)}
 									placeholder="Your full name"
 								/>
 							</div>
-
 							<div className="grid gap-2">
 								<Label htmlFor="email">Email</Label>
 								<Input
@@ -151,76 +177,62 @@ export function SignUpPage() {
 									type="email"
 									autoComplete="email"
 									value={email}
-									onChange={(event) => setEmail(event.target.value)}
+									onChange={(e) => setEmail(e.target.value)}
 									placeholder="name@domain.com"
 								/>
 							</div>
-
-							<div className="grid gap-2 sm:grid-cols-2">
-								<div className="grid gap-2">
-									<Label htmlFor="password">Password</Label>
-									<div className="relative">
-										<Input
-											id="password"
-											type={showPassword ? "text" : "password"}
-											autoComplete="new-password"
-											value={password}
-											onChange={(event) => setPassword(event.target.value)}
-											placeholder="Create a password"
-											className="pr-10"
-										/>
-										<Button
-											type="button"
-											variant="ghost"
-											size="icon-sm"
-											className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-											onClick={() => setShowPassword((value) => !value)}
-											aria-label={
-												showPassword ? "Hide password" : "Show password"
-											}
-										>
-											{showPassword ? <EyeOff /> : <Eye />}
-										</Button>
-									</div>
+							<div className="grid gap-2">
+								<Label htmlFor="password">Password</Label>
+								<div className="relative">
+									<Input
+										id="password"
+										type={showPassword ? "text" : "password"}
+										autoComplete="new-password"
+										value={password}
+										onChange={(e) => setPassword(e.target.value)}
+										placeholder="Create a password"
+										className="pr-10"
+									/>
+									<button
+										type="button"
+										className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+										onClick={() => setShowPassword((v) => !v)}
+										aria-label={showPassword ? "Hide password" : "Show password"}
+									>
+										{showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+									</button>
 								</div>
-
-								<div className="grid gap-2">
-									<Label htmlFor="confirm-password">Confirm password</Label>
-									<div className="relative">
-										<Input
-											id="confirm-password"
-											type={showConfirmPassword ? "text" : "password"}
-											autoComplete="new-password"
-											value={confirmPassword}
-											onChange={(event) =>
-												setConfirmPassword(event.target.value)
-											}
-											placeholder="Repeat password"
-											className="pr-10"
-										/>
-										<Button
-											type="button"
-											variant="ghost"
-											size="icon-sm"
-											className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-											onClick={() => setShowConfirmPassword((value) => !value)}
-											aria-label={
-												showConfirmPassword
-													? "Hide confirm password"
-													: "Show confirm password"
-											}
-										>
-											{showConfirmPassword ? <EyeOff /> : <Eye />}
-										</Button>
-									</div>
+							</div>
+							<div className="grid gap-2">
+								<Label htmlFor="confirm-password">Confirm password</Label>
+								<div className="relative">
+									<Input
+										id="confirm-password"
+										type={showConfirmPassword ? "text" : "password"}
+										autoComplete="new-password"
+										value={confirmPassword}
+										onChange={(e) => setConfirmPassword(e.target.value)}
+										placeholder="Repeat password"
+										className="pr-10"
+									/>
+									<button
+										type="button"
+										className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+										onClick={() => setShowConfirmPassword((v) => !v)}
+										aria-label={
+											showConfirmPassword ? "Hide confirm password" : "Show confirm password"
+										}
+									>
+										{showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+									</button>
 								</div>
 							</div>
 
-							<div className="rounded-2xl border border-border/60 bg-muted/30 p-4">
-								<div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-									<div className="grid gap-2">
-										<Label htmlFor="human-check">Human verification</Label>
-										<p className="text-sm text-muted-foreground">
+							<div className="rounded-lg border border-border/60 bg-muted/30 p-4">
+								<div className="flex items-center justify-between gap-4">
+									<div>
+										<Label htmlFor="human-check">Human check</Label>
+										<p className="mt-1 text-xs text-muted-foreground">
 											Solve this quick check to continue.
 										</p>
 									</div>
@@ -234,11 +246,11 @@ export function SignUpPage() {
 											setLocalError(null);
 										}}
 									>
-										New challenge
+										New
 									</Button>
 								</div>
-								<div className="mt-4 flex items-center justify-center gap-3 rounded-2xl border border-border/60 bg-background px-4 py-3">
-									<span className="text-lg font-semibold tracking-tight text-foreground">
+								<div className="mt-3 flex items-center gap-3">
+									<span className="text-sm font-semibold text-foreground">
 										{humanChallenge
 											? `${humanChallenge.left} ${humanChallenge.operator} ${humanChallenge.right} = ?`
 											: "…"}
@@ -250,15 +262,15 @@ export function SignUpPage() {
 										autoComplete="off"
 										spellCheck={false}
 										value={humanAnswer}
-										onChange={(event) => setHumanAnswer(event.target.value)}
+										onChange={(e) => setHumanAnswer(e.target.value)}
 										placeholder="Answer"
-										className="h-11 max-w-28 text-center text-base"
+										className="max-w-24 text-center"
 									/>
 								</div>
 							</div>
 
-							{localError || signUpMutation.error ? (
-								<p className="text-sm text-red-500">
+							{localError ?? signUpMutation.error ? (
+								<p className="text-sm text-destructive">
 									{localError ?? signUpMutation.error?.message}
 								</p>
 							) : null}
@@ -266,23 +278,22 @@ export function SignUpPage() {
 							<Button
 								type="submit"
 								disabled={signUpMutation.isPending}
-								className="w-full rounded-xl"
+								className="w-full"
 							>
-								{signUpMutation.isPending ? "Creating..." : "Create account"}
+								{signUpMutation.isPending ? "Creating…" : "Create account"}
 							</Button>
 						</form>
 					</CardContent>
-
-					<CardFooter className="border-t border-border/50 px-6 py-5 sm:px-8">
-						<div className="text-sm text-muted-foreground">
+					<CardFooter className="justify-center">
+						<p className="text-sm text-muted-foreground">
 							Already have an account?{" "}
 							<Link
 								to="/sign-in"
-								className="font-medium text-primary hover:underline"
+								className="font-medium text-foreground underline-offset-4 hover:underline"
 							>
 								Sign in
 							</Link>
-						</div>
+						</p>
 					</CardFooter>
 				</Card>
 			</div>
