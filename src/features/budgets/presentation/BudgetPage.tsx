@@ -1,16 +1,34 @@
 import { useState } from "react";
+import { Pencil, Plus, ShoppingBag, TrendingDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTracker } from "@/features/trackers/presentation/TrackerContext";
+import { EmptyState } from "@/shared/ui/EmptyState";
+import { MoneyText } from "@/shared/ui/MoneyText";
 import { PageHeader } from "@/shared/ui/PageHeader";
-import { StatCard } from "@/shared/ui/StatCard";
+import { StatCard, StatCardSkeleton } from "@/shared/ui/StatCard";
 import { formatCurrency } from "@/shared/utils/format";
 import { calculateBudgetStatus } from "../domain/services";
-import type { Budget, BudgetCreateInput } from "../domain/types";
+import type { Budget, BudgetCreateInput, BudgetStatus } from "../domain/types";
 import { BudgetForm } from "./BudgetForm";
 import { BudgetStatusCard } from "./BudgetStatusCard";
 import { useCreateBudget, useUpdateBudget } from "./useBudgets";
 import { useCurrentBudgetStatus } from "./useCurrentBudgetStatus";
+
+const STAT_SKELETON_KEYS = ["spent", "needs", "wants"] as const;
+
+function prevBudgetColorClass(status: BudgetStatus): string {
+	if (status.isOverBudget) return "text-destructive";
+	if (status.remaining > 0) return "text-success";
+	return "text-warning-foreground dark:text-warning";
+}
 
 function BudgetPage() {
 	const { activeTracker } = useTracker();
@@ -48,8 +66,6 @@ function BudgetPage() {
 		}
 	}
 
-	// Opening the form for an existing current-month budget must edit it, not
-	// create a second one (only one budget per tracker per month is allowed).
 	function handleOpenForm() {
 		if (currentBudget) setEditingBudget(currentBudget);
 		setShowForm(true);
@@ -61,140 +77,155 @@ function BudgetPage() {
 	}
 
 	const isFormSubmitting = createMutation.isPending || updateMutation.isPending;
+	const isFormOpen = showForm || Boolean(editingBudget);
+	const totalSpent = needsWantsSplit.needs + needsWantsSplit.wants;
+	const hasPreviousBudgets = budgets.some((b) => b.month !== currentMonth);
 
+	let budgetStatusContent: React.ReactNode = null;
 	if (budgetsLoading) {
-		return (
-			<main className="page-wrap rise-in px-4 pb-14 pt-10 sm:pt-12">
-				<PageHeader
-					kicker="Budget"
-					title="Budget workspace"
-					description="Set monthly budgets, track savings targets, and monitor spending health."
-				/>
-				<Skeleton className="h-48 rounded-2xl" />
-			</main>
+		budgetStatusContent = <Skeleton className="h-56 rounded-xl" />;
+	} else if (status && currentBudget) {
+		budgetStatusContent = (
+			<BudgetStatusCard
+				budgetName={currentBudget.name}
+				monthlyLimit={currentBudget.monthlyLimit}
+				savingsTarget={currentBudget.savingsTarget}
+				status={status}
+				currency={currency}
+			/>
+		);
+	} else if (!isFormOpen) {
+		budgetStatusContent = (
+			<EmptyState
+				icon={Plus}
+				title="No budget for this month"
+				description='Click "Create budget" above to set your monthly limit and savings goal.'
+			/>
 		);
 	}
 
 	return (
-		<main className="page-wrap rise-in px-4 pb-14 pt-10 sm:pt-12">
+		<main className="flex flex-col gap-6 px-4 pb-14 pt-6">
 			<PageHeader
-				kicker="Budget"
-				title="Budget workspace"
+				title="Budget"
 				description="Set monthly budgets, track savings targets, and monitor spending health."
+				actions={
+					<Button onClick={handleOpenForm} disabled={isFormOpen}>
+						{currentBudget ? (
+							<>
+								<Pencil className="size-4" />
+								Edit budget
+							</>
+						) : (
+							<>
+								<Plus className="size-4" />
+								Create budget
+							</>
+						)}
+					</Button>
+				}
 			/>
 
-			<div className="space-y-6">
-				{!showForm && !editingBudget && (
-					<div className="flex justify-end">
-						<Button type="button" onClick={handleOpenForm}>
-							{currentBudget ? "Edit Budget" : "Create Budget"}
-						</Button>
-					</div>
-				)}
-
-				{(showForm || editingBudget) && (
-					<div className="rounded-2xl border border-border/60 bg-card/30 p-6">
-						<h3 className="m-0 mb-4 text-base font-semibold text-foreground">
-							{editingBudget ? "Edit Budget" : "Create Budget"}
-						</h3>
+			{isFormOpen && (
+				<Card>
+					<CardHeader>
+						<CardTitle>
+							{editingBudget ? "Edit budget" : "Create budget"}
+						</CardTitle>
+						<CardDescription>
+							Set your monthly spending limit and savings goal.
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
 						<BudgetForm
 							initialData={editingBudget ?? undefined}
 							onSubmit={handleFormSubmit}
 							onCancel={handleCancel}
 							isSubmitting={isFormSubmitting}
 						/>
-					</div>
-				)}
+					</CardContent>
+				</Card>
+			)}
 
-				{status && currentBudget ? (
-					<BudgetStatusCard
-						budgetName={currentBudget.name}
-						monthlyLimit={currentBudget.monthlyLimit}
-						savingsTarget={currentBudget.savingsTarget}
-						status={status}
-						currency={currency}
-					/>
+			{budgetStatusContent}
+
+			<div className="grid gap-4 sm:grid-cols-3">
+				{budgetsLoading ? (
+					STAT_SKELETON_KEYS.map((k) => <StatCardSkeleton key={k} />)
 				) : (
-					!showForm && (
-						<div className="rounded-2xl border border-border/60 bg-card/30 p-12 text-center">
-							<p className="m-0 text-sm text-muted-foreground">
-								No budget set for this month.
-							</p>
-							<p className="m-0 mt-1 text-xs text-muted-foreground">
-								Click "Create Budget" above to get started.
-							</p>
-						</div>
-					)
-				)}
-
-				<section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-					<StatCard
-						label="This Month Spent"
-						value={formatCurrency(
-							needsWantsSplit.needs + needsWantsSplit.wants,
-							currency,
-						)}
-					/>
-					<StatCard
-						label="Needs"
-						value={formatCurrency(needsWantsSplit.needs, currency)}
-						subtext={`${needsWantsSplit.percentage.needs}% of spending`}
-					/>
-					<StatCard
-						label="Wants"
-						value={formatCurrency(needsWantsSplit.wants, currency)}
-						subtext={`${needsWantsSplit.percentage.wants}% of spending`}
-					/>
-				</section>
-
-				{budgets.length > 0 && (
-					<section>
-						<h2 className="m-0 mb-3 text-base font-semibold text-foreground">
-							Previous Budgets
-						</h2>
-						<div className="space-y-2">
-							{budgets
-								.filter((b) => b.month !== currentMonth)
-								.sort((a, b) => b.month.localeCompare(a.month))
-								.map((budget) => {
-									const monthExpenses = expenses.filter((e) =>
-										e.date.startsWith(budget.month),
-									);
-									const prevStatus = calculateBudgetStatus(
-										budget.monthlyLimit,
-										budget.savingsTarget,
-										monthExpenses,
-									);
-									return (
-										<div
-											key={budget.id}
-											className="flex items-center justify-between rounded-xl border border-border/60 bg-card/30 p-4"
-										>
-											<div>
-												<p className="m-0 text-sm font-medium text-foreground">
-													{budget.name}
-												</p>
-												<p className="m-0 text-xs text-muted-foreground">
-													Spent {formatCurrency(prevStatus.spent, currency)} of{" "}
-													{formatCurrency(budget.monthlyLimit, currency)}
-												</p>
-											</div>
-											<div className="flex items-center gap-2">
-												<span
-													className={`text-xs font-medium ${prevStatus.isOverBudget ? "text-red-500" : prevStatus.remaining > 0 ? "text-green-500" : "text-yellow-500"}`}
-												>
-													{prevStatus.isOverBudget
-														? "Over"
-														: `${formatCurrency(prevStatus.remaining, currency)} left`}
-												</span>
-											</div>
-										</div>
-									);
-								})}
-						</div>
-					</section>
+					<>
+						<StatCard
+							label="This month spent"
+							value={<MoneyText amount={totalSpent} currency={currency} />}
+							icon={TrendingDown}
+							tone="destructive"
+						/>
+						<StatCard
+							label="Needs"
+							value={
+								<MoneyText amount={needsWantsSplit.needs} currency={currency} />
+							}
+							icon={ShoppingBag}
+							hint={`${needsWantsSplit.percentage.needs}% of spending`}
+						/>
+						<StatCard
+							label="Wants"
+							value={
+								<MoneyText amount={needsWantsSplit.wants} currency={currency} />
+							}
+							icon={ShoppingBag}
+							hint={`${needsWantsSplit.percentage.wants}% of spending`}
+						/>
+					</>
 				)}
 			</div>
+
+			{hasPreviousBudgets && (
+				<Card>
+					<CardHeader>
+						<CardTitle>Previous budgets</CardTitle>
+					</CardHeader>
+					<CardContent className="space-y-2">
+						{budgets
+							.filter((b) => b.month !== currentMonth)
+							.sort((a, b) => b.month.localeCompare(a.month))
+							.map((budget) => {
+								const monthExpenses = expenses.filter((e) =>
+									e.date.startsWith(budget.month),
+								);
+								const prevStatus = calculateBudgetStatus(
+									budget.monthlyLimit,
+									budget.savingsTarget,
+									monthExpenses,
+								);
+								const label = prevStatus.isOverBudget
+									? "Over"
+									: `${formatCurrency(prevStatus.remaining, currency)} left`;
+								return (
+									<div
+										key={budget.id}
+										className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/20 p-4"
+									>
+										<div>
+											<p className="m-0 text-sm font-medium text-foreground">
+												{budget.name}
+											</p>
+											<p className="m-0 text-xs text-muted-foreground">
+												Spent {formatCurrency(prevStatus.spent, currency)} of{" "}
+												{formatCurrency(budget.monthlyLimit, currency)}
+											</p>
+										</div>
+										<span
+											className={`text-xs font-medium tabular-nums ${prevBudgetColorClass(prevStatus)}`}
+										>
+											{label}
+										</span>
+									</div>
+								);
+							})}
+					</CardContent>
+				</Card>
+			)}
 		</main>
 	);
 }
