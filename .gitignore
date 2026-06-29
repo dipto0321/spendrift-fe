@@ -18,3 +18,4 @@ todos.json
 .env.production
 .env.test
 *.log
+Design_Migration_Plan.md

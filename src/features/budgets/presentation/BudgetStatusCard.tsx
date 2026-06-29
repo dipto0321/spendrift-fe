@@ -1,15 +1,20 @@
 import { Progress } from "@/components/ui/progress";
 import { formatCurrency } from "@/shared/utils/format";
-import { getProgressBarColor } from "../domain/services";
+import { SavingsHealthBadge } from "@/shared/ui/SavingsHealthBadge";
 import type { BudgetStatus } from "../domain/types";
-import { SavingsHealthBadge } from "./SavingsHealthBadge";
 
 type BudgetStatusCardProps = {
-	budgetName: string;
-	monthlyLimit: number;
-	savingsTarget: number;
-	status: BudgetStatus;
-	currency: string;
+	readonly budgetName: string;
+	readonly monthlyLimit: number;
+	readonly savingsTarget: number;
+	readonly status: BudgetStatus;
+	readonly currency: string;
+};
+
+const HEALTH_BAR: Record<string, string> = {
+	green: "bg-success",
+	yellow: "bg-warning",
+	red: "bg-destructive",
 };
 
 export function BudgetStatusCard({
@@ -50,7 +55,7 @@ export function BudgetStatusCard({
 					<Progress
 						value={spentPercentage}
 						className="mt-1 h-2 bg-muted"
-						indicatorClassName={`duration-500 ${getProgressBarColor(status.savingsHealth)}`}
+						indicatorClassName={`duration-500 ${HEALTH_BAR[status.savingsHealth] ?? "bg-muted"}`}
 					/>
 				</div>
 
