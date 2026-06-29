@@ -22,7 +22,6 @@ import { formatCurrency, formatDateShort } from "@/shared/utils/format";
 import { MoneyText } from "@/shared/ui/MoneyText";
 import { NeedsWantsTag } from "@/shared/ui/NeedsWantsTag";
 import type { Category, Expense } from "../domain/types";
-import { CategoryChip } from "./CategoryChip";
 
 type ExpenseRowProps = {
 	readonly expense: Expense;
@@ -52,13 +51,16 @@ export function ExpenseRow({
 				<TableCell className="whitespace-nowrap px-4 py-3 text-sm text-muted-foreground">
 					{formatDateShort(expense.date)}
 				</TableCell>
-				<TableCell className="px-4 py-3">
-					<CategoryChip name={categoryName} color={categoryColor} />
-				</TableCell>
-				<TableCell className="max-w-52 truncate px-4 py-3 text-sm text-foreground">
+				<TableCell className="max-w-52 truncate px-4 py-3 font-medium text-foreground">
 					{expense.description || "—"}
+					<span className="mt-0.5 block text-xs text-muted-foreground md:hidden">
+						{categoryName}
+					</span>
 				</TableCell>
-				<TableCell className="px-4 py-3">
+				<TableCell className="hidden text-sm text-muted-foreground md:table-cell">
+					{categoryName}
+				</TableCell>
+				<TableCell className="hidden sm:table-cell">
 					<NeedsWantsTag type={expense.type} />
 				</TableCell>
 				<TableCell className="whitespace-nowrap px-4 py-3 text-right">

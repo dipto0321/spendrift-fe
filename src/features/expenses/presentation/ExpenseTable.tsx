@@ -124,34 +124,33 @@ export function ExpenseTable({
 	return (
 		<div className="overflow-hidden rounded-xl border border-border">
 			<Table>
-				<TableHeader>
-					<TableRow className="bg-muted/40 hover:bg-muted/40">
-						<SortHeader label="Date" sortKey="date" sort={sort} onSort={onSort} />
-						<SortHeader
-							label="Category"
-							sortKey="category"
-							sort={sort}
-							onSort={onSort}
-						/>
-						<SortHeader
-							label="Description"
-							sortKey="description"
-							sort={sort}
-							onSort={onSort}
-						/>
-						<TableHead className="whitespace-nowrap px-4 text-xs text-muted-foreground">
-							Type
-						</TableHead>
-						<SortHeader
-							label="Amount"
-							sortKey="amount"
-							sort={sort}
-							onSort={onSort}
-							className="text-right"
-						/>
-						<TableHead className="w-12 px-4" />
-					</TableRow>
-				</TableHeader>
+<TableHeader>
+				<TableRow className="bg-muted/40 hover:bg-muted/40">
+					<SortHeader label="Date" sortKey="date" sort={sort} onSort={onSort} />
+					<SortHeader
+						label="Title"
+						sortKey="description"
+						sort={sort}
+						onSort={onSort}
+					/>
+					<SortHeader
+						label="Category"
+						sortKey="category"
+						sort={sort}
+						onSort={onSort}
+						className="hidden md:table-cell"
+					/>
+					<TableHead className="hidden text-xs sm:table-cell">Type</TableHead>
+					<SortHeader
+						label="Amount"
+						sortKey="amount"
+						sort={sort}
+						onSort={onSort}
+						className="text-right"
+					/>
+					<TableHead className="w-10" />
+				</TableRow>
+			</TableHeader>
 				<TableBody>
 					{expenses.map((expense) => (
 						<ExpenseRow
