@@ -40,7 +40,6 @@ export function ExpenseRow({
 }: ExpenseRowProps) {
 	const [deleteOpen, setDeleteOpen] = useState(false);
 	const categoryName = category?.name ?? "Uncategorized";
-	const categoryColor = category?.color ?? "#78716C";
 
 	return (
 		<>

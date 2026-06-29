@@ -1,7 +1,13 @@
 import { Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import {
 	getThisMonthRange,
 	getTodayRange,
@@ -37,11 +43,6 @@ export function ExpenseToolbar({
 	const isTodaySelected = isSameDateRange(filter.dateRange, todayRange);
 	const isThisMonthSelected = isSameDateRange(filter.dateRange, thisMonthRange);
 
-	// Quick-range toggle value; empty when a custom date range is active.
-	let activeQuickRange = "";
-	if (isTodaySelected) activeQuickRange = "today";
-	else if (isThisMonthSelected) activeQuickRange = "month";
-
 	const hasActiveFilters =
 		filter.search ||
 		!isTodaySelected ||
@@ -51,44 +52,55 @@ export function ExpenseToolbar({
 	const userCategories = categories.filter((c) => c.name !== "Uncategorized");
 
 	return (
-		<div className="space-y-3">
-			<div className="flex flex-wrap items-center gap-2">
-				<div className="relative flex-1 min-w-50">
-					<Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+		<div className="flex flex-col gap-3">
+			<div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+				<div className="relative flex-1 sm:max-w-xs">
+					<Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
 					<Input
-						type="search"
-						placeholder="Search expenses…"
+						placeholder="Search expenses..."
 						value={filter.search ?? ""}
 						onChange={(e) =>
 							updateFilter({ search: e.target.value || undefined })
 						}
 						className="pl-9"
+						aria-label="Search expenses"
 					/>
 				</div>
-
-				<ToggleGroup
-					type="single"
-					value={activeQuickRange}
-					onValueChange={(value) => {
-						if (value === "today") setQuickRange(todayRange);
-						else if (value === "month") setQuickRange(thisMonthRange);
+				<Select
+					value={filter.categoryIds?.[0] ?? "all"}
+					onValueChange={(v) => {
+						if (v === "all") updateFilter({ categoryIds: undefined });
+						else updateFilter({ categoryIds: [v] });
 					}}
-					className="rounded-full border border-border/60 bg-muted/30 p-1"
 				>
-					<ToggleGroupItem
-						value="today"
-						className="rounded-full px-2.5 text-xs font-medium data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-					>
-						Today
-					</ToggleGroupItem>
-					<ToggleGroupItem
-						value="month"
-						className="rounded-full px-2.5 text-xs font-medium data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-					>
-						This month
-					</ToggleGroupItem>
-				</ToggleGroup>
-
+					<SelectTrigger className="h-9 sm:w-40" aria-label="Filter by category">
+						<SelectValue placeholder="All categories" />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="all">All categories</SelectItem>
+						{userCategories.map((c) => (
+							<SelectItem key={c.id} value={c.id}>
+								{c.name}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+				<Select
+					value={(filter.types?.[0] ?? "all") as string}
+					onValueChange={(v) => {
+						if (v === "all") updateFilter({ types: undefined });
+						else updateFilter({ types: [v as ExpenseType] });
+					}}
+				>
+					<SelectTrigger className="h-9 sm:w-36" aria-label="Filter by type">
+						<SelectValue placeholder="Needs & Wants" />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="all">Needs & Wants</SelectItem>
+						<SelectItem value="need">Needs</SelectItem>
+						<SelectItem value="want">Wants</SelectItem>
+					</SelectContent>
+				</Select>
 				<div className="flex items-center gap-1.5">
 					<Input
 						type="date"
@@ -118,65 +130,14 @@ export function ExpenseToolbar({
 						}
 					/>
 				</div>
-
-				<div className="flex flex-wrap items-center gap-1.5">
-					<ToggleGroup
-						type="multiple"
-						value={filter.types ?? []}
-						onValueChange={(value) =>
-							updateFilter({
-								types: value.length > 0 ? (value as ExpenseType[]) : undefined,
-							})
-						}
-						className="flex items-center gap-1"
-					>
-						<ToggleGroupItem
-							value="need"
-							className="rounded-full px-2.5 py-0.5 text-xs font-medium data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-						>
-							Need
-						</ToggleGroupItem>
-						<ToggleGroupItem
-							value="want"
-							className="rounded-full px-2.5 py-0.5 text-xs font-medium data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-						>
-							Want
-						</ToggleGroupItem>
-					</ToggleGroup>
-
-					{userCategories.map((cat) => {
-						const isActive = filter.categoryIds?.includes(cat.id) ?? false;
-						return (
-							<Button
-								key={cat.id}
-								variant={isActive ? "default" : "ghost"}
-								size="sm"
-								onClick={() => {
-									const current = filter.categoryIds ?? [];
-									const updated = isActive
-										? current.filter((id) => id !== cat.id)
-										: [...current, cat.id];
-									updateFilter({
-										categoryIds: updated.length > 0 ? updated : undefined,
-									});
-								}}
-								className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${isActive ? "" : "text-muted-foreground"}`}
-							>
-								{cat.name}
-							</Button>
-						);
-					})}
-				</div>
-
 				{hasActiveFilters && (
 					<Button
-						type="button"
-						variant="outline"
+						variant="ghost"
 						size="sm"
 						onClick={clearFilter}
-						className="flex items-center gap-1 rounded-full px-2.5 py-1 text-xs"
+						className="flex items-center gap-1"
 					>
-						<X className="h-3 w-3" />
+						<X className="size-4" />
 						Clear
 					</Button>
 				)}

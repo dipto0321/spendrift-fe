@@ -33,12 +33,12 @@ function SortHeader({ label, sortKey, sort, onSort, className }: SortHeaderProps
 				type="button"
 				onClick={() => onSort(sortKey)}
 				className={cn(
-					"inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider transition-colors hover:text-foreground",
+					"inline-flex items-center gap-1.5 text-xs font-medium transition-colors hover:text-foreground",
 					active ? "text-foreground" : "text-muted-foreground",
 				)}
 			>
 				{label}
-				<ArrowUpDown className="size-3" />
+				<ArrowUpDown className="size-3.5" />
 			</button>
 		</TableHead>
 	);
