@@ -72,16 +72,20 @@ export function toExpenseBody(
 // Map the client ExpenseFilter to API query params. Note the API's `type` is a
 // single value, so a multi-select that includes both need+want is treated as
 // "no filter" (omitted).
+// The API defaults to limit=50 if omitted; always request its max (200) so
+// the list isn't silently truncated for trackers with more expenses.
+const MAX_EXPENSE_LIMIT = "200";
+
 export function toExpenseQuery(filter?: ExpenseFilter): string {
-	if (!filter) return "";
 	const params = new URLSearchParams();
-	if (filter.dateRange?.start) params.set("start_date", filter.dateRange.start);
-	if (filter.dateRange?.end) params.set("end_date", filter.dateRange.end);
-	if (filter.categoryIds?.length) {
+	params.set("limit", MAX_EXPENSE_LIMIT);
+	if (filter?.dateRange?.start)
+		params.set("start_date", filter.dateRange.start);
+	if (filter?.dateRange?.end) params.set("end_date", filter.dateRange.end);
+	if (filter?.categoryIds?.length) {
 		params.set("category_ids", filter.categoryIds.join(","));
 	}
-	if (filter.types?.length === 1) params.set("type", filter.types[0]);
-	if (filter.search) params.set("search", filter.search);
-	const qs = params.toString();
-	return qs ? `?${qs}` : "";
+	if (filter?.types?.length === 1) params.set("type", filter.types[0]);
+	if (filter?.search) params.set("search", filter.search);
+	return `?${params.toString()}`;
 }

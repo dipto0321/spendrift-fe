@@ -100,7 +100,7 @@ export const categoryRepository: CategoryRepository = {
 		const uncategorized = categories.find((c) => c.name === UNCATEGORIZED_NAME);
 		if (uncategorized && uncategorized.id !== id) {
 			const expenses = await apiFetch<ExpenseResponseDto[]>(
-				`${expensesPath(trackerId)}?category_ids=${id}`,
+				`${expensesPath(trackerId)}?category_ids=${id}&limit=200`,
 			);
 			await Promise.all(
 				expenses.map((expense) =>
