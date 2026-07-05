@@ -289,6 +289,10 @@ This project leans on AI for architecture planning, code explanation, UI explora
 
 ![Settings](docs/screenshots/settings.png)
 
+> 📸 To re-capture the screenshots in this section (e.g. after a UI pass),
+> see [`docs/screenshots/CAPTURE.md`](docs/screenshots/CAPTURE.md) and run
+> `pnpm dlx tsx scripts/capture-screenshots.ts`.
+
 ---
 
 ## 📜 License
