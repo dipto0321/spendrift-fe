@@ -80,8 +80,6 @@ function ReportsPage() {
 	const [period, setPeriod] = useState<ReportPeriod>("monthly");
 	const [customRange, setCustomRange] = useState<PickerDateRange | undefined>();
 	const [customRangeOpen, setCustomRangeOpen] = useState(false);
-	const [customRangeSelectionStarted, setCustomRangeSelectionStarted] =
-		useState(false);
 
 	const range = useMemo<ReportRange>(
 		() => ({
@@ -196,7 +194,6 @@ function ReportsPage() {
 						onValueChange={(value) => {
 							if (!value) return;
 							if (value === "custom") {
-								setCustomRangeSelectionStarted(false);
 								setCustomRangeOpen(true);
 								return;
 							}
@@ -238,21 +235,7 @@ function ReportsPage() {
 						<Calendar
 							mode="range"
 							selected={customRange}
-							onSelect={(range) => {
-								setCustomRange(range);
-								if (range?.from && !range?.to) {
-									setCustomRangeSelectionStarted(true);
-									return;
-								}
-								if (
-									range?.from &&
-									range?.to &&
-									customRangeSelectionStarted
-								) {
-									setCustomRangeOpen(false);
-									setCustomRangeSelectionStarted(false);
-								}
-							}}
+							onSelect={setCustomRange}
 							numberOfMonths={2}
 							className="w-full"
 						/>
@@ -263,7 +246,6 @@ function ReportsPage() {
 							variant="outline"
 							onClick={() => {
 								setCustomRange(undefined);
-								setCustomRangeSelectionStarted(false);
 								setCustomRangeOpen(false);
 							}}
 							disabled={!customRange?.from && !customRange?.to}
