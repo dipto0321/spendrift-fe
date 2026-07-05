@@ -8,6 +8,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { DateRangePicker } from "@/shared/ui/DateRangePicker";
 import {
 	getThisMonthRange,
 	getTodayRange,
@@ -101,35 +102,12 @@ export function ExpenseToolbar({
 						<SelectItem value="want">Wants</SelectItem>
 					</SelectContent>
 				</Select>
-				<div className="flex items-center gap-1.5">
-					<Input
-						type="date"
-						title="From date"
-						value={filter.dateRange?.start ?? ""}
-						onChange={(e) =>
-							updateFilter({
-								dateRange: {
-									start: e.target.value || undefined,
-									end: filter.dateRange?.end,
-								},
-							})
-						}
-					/>
-					<span className="text-muted-foreground">—</span>
-					<Input
-						type="date"
-						title="To date"
-						value={filter.dateRange?.end ?? ""}
-						onChange={(e) =>
-							updateFilter({
-								dateRange: {
-									start: filter.dateRange?.start,
-									end: e.target.value || undefined,
-								},
-							})
-						}
-					/>
-				</div>
+				<DateRangePicker
+					aria-label="Filter by date range"
+					className="h-9 sm:w-56"
+					value={filter.dateRange}
+					onChange={(dateRange) => updateFilter({ dateRange })}
+				/>
 				{hasActiveFilters && (
 					<Button
 						variant="ghost"
