@@ -67,6 +67,18 @@ export function useExpenses(trackerId?: string) {
 
 ---
 
+## Preferences — special case
+
+`features/preferences` follows the same seam, but **pages do not call the
+repository directly** — they go through `usePreferences()` and
+`useUpdatePreferences()`. The mutation hook applies optimistic updates and
+rolls back on error, which is why the repository call is one level deeper
+than usual. Consumers of preferences (e.g. `useBudgetAlerts`) read the flag
+from the cached query rather than re-fetching, so toggling a switch is
+visible to every dependent query in the same render.
+
+---
+
 ## Rules
 
 - Never `fetch`/axios from pages, hooks, or components — go through the repository.

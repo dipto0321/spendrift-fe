@@ -24,7 +24,7 @@ The frontend follows:
 
 ```text
 src/
- ├── features/        # dashboard, expenses, budgets, reports, trackers
+ ├── features/        # dashboard, expenses, budgets, reports, trackers, preferences
  ├── shared/          # api, ui, hooks, utils
  ├── components/ui/   # ShadCN-generated primitives (CLI-owned)
  ├── routes/          # TanStack Start file-based routes
@@ -93,6 +93,20 @@ Responsible for:
 - tracker selection
 - currency-specific workspace
 - tracker settings
+
+---
+
+## preferences
+
+Responsible for:
+
+- `GET|PUT /preferences` (Budget alerts / Weekly summary / Round amounts)
+- `usePreferences()` + `useUpdatePreferences()` (optimistic, rollback)
+- `useFormatCurrency()` — wraps `formatCurrency` with the user's
+  `roundAmounts` flag so every money surface respects the preference
+  without callers threading it manually
+- Gates consumers on toggles (e.g. `useBudgetAlerts` skips its query when
+  `preferences.budgetAlerts` is off)
 
 ---
 

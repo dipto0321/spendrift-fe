@@ -126,6 +126,16 @@ The application dynamically calculates:
 
 ---
 
+## Budget Alerts
+
+When the user's **Budget alerts** preference is enabled, the dashboard
+surfaces a dismissible alert banner listing any category that has crossed
+its warning or exceeded threshold for the selected month. The flag itself
+lives server-side (`GET/PUT /preferences`), so it follows the user across
+devices.
+
+---
+
 ## Savings Status Indicator
 
 The system visually communicates financial health using:
@@ -154,6 +164,21 @@ Analytics include:
 * Average expense
 
 Users can also compare multiple years to identify spending trends and behavioral changes over time.
+
+---
+
+## User Preferences
+
+Three per-user toggles are stored server-side (`/preferences`):
+
+* **Budget alerts** — enable the dashboard alert banner
+* **Weekly summary** — reserved flag, feature pending
+* **Round amounts** — when on, every money surface (cards, charts,
+  expense rows, tooltips) renders integer amounts via the shared
+  `useFormatCurrency()` hook
+
+The Settings page uses optimistic updates so the UI responds instantly;
+mutations are rolled back (with a toast) on API error.
 
 ---
 

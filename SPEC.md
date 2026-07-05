@@ -31,8 +31,10 @@ tracker-based personal finance web app (Spendrift). ∀ tracker → own currency
 - api: `GET|POST /trackers/:id/categories`, `GET|PATCH|DELETE /trackers/:id/categories/:id`
 - api: `GET|POST /trackers/:id/expenses` (query filters via `toExpenseQuery`), `GET|PATCH|DELETE /trackers/:id/expenses/:id`
 - api: `GET|POST /trackers/:id/budgets`, `GET|PATCH|DELETE /trackers/:id/budgets/:id`, `GET /trackers/:id/budgets/:id/status`
-- api: `GET /trackers/:id/dashboard`
+- api: `GET /trackers/:id/budget-alerts?month=YYYY-MM` → `BudgetAlert[]` (level: `ok|warning|exceeded`)
+- api: `GET /trackers/:id/dashboard?month=YYYY-MM`
 - api: `GET /trackers/:id/reports/{summary,spending,category-breakdown,needs-vs-wants,year-comparison}`
+- api: `GET|PUT /preferences` → `Preferences { budgetAlerts, weeklySummary, roundAmounts }`
 - storage: localStorage `spendrift.last-tracker` (last active tracker id, client-only convenience)
 - storage: localStorage access/refresh tokens (`shared/api/tokens.ts`)
 - env: `VITE_API_BASE_URL`, `VITE_SENTRY_{DSN,ORG,PROJECT}`, `SENTRY_AUTH_TOKEN`, `SENTRY_ENVIRONMENT`
@@ -53,6 +55,8 @@ V12: sign-out best-effort: local session cleared even if `/auth/sign-out` call f
 V13: access token present & ⊥ cached user → `bootstrap()` fetches `/users/me` once/session (in-flight guarded)
 V14: money crosses dto boundary as decimal-string ↔ `number`, keys snake_case ↔ camelCase — nowhere else in app
 V15: ∀ route ∈ `MONTH_PAGES` (`routes/__root.tsx`) ! consume `useMonth().selectedMonth` for its data query — see B1
+V16: preferences (Budget alerts / Weekly summary / Round amounts) ! read via `usePreferences()`, mutations via `useUpdatePreferences()` (optimistic, rollback on error); ⊥ direct `apiFetch(/preferences)` in pages
+V17: money rendering ! threaded thru `useFormatCurrency()` so the `roundAmounts` preference applies app-wide; raw `formatCurrency()` only acceptable in tests / non-UI utilities
 
 ## §T TASKS
 id|status|task|cites
@@ -72,8 +76,11 @@ T13|~|AI settings: page built (`routes/ai.tsx`, config form, feature toggles, lo
 T14|x|design migration: v0 palette + design-token pass, all 10 phases of `Design_Migration_Plan.md` shipped on `feat/design-migration`|-
 T15|.|per-category budgets: `ReportsPage.tsx` even-splits tracker's monthly limit across categories (`monthlyLimit / catBudgetData.length`) ∴ replace w/ real backend per-category budget data when available|-
 T16|.|delete dead `features/expenses/presentation/CategoryColorPicker.tsx` — 0 imports, superseded by `shared/ui/ColorPicker.tsx`|-
-T17|.|fix B1: wire dashboard to `selectedMonth` or drop it from `MONTH_PAGES`|V15,B1
+T17|x|fix B1: wire dashboard to `selectedMonth` (`DashboardPage.tsx` + `dashboardRepository.getSummary(month)` + `useDashboard(trackerId, month)`)|V15,B1
+T18|x|server-backed user preferences: `features/preferences/{data,domain,presentation}` reads/writes `/preferences`; replaces prior localStorage stub — UI flag now persists per user|V16,V17
+T19|x|budget alerts banner: `BudgetAlertBanner` on `/` lists warning/exceeded categories for `useMonth().selectedMonth`, gated on `preferences.budgetAlerts` so the request is skipped when disabled|I.budget-alerts,V16
 
 ## §B BUGS
 id|date|cause|fix
 B1|2026-07-05|`routes/__root.tsx` `MONTH_PAGES` shows month selector on `/` but `DashboardPage.tsx` never reads `useMonth()`; `dashboardRepository.getSummary()` always hits current-month-only `/dashboard`|V15
+B1.fix|2026-07-06|DashboardPage now consumes `useMonth().selectedMonth` and forwards it to `useDashboard(trackerId, month)` → `dashboardRepository.getSummary(trackerId, month)`. `dashboardKeys.summary` includes `month` so cached entries invalidate per-month.
