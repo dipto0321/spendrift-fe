@@ -167,6 +167,7 @@ function SettingsPage() {
 
 				<Card>
 					<form
+						className="contents"
 						onSubmit={async (event) => {
 							event.preventDefault();
 							setPasswordError(null);
@@ -243,7 +244,7 @@ function SettingsPage() {
 								</p>
 							) : null}
 						</CardContent>
-						<CardFooter className="justify-end border-t border-border">
+						<CardFooter className="justify-end">
 							<Button type="submit" disabled={updatePasswordMutation.isPending}>
 								{updatePasswordMutation.isPending ? "Updating…" : "Update password"}
 							</Button>

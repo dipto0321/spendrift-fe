@@ -56,6 +56,7 @@ export function ProfilePage() {
 
 				<Card>
 					<form
+						className="contents"
 						onSubmit={async (event) => {
 							event.preventDefault();
 							setProfileError(null);
@@ -179,7 +180,7 @@ export function ProfilePage() {
 								) : null}
 							</div>
 						</CardContent>
-						<CardFooter className="justify-end border-t border-border">
+						<CardFooter className="justify-end">
 							<Button type="submit" disabled={updateProfileMutation.isPending}>
 								<Save className="size-4" />
 								{updateProfileMutation.isPending ? "Saving…" : "Save changes"}

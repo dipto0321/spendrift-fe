@@ -116,6 +116,7 @@ function AiSettingsPage() {
 
 					<Card>
 						<form
+							className="contents"
 							onSubmit={(e) => {
 								e.preventDefault();
 								handleSave();
@@ -186,7 +187,7 @@ function AiSettingsPage() {
 									/>
 								</div>
 							</CardContent>
-							<CardFooter className="justify-end border-t border-border">
+							<CardFooter className="justify-end">
 								<Button type="submit">
 									<Save className="size-4" />
 									{saved ? "Saved!" : "Save configuration"}
