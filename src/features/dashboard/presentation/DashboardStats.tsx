@@ -1,10 +1,10 @@
 import { PiggyBank, Target, TrendingDown, Wallet } from "lucide-react";
 import type { SavingsHealth } from "@/features/budgets/domain/types";
+import { useFormatCurrency } from "@/features/preferences/presentation/useFormatCurrency";
 import { MoneyText } from "@/shared/ui/MoneyText";
 import { SavingsHealthBadge } from "@/shared/ui/SavingsHealthBadge";
-import { StatCard, StatCardSkeleton } from "@/shared/ui/StatCard";
 import type { StatCardProps } from "@/shared/ui/StatCard";
-import { formatCurrency } from "@/shared/utils/format";
+import { StatCard, StatCardSkeleton } from "@/shared/ui/StatCard";
 import type { DashboardSummary } from "../domain/types";
 
 type DashboardStatsProps = {
@@ -32,6 +32,7 @@ export function DashboardStats({
 	currency,
 	isLoading,
 }: DashboardStatsProps) {
+	const formatCurrency = useFormatCurrency();
 	if (isLoading || !summary) {
 		return (
 			<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -49,7 +50,10 @@ export function DashboardStats({
 
 	const savedPct =
 		savingsTarget && savingsTarget > 0 && remaining !== null
-			? Math.min(100, Math.round((Math.max(remaining, 0) / savingsTarget) * 100))
+			? Math.min(
+					100,
+					Math.round((Math.max(remaining, 0) / savingsTarget) * 100),
+				)
 			: null;
 
 	const remainingValue =
@@ -63,8 +67,13 @@ export function DashboardStats({
 		savingsTarget === null ? "—" : formatCurrency(savingsTarget, currency);
 
 	const budgetHint = budget ? "budget remaining" : "no budget set";
-	const savingsHint = savedPct === null ? "no budget set" : `${savedPct}% reached`;
-	const healthHint = health ? <SavingsHealthBadge health={health} /> : "no budget set";
+	const savingsHint =
+		savedPct === null ? "no budget set" : `${savedPct}% reached`;
+	const healthHint = health ? (
+		<SavingsHealthBadge health={health} />
+	) : (
+		"no budget set"
+	);
 
 	return (
 		<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

@@ -22,7 +22,7 @@ import {
 	ChartTooltipContent,
 } from "@/components/ui/chart";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { formatCurrency } from "@/shared/utils/format";
+import { useFormatCurrency } from "@/features/preferences/presentation/useFormatCurrency";
 import { getMonthLabel, getWeekLabel } from "../domain/services";
 import type { PeriodData } from "../domain/types";
 
@@ -46,13 +46,18 @@ const PERIOD_LABELS: Record<string, string> = {
 
 const AXIS_MARGIN = { left: 4, right: 8, top: 8 };
 
-function yAxisFormatter(v: number, currency: string): string {
+function yAxisFormatter(
+	v: number,
+	currency: string,
+	formatCurrency: (amount: number, currency: string) => string,
+): string {
 	const formatted = formatCurrency(v, currency);
 	return formatted.replace(/\.00$/, "").replace(/,000$/, "k");
 }
 
 export function SpendingChart({ data, period, currency }: SpendingChartProps) {
 	const [chartType, setChartType] = useState<ChartType>("bar");
+	const formatCurrency = useFormatCurrency();
 
 	const chartData = data.map((d) => {
 		let label = d.label;
@@ -103,7 +108,9 @@ export function SpendingChart({ data, period, currency }: SpendingChartProps) {
 								tickLine={false}
 								axisLine={false}
 								width={52}
-								tickFormatter={(v) => yAxisFormatter(Number(v), currency)}
+								tickFormatter={(v) =>
+									yAxisFormatter(Number(v), currency, formatCurrency)
+								}
 								className="text-xs"
 							/>
 							<ChartTooltip
@@ -138,7 +145,9 @@ export function SpendingChart({ data, period, currency }: SpendingChartProps) {
 								tickLine={false}
 								axisLine={false}
 								width={52}
-								tickFormatter={(v) => yAxisFormatter(Number(v), currency)}
+								tickFormatter={(v) =>
+									yAxisFormatter(Number(v), currency, formatCurrency)
+								}
 								className="text-xs"
 							/>
 							<ChartTooltip

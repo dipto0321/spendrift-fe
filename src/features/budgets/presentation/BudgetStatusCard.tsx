@@ -5,10 +5,10 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { MoneyText } from "@/shared/ui/MoneyText";
+import { useFormatCurrency } from "@/features/preferences/presentation/useFormatCurrency";
 import { BudgetProgress } from "@/shared/ui/BudgetProgress";
+import { MoneyText } from "@/shared/ui/MoneyText";
 import { SavingsHealthBadge } from "@/shared/ui/SavingsHealthBadge";
-import { formatCurrency } from "@/shared/utils/format";
 import type { BudgetStatus } from "../domain/types";
 
 type BudgetStatusCardProps = {
@@ -26,6 +26,7 @@ export function BudgetStatusCard({
 	status,
 	currency,
 }: BudgetStatusCardProps) {
+	const formatCurrency = useFormatCurrency();
 	return (
 		<Card className="h-full">
 			<CardHeader>
@@ -66,7 +67,9 @@ export function BudgetStatusCard({
 						</span>
 					</div>
 					<div className="flex flex-col gap-0.5">
-						<span className="text-xs text-muted-foreground">Savings target</span>
+						<span className="text-xs text-muted-foreground">
+							Savings target
+						</span>
 						<span className="font-medium tabular-nums text-foreground">
 							{formatCurrency(savingsTarget, currency)}
 						</span>

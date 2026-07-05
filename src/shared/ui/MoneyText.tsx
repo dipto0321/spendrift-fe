@@ -1,5 +1,5 @@
+import { useFormatCurrency } from "@/features/preferences/presentation/useFormatCurrency";
 import { cn } from "@/lib/utils";
-import { formatCurrency } from "@/shared/utils/format";
 
 interface MoneyTextProps {
 	amount: number;
@@ -18,6 +18,7 @@ export function MoneyText({
 	sign = false,
 	className,
 }: MoneyTextProps) {
+	const formatCurrency = useFormatCurrency();
 	let formatted: string;
 	if (sign && amount !== 0) {
 		formatted = `${amount > 0 ? "+" : "-"}${formatCurrency(Math.abs(amount), currency)}`;

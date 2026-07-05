@@ -23,3 +23,14 @@ export type BudgetStatus = {
 	savingsHealth: SavingsHealth;
 	isOverBudget: boolean;
 };
+
+export type BudgetAlertLevel = "ok" | "warning" | "exceeded";
+
+export type BudgetAlert = {
+	categoryId: string;
+	categoryName: string;
+	spent: number;
+	limit: number;
+	percentage: number;
+	level: BudgetAlertLevel;
+};

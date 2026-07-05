@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { useState } from "react";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -18,9 +18,10 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { TableCell, TableRow } from "@/components/ui/table";
-import { formatCurrency, formatDateShort } from "@/shared/utils/format";
+import { useFormatCurrency } from "@/features/preferences/presentation/useFormatCurrency";
 import { MoneyText } from "@/shared/ui/MoneyText";
 import { NeedsWantsTag } from "@/shared/ui/NeedsWantsTag";
+import { formatDateShort } from "@/shared/utils/format";
 import type { Category, Expense } from "../domain/types";
 
 type ExpenseRowProps = {
@@ -39,6 +40,7 @@ export function ExpenseRow({
 	onDelete,
 }: ExpenseRowProps) {
 	const [deleteOpen, setDeleteOpen] = useState(false);
+	const formatCurrency = useFormatCurrency();
 	const categoryName = category?.name ?? "Uncategorized";
 
 	return (
@@ -63,7 +65,11 @@ export function ExpenseRow({
 					<NeedsWantsTag type={expense.type} />
 				</TableCell>
 				<TableCell className="whitespace-nowrap px-4 py-3 text-right">
-					<MoneyText amount={expense.amount} currency={currency} className="font-medium" />
+					<MoneyText
+						amount={expense.amount}
+						currency={currency}
+						className="font-medium"
+					/>
 				</TableCell>
 				<TableCell className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
 					<DropdownMenu>
@@ -100,10 +106,9 @@ export function ExpenseRow({
 					<AlertDialogHeader>
 						<AlertDialogTitle>Delete this expense?</AlertDialogTitle>
 						<AlertDialogDescription>
-							This permanently removes "
-							{expense.description || categoryName}"" (
-							{formatCurrency(expense.amount, currency)}). This action cannot be
-							undone.
+							This permanently removes "{expense.description || categoryName}""
+							({formatCurrency(expense.amount, currency)}). This action cannot
+							be undone.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>

@@ -1,12 +1,18 @@
 import { getCurrencyDecimals, getCurrencySymbol } from "./currency";
 
-export function formatCurrency(amount: number, currency: string) {
+export function formatCurrency(
+	amount: number,
+	currency: string,
+	roundAmounts = false,
+) {
 	const code = currency?.trim();
 	if (code?.length !== 3) {
-		return new Intl.NumberFormat("en", { maximumFractionDigits: 2 }).format(amount);
+		return new Intl.NumberFormat("en", {
+			maximumFractionDigits: roundAmounts ? 0 : 2,
+		}).format(amount);
 	}
 	const symbol = getCurrencySymbol(code);
-	const decimals = getCurrencyDecimals(code);
+	const decimals = roundAmounts ? 0 : getCurrencyDecimals(code);
 	const formatted = new Intl.NumberFormat("en", {
 		minimumFractionDigits: decimals,
 		maximumFractionDigits: decimals,

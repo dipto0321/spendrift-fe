@@ -1,5 +1,6 @@
 import type {
 	Budget,
+	BudgetAlert,
 	BudgetCreateInput,
 	BudgetStatus,
 	BudgetUpdateInput,
@@ -10,6 +11,7 @@ export interface BudgetRepository {
 	getByMonth(trackerId: string, month: string): Promise<Budget | null>;
 	getById(trackerId: string, id: string): Promise<Budget | null>;
 	getStatus(trackerId: string, id: string): Promise<BudgetStatus>;
+	getAlerts(trackerId: string, month?: string): Promise<BudgetAlert[]>;
 	create(trackerId: string, input: BudgetCreateInput): Promise<Budget>;
 	update(
 		trackerId: string,

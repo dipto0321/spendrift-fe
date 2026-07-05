@@ -1,7 +1,7 @@
 import { Progress } from "@/components/ui/progress";
 import { getProgressBarColor } from "@/features/budgets/domain/services";
 import { SavingsHealthBadge } from "@/features/budgets/presentation/SavingsHealthBadge";
-import { formatCurrency } from "@/shared/utils/format";
+import { useFormatCurrency } from "@/features/preferences/presentation/useFormatCurrency";
 import type { DashboardBudget } from "../domain/types";
 
 type BudgetCardProps = {
@@ -10,6 +10,7 @@ type BudgetCardProps = {
 };
 
 export function BudgetCard({ budget, currency }: BudgetCardProps) {
+	const formatCurrency = useFormatCurrency();
 	if (!budget) {
 		return (
 			<section className="island-shell min-w-0 rounded-2xl p-6">

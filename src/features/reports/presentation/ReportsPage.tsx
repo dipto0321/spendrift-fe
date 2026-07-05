@@ -22,11 +22,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { getCurrentMonth } from "@/features/budgets/domain/services";
 import { useCurrentBudgetStatus } from "@/features/budgets/presentation/useCurrentBudgetStatus";
+import { useFormatCurrency } from "@/features/preferences/presentation/useFormatCurrency";
 import { useTracker } from "@/features/trackers/presentation/TrackerContext";
 import { BudgetProgress } from "@/shared/ui/BudgetProgress";
 import { MoneyText } from "@/shared/ui/MoneyText";
 import { PageHeader } from "@/shared/ui/PageHeader";
-import { formatCurrency } from "@/shared/utils/format";
 import type { ReportRange } from "../data/queryKeys";
 import type { ReportPeriod } from "../domain/types";
 import { CategoryBreakdownChart } from "./CategoryBreakdownChart";
@@ -77,6 +77,7 @@ function ReportsPage() {
 	const { activeTracker } = useTracker();
 	const trackerId = activeTracker?.id;
 	const currency = activeTracker?.currency ?? "";
+	const formatCurrency = useFormatCurrency();
 	const [period, setPeriod] = useState<ReportPeriod>("monthly");
 	const [customRange, setCustomRange] = useState<PickerDateRange | undefined>();
 	const [customRangeOpen, setCustomRangeOpen] = useState(false);
@@ -282,9 +283,7 @@ function ReportsPage() {
 											className="h-2.5 w-2.5 rounded-full"
 											style={{ backgroundColor: item.categoryColor }}
 										/>
-										<span className="text-foreground">
-											{item.categoryName}
-										</span>
+										<span className="text-foreground">{item.categoryName}</span>
 									</div>
 									<div className="flex items-center gap-3 tabular-nums">
 										<span className="text-muted-foreground">

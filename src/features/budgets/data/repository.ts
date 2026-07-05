@@ -1,9 +1,11 @@
 import { apiFetch } from "@/shared/api/client";
 import type { BudgetRepository } from "../domain/repository";
 import {
+	type BudgetAlertResponseDto,
 	type BudgetResponseDto,
 	type BudgetStatusResponseDto,
 	mapBudget,
+	mapBudgetAlert,
 	mapBudgetStatus,
 	toBudgetBody,
 } from "./dto";
@@ -35,6 +37,14 @@ export const budgetRepository: BudgetRepository = {
 			`${budgetsPath(trackerId)}/${id}/status`,
 		);
 		return mapBudgetStatus(dto);
+	},
+
+	async getAlerts(trackerId, month) {
+		const qs = month ? `?month=${month}` : "";
+		const dtos = await apiFetch<BudgetAlertResponseDto[]>(
+			`/trackers/${trackerId}/budget-alerts${qs}`,
+		);
+		return dtos.map(mapBudgetAlert);
 	},
 
 	async create(trackerId, input) {

@@ -8,13 +8,13 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useFormatCurrency } from "@/features/preferences/presentation/useFormatCurrency";
 import { useTracker } from "@/features/trackers/presentation/TrackerContext";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { MoneyText } from "@/shared/ui/MoneyText";
 import { useMonth } from "@/shared/ui/MonthContext";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { StatCard, StatCardSkeleton } from "@/shared/ui/StatCard";
-import { formatCurrency } from "@/shared/utils/format";
 import { calculateBudgetStatus, getCurrentMonth } from "../domain/services";
 import type { BudgetCreateInput, BudgetStatus } from "../domain/types";
 import { BudgetForm } from "./BudgetForm";
@@ -34,6 +34,7 @@ function BudgetPage() {
 	const { activeTracker } = useTracker();
 	const trackerId = activeTracker?.id;
 	const currency = activeTracker?.currency ?? "";
+	const formatCurrency = useFormatCurrency();
 
 	const { selectedMonth } = useMonth();
 	const isPastMonth = selectedMonth < getCurrentMonth();
@@ -71,9 +72,7 @@ function BudgetPage() {
 		{ month: "long", year: "numeric" },
 	);
 
-	let budgetStatusContent = (
-		<Skeleton className="h-full min-h-64 rounded-xl" />
-	);
+	let budgetStatusContent = <Skeleton className="h-full min-h-64 rounded-xl" />;
 	if (!budgetsLoading && status && currentBudget) {
 		budgetStatusContent = (
 			<BudgetStatusCard

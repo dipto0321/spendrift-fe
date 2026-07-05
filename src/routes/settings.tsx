@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { authRepository } from "@/features/auth/data/repository";
 import { requireAuth } from "@/features/auth/presentation/routeGuards";
@@ -23,6 +24,11 @@ import {
 	useDeleteCategory,
 	useUpdateCategory,
 } from "@/features/expenses/presentation/useCategories";
+import type { Preferences } from "@/features/preferences/domain/types";
+import {
+	usePreferences,
+	useUpdatePreferences,
+} from "@/features/preferences/presentation/usePreferences";
 import { useTracker } from "@/features/trackers/presentation/TrackerContext";
 import { TrackerManager } from "@/features/trackers/presentation/TrackerManager";
 import {
@@ -38,16 +44,8 @@ export const Route = createFileRoute("/settings")({
 	component: SettingsPage,
 });
 
-type PreferenceKey = "budgetAlerts" | "weeklySummary" | "roundAmounts";
-
-const PREFERENCE_DEFAULTS: Record<PreferenceKey, boolean> = {
-	budgetAlerts: true,
-	weeklySummary: true,
-	roundAmounts: false,
-};
-
 const PREFERENCES: {
-	key: PreferenceKey;
+	key: keyof Preferences;
 	title: string;
 	description: string;
 }[] = [
@@ -85,17 +83,17 @@ function SettingsPage() {
 	const updateTrackerMutation = useUpdateTracker();
 	const deleteTrackerMutation = useDeleteTracker();
 
-	const [prefs, setPrefs] = useState<Record<PreferenceKey, boolean>>(
-		PREFERENCE_DEFAULTS,
-	);
+	const { data: prefs, isLoading: prefsLoading } = usePreferences();
+	const updatePrefsMutation = useUpdatePreferences();
 	const [passwordError, setPasswordError] = useState<string | null>(null);
 
 	const updatePasswordMutation = useMutation({
 		mutationFn: authRepository.updatePassword,
 	});
 
-	function togglePref(key: PreferenceKey) {
-		setPrefs((p) => ({ ...p, [key]: !p[key] }));
+	function togglePref(key: keyof Preferences) {
+		if (!prefs) return;
+		updatePrefsMutation.mutate({ [key]: !prefs[key] });
 	}
 
 	return (
@@ -142,26 +140,35 @@ function SettingsPage() {
 						</CardDescription>
 					</CardHeader>
 					<CardContent className="flex flex-col gap-1">
-						{PREFERENCES.map((pref, i) => (
-							<div key={pref.key}>
-								{i > 0 ? <Separator /> : null}
-								<div className="flex items-center justify-between gap-4 py-3">
-									<div className="flex flex-col gap-0.5">
-										<span className="text-sm font-medium text-foreground">
-											{pref.title}
-										</span>
-										<span className="text-xs text-muted-foreground">
-											{pref.description}
-										</span>
-									</div>
-									<Switch
-										checked={prefs[pref.key]}
-										onCheckedChange={() => togglePref(pref.key)}
-										aria-label={pref.title}
-									/>
-								</div>
+						{prefsLoading || !prefs ? (
+							<div className="flex flex-col gap-4 py-1">
+								{PREFERENCES.map((pref) => (
+									<Skeleton key={pref.key} className="h-10 w-full" />
+								))}
 							</div>
-						))}
+						) : (
+							PREFERENCES.map((pref, i) => (
+								<div key={pref.key}>
+									{i > 0 ? <Separator /> : null}
+									<div className="flex items-center justify-between gap-4 py-3">
+										<div className="flex flex-col gap-0.5">
+											<span className="text-sm font-medium text-foreground">
+												{pref.title}
+											</span>
+											<span className="text-xs text-muted-foreground">
+												{pref.description}
+											</span>
+										</div>
+										<Switch
+											checked={prefs[pref.key]}
+											onCheckedChange={() => togglePref(pref.key)}
+											disabled={updatePrefsMutation.isPending}
+											aria-label={pref.title}
+										/>
+									</div>
+								</div>
+							))
+						)}
 					</CardContent>
 				</Card>
 
@@ -246,7 +253,9 @@ function SettingsPage() {
 						</CardContent>
 						<CardFooter className="justify-end">
 							<Button type="submit" disabled={updatePasswordMutation.isPending}>
-								{updatePasswordMutation.isPending ? "Updating…" : "Update password"}
+								{updatePasswordMutation.isPending
+									? "Updating…"
+									: "Update password"}
 							</Button>
 						</CardFooter>
 					</form>

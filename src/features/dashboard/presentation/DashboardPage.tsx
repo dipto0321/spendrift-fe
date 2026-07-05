@@ -1,8 +1,11 @@
+import { BudgetAlertBanner } from "@/features/budgets/presentation/BudgetAlertBanner";
+import { useBudgetAlerts } from "@/features/budgets/presentation/useBudgetAlerts";
 import type { Category } from "@/features/expenses/domain/types";
 import { useCategories } from "@/features/expenses/presentation/useCategories";
 import { useExpenses } from "@/features/expenses/presentation/useExpenses";
 import { groupByMonth } from "@/features/reports/domain/services";
 import { useTracker } from "@/features/trackers/presentation/TrackerContext";
+import { useMonth } from "@/shared/ui/MonthContext";
 import { CashflowCard } from "./CashflowCard";
 import { DashboardStats } from "./DashboardStats";
 import { NeedsVsWantsCard } from "./NeedsVsWantsCard";
@@ -13,11 +16,16 @@ export function DashboardPage() {
 	const { activeTracker } = useTracker();
 	const trackerId = activeTracker?.id;
 	const currency = activeTracker?.currency ?? "";
+	const { selectedMonth } = useMonth();
 
-	const { data: summary, isLoading: summaryLoading } = useDashboard(trackerId);
+	const { data: summary, isLoading: summaryLoading } = useDashboard(
+		trackerId,
+		selectedMonth,
+	);
 	const { data: categories = [] } = useCategories(trackerId);
 	const { data: expenses = [], isLoading: expensesLoading } =
 		useExpenses(trackerId);
+	const { data: budgetAlerts = [] } = useBudgetAlerts(trackerId, selectedMonth);
 
 	const monthlyData = groupByMonth(expenses)
 		.slice(-6)
@@ -38,6 +46,8 @@ export function DashboardPage() {
 
 	return (
 		<main className="flex flex-col gap-6 px-4 pb-14 pt-6">
+			<BudgetAlertBanner alerts={budgetAlerts} currency={currency} />
+
 			<DashboardStats
 				summary={summary}
 				currency={currency}
@@ -48,7 +58,10 @@ export function DashboardPage() {
 				<div className="h-full lg:col-span-2">
 					<CashflowCard data={monthlyData} currency={currency} />
 				</div>
-				<NeedsVsWantsCard needsWants={summary?.needsWants} currency={currency} />
+				<NeedsVsWantsCard
+					needsWants={summary?.needsWants}
+					currency={currency}
+				/>
 			</div>
 
 			<RecentExpenses

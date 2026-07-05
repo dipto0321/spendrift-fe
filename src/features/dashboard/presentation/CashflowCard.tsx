@@ -7,13 +7,13 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import {
+	type ChartConfig,
 	ChartContainer,
 	ChartTooltip,
 	ChartTooltipContent,
-	type ChartConfig,
 } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatCurrency } from "@/shared/utils/format";
+import { useFormatCurrency } from "@/features/preferences/presentation/useFormatCurrency";
 
 const chartConfig = {
 	total: { label: "Spending", color: "var(--chart-1)" },
@@ -27,11 +27,14 @@ type CashflowCardProps = {
 };
 
 export function CashflowCard({ data, currency }: CashflowCardProps) {
+	const formatCurrency = useFormatCurrency();
 	return (
 		<Card className="h-full">
 			<CardHeader>
 				<CardTitle>Spending trend</CardTitle>
-				<CardDescription>Monthly spending over the last 6 months</CardDescription>
+				<CardDescription>
+					Monthly spending over the last 6 months
+				</CardDescription>
 			</CardHeader>
 			<CardContent>
 				{data.length === 0 ? (
