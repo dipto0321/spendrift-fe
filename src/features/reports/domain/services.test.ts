@@ -8,11 +8,13 @@ import {
 	daySpanInRange,
 	elapsedDaysInRange,
 	fillEmptyDailySlots,
+	formatYearOverYearDelta,
 	granularityForRange,
 	groupByMonth,
 	groupByWeek,
 	groupByYear,
 	multiYearComparison,
+	withYearOverYearDelta,
 	yearlyRangeFromComparison,
 } from "./services";
 import type { YearComparison } from "./types";
@@ -495,5 +497,60 @@ describe("fillEmptyDailySlots", () => {
 		expect(out[0].total).toBe(10);
 		expect(out[2].total).toBe(20);
 		expect(out[4].total).toBe(30);
+	});
+});
+
+describe("withYearOverYearDelta", () => {
+	it("returns null for the first year (no prior)", () => {
+		const out = withYearOverYearDelta([{ total: 100 }, { total: 120 }]);
+		expect(out[0].deltaPct).toBeNull();
+		expect(out[1].deltaPct).toBe(20); // (120-100)/100 = +20%
+	});
+
+	it("computes the percentage change rounded to the nearest integer", () => {
+		const out = withYearOverYearDelta([
+			{ total: 100 },
+			{ total: 150 }, // +50%
+			{ total: 99 }, // -34%  ((99-150)/150 = -0.34 → -34%)
+			{ total: 200 }, // +102% ((200-99)/99 ≈ 1.0202 → 102%)
+		]);
+		expect(out.map((r) => r.deltaPct)).toEqual([null, 50, -34, 102]);
+	});
+
+	it("returns null when the prior year total is 0 (infinite change)", () => {
+		const out = withYearOverYearDelta([{ total: 0 }, { total: 50 }]);
+		expect(out[1].deltaPct).toBeNull();
+	});
+
+	it("returns all-nulls for a single-year series", () => {
+		const out = withYearOverYearDelta([{ total: 100 }]);
+		expect(out[0].deltaPct).toBeNull();
+	});
+
+	it("preserves the original fields on each row", () => {
+		const out = withYearOverYearDelta([
+			{ year: "2024", total: 100, count: 5 },
+			{ year: "2025", total: 200, count: 8 },
+		]);
+		expect(out[1]).toMatchObject({ year: "2025", total: 200, count: 8 });
+	});
+});
+
+describe("formatYearOverYearDelta", () => {
+	it("renders an empty string when deltaPct is null", () => {
+		expect(formatYearOverYearDelta(null)).toBe("");
+	});
+
+	it("renders positive deltas with a leading +", () => {
+		expect(formatYearOverYearDelta(12)).toBe("+12%");
+		expect(formatYearOverYearDelta(150)).toBe("+150%");
+	});
+
+	it("renders negative deltas with a leading -", () => {
+		expect(formatYearOverYearDelta(-25)).toBe("-25%");
+	});
+
+	it("renders 0% without a sign", () => {
+		expect(formatYearOverYearDelta(0)).toBe("0%");
 	});
 });

@@ -1,12 +1,14 @@
-import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, LabelList, XAxis } from "recharts";
 import type { ChartConfig } from "@/components/ui/chart";
 import {
 	ChartContainer,
-	ChartLegend,
-	ChartLegendContent,
 	ChartTooltip,
 	ChartTooltipContent,
 } from "@/components/ui/chart";
+import {
+	formatYearOverYearDelta,
+	withYearOverYearDelta,
+} from "../domain/services";
 import type { YearComparison } from "../domain/types";
 
 type YearComparisonChartProps = {
@@ -18,10 +20,6 @@ const chartConfig = {
 	total: {
 		label: "Yearly total",
 		color: "var(--chart-3)",
-	},
-	avg: {
-		label: "Monthly average",
-		color: "var(--chart-1)",
 	},
 } satisfies ChartConfig;
 
@@ -46,10 +44,18 @@ export function YearComparisonChart({
 		);
 	}
 
+	const enriched = withYearOverYearDelta(data).map((row) => ({
+		...row,
+		deltaLabel: formatYearOverYearDelta(row.deltaPct),
+	}));
+
 	return (
 		<div>
 			<ChartContainer config={chartConfig} className="h-[300px] w-full">
-				<BarChart data={data} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
+				<BarChart
+					data={enriched}
+					margin={{ top: 28, right: 8, bottom: 5, left: 5 }}
+				>
 					<CartesianGrid vertical={false} strokeDasharray="3 3" />
 					<XAxis
 						dataKey="year"
@@ -58,12 +64,13 @@ export function YearComparisonChart({
 						tickMargin={8}
 						className="text-xs"
 					/>
-					<Bar
-						dataKey="total"
-						fill="var(--color-total)"
-						radius={[4, 4, 0, 0]}
-					/>
-					<Bar dataKey="avg" fill="var(--color-avg)" radius={[4, 4, 0, 0]} />
+					<Bar dataKey="total" fill="var(--color-total)" radius={[4, 4, 0, 0]}>
+						<LabelList
+							dataKey="deltaLabel"
+							position="top"
+							className="fill-muted-foreground text-[10px] font-medium"
+						/>
+					</Bar>
 					<ChartTooltip
 						content={
 							<ChartTooltipContent
@@ -71,7 +78,6 @@ export function YearComparisonChart({
 							/>
 						}
 					/>
-					<ChartLegend content={<ChartLegendContent />} />
 				</BarChart>
 			</ChartContainer>
 		</div>

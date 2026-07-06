@@ -355,6 +355,41 @@ export function getDayLabel(dateStr: string): string {
 	});
 }
 
+/**
+ * Compute year-over-year % change between consecutive yearly totals.
+ * The first year has no prior — its `deltaPct` is `null` so the caller
+ * can render an empty label rather than a misleading `+0%`. A prior-year
+ * total of 0 also yields `null` (infinite change isn't meaningful as a
+ * percentage). Returned alongside the original row so a chart layer can
+ * plot `total` bars and the delta labels in one pass.
+ */
+export function withYearOverYearDelta<T extends { total: number }>(
+	years: readonly T[],
+): Array<T & { deltaPct: number | null }> {
+	return years.map((row, i) => {
+		const prior = years[i - 1];
+		if (!prior || prior.total === 0) {
+			return { ...row, deltaPct: null };
+		}
+		const deltaPct = Math.round(
+			((row.total - prior.total) / prior.total) * 100,
+		);
+		return { ...row, deltaPct };
+	});
+}
+
+/**
+ * Render a YoY delta as a human-readable label. `null` (no prior year)
+ * renders empty so the chart skips the label. `0` renders `0%` (don't
+ * suppress — the user wants to see "no change" too).
+ */
+export function formatYearOverYearDelta(deltaPct: number | null): string {
+	if (deltaPct === null) return "";
+	if (deltaPct === 0) return "0%";
+	const sign = deltaPct > 0 ? "+" : "";
+	return `${sign}${deltaPct}%`;
+}
+
 function getWeekStart(date: Date): Date {
 	const d = new Date(date);
 	const day = d.getDay();
