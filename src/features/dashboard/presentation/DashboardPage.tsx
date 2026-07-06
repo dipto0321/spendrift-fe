@@ -12,6 +12,24 @@ import { NeedsVsWantsCard } from "./NeedsVsWantsCard";
 import { RecentExpenses } from "./RecentExpenses";
 import { useDashboard } from "./useDashboard";
 
+// Dashboard widgets need a multi-month expense slice (trend chart spans up to
+// six months; recent expenses block shows the latest rows). The BE caps
+// `limit` at 200, so we ask for that window.
+const DASHBOARD_EXPENSE_LIMIT = 200;
+
+function lastNMonthsRange(
+	fromMonth: string,
+	months: number,
+): { start: string; end: string } {
+	const year = Number(fromMonth.slice(0, 4));
+	const monthIdx = Number(fromMonth.slice(5, 7)) - 1; // 0-based
+	const start = new Date(year, monthIdx - (months - 1), 1);
+	const end = new Date(year, monthIdx + 1, 0); // last day of the from-month
+	const fmt = (d: Date) =>
+		`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+	return { start: fmt(start), end: fmt(end) };
+}
+
 export function DashboardPage() {
 	const { activeTracker } = useTracker();
 	const trackerId = activeTracker?.id;
@@ -23,8 +41,16 @@ export function DashboardPage() {
 		selectedMonth,
 	);
 	const { data: categories = [] } = useCategories(trackerId);
-	const { data: expenses = [], isLoading: expensesLoading } =
-		useExpenses(trackerId);
+	const trendRange = lastNMonthsRange(selectedMonth, 6);
+	const { data: expensesResult, isLoading: expensesLoading } = useExpenses(
+		trackerId,
+		{
+			filter: { dateRange: trendRange },
+			page: 1,
+			pageSize: DASHBOARD_EXPENSE_LIMIT,
+		},
+	);
+	const expenses = expensesResult?.items ?? [];
 	const { data: budgetAlerts = [] } = useBudgetAlerts(trackerId, selectedMonth);
 
 	const monthlyData = groupByMonth(expenses)

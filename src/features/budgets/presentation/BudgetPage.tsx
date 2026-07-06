@@ -8,6 +8,7 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useExpenses } from "@/features/expenses/presentation/useExpenses";
 import { useFormatCurrency } from "@/features/preferences/presentation/useFormatCurrency";
 import { useTracker } from "@/features/trackers/presentation/TrackerContext";
 import { EmptyState } from "@/shared/ui/EmptyState";
@@ -21,6 +22,11 @@ import { BudgetForm } from "./BudgetForm";
 import { BudgetStatusCard } from "./BudgetStatusCard";
 import { useCreateBudget, useUpdateBudget } from "./useBudgets";
 import { useCurrentBudgetStatus } from "./useCurrentBudgetStatus";
+
+// BE caps `limit` at 200. The "Previous budgets" list filters per-month, so
+// 200 rows of the most recent expenses covers months within the user's
+// practical recall window.
+const PREVIOUS_BUDGETS_EXPENSE_LIMIT = 200;
 
 const STAT_SKELETON_KEYS = ["spent", "needs", "wants"] as const;
 
@@ -39,14 +45,15 @@ function BudgetPage() {
 	const { selectedMonth } = useMonth();
 	const isPastMonth = selectedMonth < getCurrentMonth();
 
-	const {
-		budgets,
-		expenses,
-		currentBudget,
-		status,
-		needsWantsSplit,
-		budgetsLoading,
-	} = useCurrentBudgetStatus(trackerId, selectedMonth);
+	const { budgets, currentBudget, status, needsWantsSplit, budgetsLoading } =
+		useCurrentBudgetStatus(trackerId, selectedMonth);
+	// Previous-budgets list filters expenses per month, so it needs a broader
+	// slice of recent expenses rather than the current-month subset above.
+	const { data: previousExpensesResult } = useExpenses(trackerId, {
+		page: 1,
+		pageSize: PREVIOUS_BUDGETS_EXPENSE_LIMIT,
+	});
+	const allExpenses = previousExpensesResult?.items ?? [];
 
 	const createMutation = useCreateBudget(trackerId);
 	const updateMutation = useUpdateBudget(trackerId);
@@ -181,7 +188,7 @@ function BudgetPage() {
 						{otherBudgets
 							.sort((a, b) => b.month.localeCompare(a.month))
 							.map((budget) => {
-								const monthExpenses = expenses.filter((e) =>
+								const monthExpenses = allExpenses.filter((e) =>
 									e.date.startsWith(budget.month),
 								);
 								const prevStatus = calculateBudgetStatus(
