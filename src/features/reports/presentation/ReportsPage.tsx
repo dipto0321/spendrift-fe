@@ -156,14 +156,15 @@ function ReportsPage() {
 		[preset, customRange.start, customRange.end],
 	);
 
-	// The spending chart needs the bucket *label* period (weekly/monthly/yearly)
-	// separate from the date-range filter — a "weekly" preset over a custom
-	// range still makes sense, so we bucket by the user's chosen period when
-	// one is selected, falling back to monthly for custom/all.
+	// Chart bucket granularity: for weekly/monthly/yearly presets the user
+	// picks the bucket explicitly. For custom/all-time presets we derive
+	// the granularity from the range span so a 5-day custom range renders
+	// per-day bars (not a single monthly bar with all the spend squashed
+	// into one column).
 	const bucketPeriod: ReportPeriod =
 		preset === "weekly" || preset === "monthly" || preset === "yearly"
 			? preset
-			: "monthly";
+			: granularityForRange(range.startDate, range.endDate);
 
 	// yearComparison's dataUpdatedAt is monotonic (independent of `range`),
 	// so once it's non-zero we know the user has been on the page long
@@ -192,26 +193,25 @@ function ReportsPage() {
 		return granularityForRange(range.startDate, range.endDate);
 	}, [preset, range.startDate, range.endDate, yearComparison.length]);
 
-	// Chart and stats share the same series unless stats wants daily on a
-	// weekly/monthly preset (in which case we fetch daily separately for
-	// per-day Low/High/Avg, leaving the chart at the user's period).
+	// Chart and stats share the same series when their granularities match.
+	// They diverge in two cases:
+	//   1. Weekly/Monthly preset → chart at week/month, cards per-day.
+	//   2. Yearly with 1 year of data → chart at year (1 bar), cards per-month.
 	const chartGranularity: ReportPeriod = bucketPeriod;
-	const needsSeparateStatsFetch =
-		statsGranularity === "daily" && chartGranularity !== "daily";
+	const statsNeedsSeparateFetch = statsGranularity !== chartGranularity;
 
 	// Chart series at the user's chosen period (weekly/monthly/yearly).
 	const spendingQuery = useSpending(trackerId, chartGranularity, range);
 	const periodData = spendingQuery.data ?? [];
 
-	// Optional second fetch for per-day stats when the user picked
-	// weekly/monthly (so the cards can show lowest-day / highest-day /
-	// daily average, while the chart stays at week/month bars).
+	// Optional second fetch for the stats series whenever the cards want
+	// a finer (or coarser) granularity than the chart shows.
 	const statsSpendingQuery = useSpending(
-		needsSeparateStatsFetch ? trackerId : undefined,
-		"daily",
+		statsNeedsSeparateFetch ? trackerId : undefined,
+		statsGranularity,
 		range,
 	);
-	const statsDailyData = statsSpendingQuery.data ?? [];
+	const statsData = statsSpendingQuery.data ?? periodData;
 
 	// Derive analytics from the stats series (per-day when statsGranularity
 	// is daily, otherwise from the chart series itself). Avg uses
@@ -219,18 +219,12 @@ function ReportsPage() {
 	const analytics: AnalyticsResult = useMemo(() => {
 		if (statsGranularity === "daily") {
 			return analyticsFromDailyBuckets(
-				statsDailyData,
+				statsData,
 				daySpanInRange(range.startDate, range.endDate),
 			);
 		}
-		return analyticsFromBuckets(periodData);
-	}, [
-		statsGranularity,
-		statsDailyData,
-		periodData,
-		range.startDate,
-		range.endDate,
-	]);
+		return analyticsFromBuckets(statsData);
+	}, [statsGranularity, statsData, range.startDate, range.endDate]);
 
 	const { data: categoryBreakdown = [] } = useCategoryBreakdown(
 		trackerId,
