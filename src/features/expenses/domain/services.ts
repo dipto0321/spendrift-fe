@@ -3,7 +3,6 @@ import type {
 	DateRange,
 	Expense,
 	ExpenseFilter,
-	ExpenseType,
 	GroupedExpenses,
 	NeedsWantsSplit,
 } from "./types";
@@ -180,15 +179,4 @@ export function buildPageList(
 export function pageCount(total: number, pageSize: number): number {
 	if (total <= 0 || pageSize <= 0) return 1;
 	return Math.max(1, Math.ceil(total / pageSize));
-}
-
-export function formatExpenseType(type: ExpenseType): string {
-	return type === "need" ? "Need" : "Want";
-}
-
-export function getCategoryById(
-	categories: Category[],
-	id: string,
-): Category | undefined {
-	return categories.find((c) => c.id === id);
 }
