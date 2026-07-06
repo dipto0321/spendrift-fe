@@ -57,9 +57,22 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 		meta: [
 			{ charSet: "utf-8" },
 			{ name: "viewport", content: "width=device-width, initial-scale=1" },
+			{
+				name: "theme-color",
+				content: "#10b981",
+			},
+			{
+				name: "description",
+				content:
+					"Spendrift — track every expense across every currency, in one calm place.",
+			},
 			{ title: "Spendrift" },
 		],
 		links: [
+			{ rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+			{ rel: "icon", href: "/favicon.ico", sizes: "any" },
+			{ rel: "apple-touch-icon", href: "/logo192.png" },
+			{ rel: "manifest", href: "/manifest.json" },
 			{ rel: "preconnect", href: "https://fonts.googleapis.com" },
 			{
 				rel: "preconnect",
