@@ -172,7 +172,23 @@ function ReportsPage() {
 		range,
 	);
 	const { data: needsWantsSplit } = useReportNeedsWants(trackerId, range);
-	const { data: yearComparison = [] } = useYearComparison(trackerId);
+	// `useYearComparison` is independent of the date range, so its
+	// `dataUpdatedAt` is monotonic across the page lifetime — once it's
+	// non-zero we know the user has been on the page long enough for at
+	// least one fetch to land, and we should never replace the page chrome
+	// with the cold-start skeleton again (that unmount would yank the open
+	// popover's anchor tree and close the popover mid-selection, looking
+	// like a page refresh).
+	const yearComparisonQuery = useYearComparison(trackerId);
+	const { data: yearComparison = [] } = yearComparisonQuery;
+	const yearComparisonUpdatedAt = yearComparisonQuery.dataUpdatedAt;
+	// Cold-start decision: only on the *very first* fetch do we replace the
+	// whole page with a skeleton. After any successful query lands, range
+	// changes must keep the page chrome mounted so the open date-picker
+	// popover survives the refetch (otherwise the user sees what looks
+	// like a page refresh after every click). `yearComparisonUpdatedAt`
+	// serves as the monotonic "ever loaded" signal.
+	const isColdStart = isLoading && yearComparisonUpdatedAt === 0;
 
 	// Category budgets — always current month, independent of the custom range
 	const currentMonth = useMemo(() => getCurrentMonth(), []);
@@ -204,7 +220,7 @@ function ReportsPage() {
 		{ key: "high", label: "Highest", value: analytics.max },
 	];
 
-	if (isLoading) {
+	if (isColdStart) {
 		return (
 			<main className="flex flex-col gap-6 px-4 pb-14 pt-6">
 				<PageHeader
