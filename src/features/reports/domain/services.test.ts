@@ -7,6 +7,7 @@ import {
 	computeCategoryBreakdown,
 	daySpanInRange,
 	elapsedDaysInRange,
+	fillEmptyDailySlots,
 	granularityForRange,
 	groupByMonth,
 	groupByWeek,
@@ -402,5 +403,97 @@ describe("elapsedDaysInRange", () => {
 		const todayStr = t.toISOString().slice(0, 10);
 		const monthStart = `${todayStr.slice(0, 8)}01`;
 		expect(elapsedDaysInRange(monthStart, todayStr)).toBeGreaterThanOrEqual(1);
+	});
+});
+
+describe("fillEmptyDailySlots", () => {
+	it("returns the input unchanged for open-ended ranges", () => {
+		const input = [{ label: "2026-07-01", total: 10, count: 1 }];
+		expect(fillEmptyDailySlots(input, undefined, undefined)).toEqual(input);
+		expect(fillEmptyDailySlots(input, "2026-07-01", undefined)).toEqual(input);
+		expect(fillEmptyDailySlots(input, undefined, "2026-07-07")).toEqual(input);
+	});
+
+	it("returns the input unchanged for invalid date strings", () => {
+		const input = [{ label: "2026-07-01", total: 10, count: 1 }];
+		expect(fillEmptyDailySlots(input, "nope", "also-nope")).toEqual(input);
+	});
+
+	it("pads a fully-empty week with 7 zero day-slots", () => {
+		const out = fillEmptyDailySlots([], "2026-07-06", "2026-07-12");
+		expect(out).toHaveLength(7);
+		expect(out.every((d) => d.total === 0 && d.count === 0)).toBe(true);
+		expect(out.map((d) => d.label)).toEqual([
+			"2026-07-06",
+			"2026-07-07",
+			"2026-07-08",
+			"2026-07-09",
+			"2026-07-10",
+			"2026-07-11",
+			"2026-07-12",
+		]);
+	});
+
+	it("preserves existing buckets and fills the gaps with zeros", () => {
+		const out = fillEmptyDailySlots(
+			[
+				{ label: "2026-07-06", total: 100, count: 2 },
+				{ label: "2026-07-09", total: 50, count: 1 },
+			],
+			"2026-07-06",
+			"2026-07-12",
+		);
+		expect(out).toHaveLength(7);
+		expect(out.find((d) => d.label === "2026-07-06")).toEqual({
+			label: "2026-07-06",
+			total: 100,
+			count: 2,
+		});
+		expect(out.find((d) => d.label === "2026-07-09")).toEqual({
+			label: "2026-07-09",
+			total: 50,
+			count: 1,
+		});
+		// The other 5 days are zero-filled.
+		const zeros = out.filter((d) => d.total === 0);
+		expect(zeros).toHaveLength(5);
+	});
+
+	it("pads a full month with 31 day-slots", () => {
+		const out = fillEmptyDailySlots(
+			[{ label: "2026-07-15", total: 200, count: 3 }],
+			"2026-07-01",
+			"2026-07-31",
+		);
+		expect(out).toHaveLength(31);
+		expect(out[0].label).toBe("2026-07-01");
+		expect(out[30].label).toBe("2026-07-31");
+		expect(out[14].total).toBe(200);
+		expect(out[14].count).toBe(3);
+	});
+
+	it("handles unsorted input by sorting the output ascending", () => {
+		const out = fillEmptyDailySlots(
+			[
+				{ label: "2026-07-10", total: 30, count: 1 },
+				{ label: "2026-07-06", total: 10, count: 1 },
+				{ label: "2026-07-08", total: 20, count: 1 },
+			],
+			"2026-07-06",
+			"2026-07-12",
+		);
+		expect(out.map((d) => d.label)).toEqual([
+			"2026-07-06",
+			"2026-07-07",
+			"2026-07-08",
+			"2026-07-09",
+			"2026-07-10",
+			"2026-07-11",
+			"2026-07-12",
+		]);
+		// Values preserved across reorder.
+		expect(out[0].total).toBe(10);
+		expect(out[2].total).toBe(20);
+		expect(out[4].total).toBe(30);
 	});
 });

@@ -144,7 +144,8 @@ export function elapsedDaysInRange(
 	const todayMidnight = new Date(
 		Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()),
 	);
-	const effectiveEnd = end.getTime() > todayMidnight.getTime() ? todayMidnight : end;
+	const effectiveEnd =
+		end.getTime() > todayMidnight.getTime() ? todayMidnight : end;
 	return Math.max(
 		1,
 		Math.round((effectiveEnd.getTime() - start.getTime()) / 86_400_000) + 1,
@@ -175,6 +176,39 @@ export function yearlyRangeFromComparison(
 		startDate: `${startYear}-01-01`,
 		endDate: `${max}-12-31`,
 	};
+}
+
+/**
+ * Fill in zero-buckets for any day in `[startDate, endDate]` that's missing
+ * from `buckets`. The result has one entry per calendar day, sorted
+ * ascending. Used by the Weekly chart so an empty week still renders 7
+ * visible day-slots instead of an empty plot.
+ *
+ * If either bound is missing, returns the input unchanged (caller can fall
+ * back to a different strategy for open-ended ranges).
+ */
+export function fillEmptyDailySlots(
+	buckets: PeriodData[],
+	startDate: string | undefined,
+	endDate: string | undefined,
+): PeriodData[] {
+	if (!startDate || !endDate) return buckets;
+	// Anchor both bounds at UTC midnight so `toISOString().slice(0, 10)`
+	// returns the calendar day the user typed (avoids the off-by-one
+	// you'd get from local-midnight in non-UTC zones).
+	const [sy, sm, sd] = startDate.split("-").map(Number);
+	const [ey, em, ed] = endDate.split("-").map(Number);
+	if (!Number.isFinite(sy) || !Number.isFinite(ey)) return buckets;
+	const startUtc = Date.UTC(sy, sm - 1, sd);
+	const endUtc = Date.UTC(ey, em - 1, ed);
+	const byLabel = new Map(buckets.map((b) => [b.label, b]));
+	const out: PeriodData[] = [];
+	for (let t = startUtc; t <= endUtc; t += 86_400_000) {
+		const label = new Date(t).toISOString().slice(0, 10);
+		const existing = byLabel.get(label);
+		out.push(existing ?? { label, total: 0, count: 0 });
+	}
+	return out;
 }
 
 export function groupByWeek(expenses: Expense[]): PeriodData[] {

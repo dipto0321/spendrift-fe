@@ -28,6 +28,7 @@ import {
 	analyticsFromBuckets,
 	analyticsFromDailyBuckets,
 	elapsedDaysInRange,
+	fillEmptyDailySlots,
 	granularityForRange,
 	yearlyRangeFromComparison,
 } from "../domain/services";
@@ -192,10 +193,10 @@ function ReportsPage() {
 		return granularityForRange(range.startDate, range.endDate);
 	}, [preset, range.startDate, range.endDate, yearComparison.length]);
 
-	// Effective granularity for the stat cards and chart:
-	//   - Weekly / Monthly presets: stat cards go per-day (current-week /
-	//     current-month basis as the user requested); chart stays at the
-	//     user's chosen period.
+	// Effective granularity for the stat cards (and reused by the chart
+	// when its display period matches):
+	//   - Weekly / Monthly presets: both chart and stat cards go per-day
+	//     (current-week / current-month basis as the user requested).
 	//   - Yearly: if only one year of data exists, fall back to monthly
 	//     granularity so we have something to compare across. Multi-year
 	//     keeps yearly cards.
@@ -215,9 +216,10 @@ function ReportsPage() {
 	}, [preset, range.startDate, range.endDate, yearComparison.length]);
 
 	// Chart and stats share the same series when their granularities match.
-	// They diverge in two cases:
-	//   1. Weekly/Monthly preset → chart at week/month, cards per-day.
-	//   2. Yearly with 1 year of data → chart at year (1 bar), cards per-month.
+	// They diverge only when the stats series uses a different bucket from
+	// the chart (e.g. Yearly with 1 year of data → chart at year (1 bar),
+	// cards per-month). Weekly/Monthly presets align on daily so we can
+	// reuse the same fetch for the chart's day-slot rendering.
 	const chartGranularity: ReportPeriod = bucketPeriod;
 	const statsNeedsSeparateFetch = statsGranularity !== chartGranularity;
 
@@ -233,6 +235,25 @@ function ReportsPage() {
 		range,
 	);
 	const statsData = statsSpendingQuery.data ?? periodData;
+
+	// Weekly and Monthly presets render day-slots (7 for a week, 30/31 for
+	// a month) so an empty week or partial month still shows the axis ticks
+	// the user expects. We reuse the daily series already fetched for the
+	// stat cards and pad any missing day with a zero-bucket. The chart's
+	// display period is also "daily" in those cases so the header and axis
+	// labels reflect what's actually being plotted. Yearly and "all" keep
+	// their coarser bucket view.
+	const chartDisplayPeriod: ReportPeriod = useMemo(() => {
+		if (preset === "weekly" || preset === "monthly") return "daily";
+		return bucketPeriod;
+	}, [preset, bucketPeriod]);
+
+	const chartData = useMemo(() => {
+		if (preset === "weekly" || preset === "monthly") {
+			return fillEmptyDailySlots(statsData, range.startDate, range.endDate);
+		}
+		return periodData;
+	}, [preset, statsData, periodData, range.startDate, range.endDate]);
 
 	// Derive analytics from the stats series (per-day when statsGranularity
 	// is daily, otherwise from the chart series itself). Avg uses
@@ -420,8 +441,8 @@ function ReportsPage() {
 				</div>
 
 				<SpendingChart
-					data={periodData}
-					period={bucketPeriod}
+					data={chartData}
+					period={chartDisplayPeriod}
 					currency={currency}
 				/>
 			</div>
