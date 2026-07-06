@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { Plus } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTracker } from "@/features/trackers/presentation/TrackerContext";
@@ -10,6 +10,7 @@ import {
 	calculateTotal,
 	filterExpenses,
 	getTodayRange,
+	pageCount,
 } from "../domain/services";
 import type {
 	Expense,
@@ -17,6 +18,7 @@ import type {
 	ExpenseFilter,
 } from "../domain/types";
 import { ExpenseModal } from "./ExpenseModal";
+import { ExpensePagination } from "./ExpensePagination";
 import { ExpenseTable, type SortKey, type SortState } from "./ExpenseTable";
 import { ExpenseToolbar } from "./ExpenseToolbar";
 import { useCategories } from "./useCategories";
@@ -27,6 +29,9 @@ import {
 	useUpdateExpense,
 } from "./useExpenses";
 
+const PAGE_SIZE = 100;
+const SEARCH_DEBOUNCE_MS = 300;
+
 export function ExpensePage() {
 	const { activeTracker } = useTracker();
 	const trackerId = activeTracker?.id;
@@ -35,17 +40,41 @@ export function ExpensePage() {
 	const [filter, setFilter] = useState<ExpenseFilter>(() => ({
 		dateRange: getTodayRange(),
 	}));
+	// Debounced view of the filter — feeds the query so each keystroke doesn't
+	// fire a network round-trip. The toolbar still drives `filter` immediately
+	// so the UI feels responsive.
+	const [debouncedFilter, setDebouncedFilter] = useState(filter);
+	useEffect(() => {
+		const id = setTimeout(() => setDebouncedFilter(filter), SEARCH_DEBOUNCE_MS);
+		return () => clearTimeout(id);
+	}, [filter]);
+
 	const [sort, setSort] = useState<SortState>({ key: "date", dir: "desc" });
+	const [page, setPage] = useState(1);
 	const [modalState, setModalState] = useState<{
 		open: boolean;
 		expense?: Expense;
 	}>({ open: false });
 
 	const {
-		data: allExpenses = [],
+		data,
 		isLoading: expensesLoading,
 		error: expensesError,
-	} = useExpenses(trackerId);
+	} = useExpenses(trackerId, {
+		filter: debouncedFilter,
+		page,
+		pageSize: PAGE_SIZE,
+	});
+	const pageItems = data?.items ?? [];
+	const total = data?.total ?? 0;
+
+	// If the server's total drops (e.g. after a delete) so the current page is
+	// past the end, snap back to the last valid page.
+	useEffect(() => {
+		if (expensesLoading) return;
+		const lastPage = pageCount(total, PAGE_SIZE);
+		if (page > lastPage) setPage(lastPage);
+	}, [expensesLoading, page, total]);
 
 	const { data: categories = [] } = useCategories(trackerId);
 
@@ -53,24 +82,28 @@ export function ExpensePage() {
 	const updateMutation = useUpdateExpense(trackerId);
 	const deleteMutation = useDeleteExpense(trackerId);
 
-	const filteredExpenses = filterExpenses(allExpenses, filter);
+	// Search is debounced via `debouncedFilter`, so the page query sees a
+	// stable filter set per search burst. The other filters apply
+	// immediately because they're chip-style with no per-keystroke fan-out.
+	const filteredExpenses = filterExpenses(pageItems, filter);
 
-	const sortedExpenses = [...filteredExpenses].sort((a, b) => {
+	const sortedExpenses = useMemo(() => {
 		const dir = sort.dir === "asc" ? 1 : -1;
-		if (sort.key === "amount") return (a.amount - b.amount) * dir;
-		if (sort.key === "description") {
-			return (a.description ?? "").localeCompare(b.description ?? "") * dir;
-		}
-		if (sort.key === "category") {
-			const catA = categories.find((c) => c.id === a.categoryId)?.name ?? "";
-			const catB = categories.find((c) => c.id === b.categoryId)?.name ?? "";
-			return catA.localeCompare(catB) * dir;
-		}
-		return a.date.localeCompare(b.date) * dir;
-	});
+		return [...filteredExpenses].sort((a, b) => {
+			if (sort.key === "amount") return (a.amount - b.amount) * dir;
+			if (sort.key === "description") {
+				return (a.description ?? "").localeCompare(b.description ?? "") * dir;
+			}
+			if (sort.key === "category") {
+				const catA = categories.find((c) => c.id === a.categoryId)?.name ?? "";
+				const catB = categories.find((c) => c.id === b.categoryId)?.name ?? "";
+				return catA.localeCompare(catB) * dir;
+			}
+			return a.date.localeCompare(b.date) * dir;
+		});
+	}, [filteredExpenses, sort, categories]);
 
-	const filteredTotal = calculateTotal(filteredExpenses);
-	const filteredCount = filteredExpenses.length;
+	const pageTotal = calculateTotal(filteredExpenses);
 
 	const isFiltered = Boolean(
 		filter.search ||
@@ -98,8 +131,15 @@ export function ExpensePage() {
 		setModalState({ open: false });
 	}
 
+	function handleFilterChange(next: ExpenseFilter) {
+		// Any filter change should restart pagination at the first page so the
+		// user immediately sees the start of the new result set.
+		setFilter(next);
+		setPage(1);
+	}
+
 	function clearFilter() {
-		setFilter({ dateRange: getTodayRange() });
+		handleFilterChange({ dateRange: getTodayRange() });
 	}
 
 	async function handleFormSubmit(data: ExpenseCreateInput) {
@@ -141,20 +181,21 @@ export function ExpensePage() {
 					<ExpenseToolbar
 						filter={filter}
 						categories={categories}
-						onFilterChange={setFilter}
+						onFilterChange={handleFilterChange}
 					/>
 
-					{!expensesLoading && filteredCount > 0 && (
+					{!expensesLoading && total > 0 && (
 						<div className="flex items-center justify-between rounded-lg bg-muted/50 px-4 py-2.5">
 							<span className="text-sm text-muted-foreground">
-								{filteredCount}{" "}
-								{filteredCount === 1 ? "expense" : "expenses"}
+								{total} {total === 1 ? "expense" : "expenses"}
 								{isFiltered ? " matching filters" : ""}
 							</span>
 							<div className="flex items-baseline gap-1.5">
-								<span className="text-xs text-muted-foreground">Total</span>
+								<span className="text-xs text-muted-foreground">
+									Page total
+								</span>
 								<MoneyText
-									amount={filteredTotal}
+									amount={pageTotal}
 									currency={currency}
 									className="text-base font-semibold"
 								/>
@@ -174,6 +215,13 @@ export function ExpensePage() {
 						onDelete={(id) => deleteMutation.mutate(id)}
 						onAddExpense={openAddModal}
 						onClearFilters={clearFilter}
+					/>
+
+					<ExpensePagination
+						page={page}
+						pageSize={PAGE_SIZE}
+						total={total}
+						onPageChange={setPage}
 					/>
 				</CardContent>
 			</Card>

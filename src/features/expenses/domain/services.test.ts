@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+	buildPageList,
 	calculateNeedsWantsSplit,
 	calculateTotal,
 	filterExpenses,
@@ -7,6 +8,7 @@ import {
 	groupByCategory,
 	groupByMonth,
 	isWithinDateRange,
+	pageCount,
 	sortExpensesByDate,
 } from "./services";
 import type { Expense } from "./types";
@@ -163,5 +165,72 @@ describe("isWithinDateRange", () => {
 		expect(isWithinDateRange("2026-01-01", range)).toBe(true);
 		expect(isWithinDateRange("2026-01-31", range)).toBe(true);
 		expect(isWithinDateRange("2026-02-01", range)).toBe(false);
+	});
+});
+
+describe("pageCount", () => {
+	it("returns 1 for an empty total", () => {
+		expect(pageCount(0, 100)).toBe(1);
+	});
+
+	it("returns 1 when total equals page size exactly", () => {
+		expect(pageCount(100, 100)).toBe(1);
+	});
+
+	it("rounds up partial last pages", () => {
+		expect(pageCount(101, 100)).toBe(2);
+		expect(pageCount(250, 100)).toBe(3);
+	});
+
+	it("guards against invalid page sizes", () => {
+		expect(pageCount(50, 0)).toBe(1);
+		expect(pageCount(50, -1)).toBe(1);
+	});
+});
+
+describe("buildPageList", () => {
+	it("returns a single page when last is 1", () => {
+		expect(buildPageList(1, 1)).toEqual([1]);
+	});
+
+	it("shows all pages when the range fits in one screen", () => {
+		// Even for short ranges, the algorithm always trims to {first, last,
+		// current ± 1} which can introduce ellipses. A 3-page range is the
+		// smallest where this collapses to no ellipsis.
+		expect(buildPageList(2, 3)).toEqual([1, 2, 3]);
+	});
+
+	it("inserts ellipses around the current page on long ranges", () => {
+		// current = 5, last = 10 → show [1, ..., 4, 5, 6, ..., 10]
+		expect(buildPageList(5, 10)).toEqual([
+			1,
+			"ellipsis",
+			4,
+			5,
+			6,
+			"ellipsis",
+			10,
+		]);
+	});
+
+	it("hides the trailing ellipsis when current sits near the end", () => {
+		// current = 9, last = 10 → show [1, ..., 8, 9, 10]
+		expect(buildPageList(9, 10)).toEqual([1, "ellipsis", 8, 9, 10]);
+	});
+
+	it("hides the leading ellipsis when current sits near the start", () => {
+		// current = 2, last = 10 → show [1, 2, 3, ..., 10]
+		expect(buildPageList(2, 10)).toEqual([1, 2, 3, "ellipsis", 10]);
+	});
+
+	it("clamps neighbours that fall outside [1, last]", () => {
+		// current = 1, last = 10 → no 0 or 2 in output (well, 2 is included
+		// because it's a neighbour); we just shouldn't see 0 or -1.
+		const out = buildPageList(1, 10);
+		expect(out).toContain(1);
+		expect(out).toContain(10);
+		expect(out.every((p) => p === "ellipsis" || (p >= 1 && p <= 10))).toBe(
+			true,
+		);
 	});
 });

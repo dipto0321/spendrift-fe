@@ -154,6 +154,34 @@ export function getMonthRange(year: number, month: number): DateRange {
 	return { start, end };
 }
 
+// Build the visible page-number slots for the expenses pagination control.
+// Always shows the first and last page, the current page and its neighbours,
+// with ellipses filling the gaps. Mirrors the shadcn pagination example.
+export function buildPageList(
+	current: number,
+	last: number,
+): Array<number | "ellipsis"> {
+	if (last <= 1) return [1];
+	const pages = new Set<number>([1, last, current, current - 1, current + 1]);
+	const sorted = [...pages]
+		.filter((p) => p >= 1 && p <= last)
+		.sort((a, b) => a - b);
+
+	const out: Array<number | "ellipsis"> = [];
+	let prev = 0;
+	for (const p of sorted) {
+		if (prev && p - prev > 1) out.push("ellipsis");
+		out.push(p);
+		prev = p;
+	}
+	return out;
+}
+
+export function pageCount(total: number, pageSize: number): number {
+	if (total <= 0 || pageSize <= 0) return 1;
+	return Math.max(1, Math.ceil(total / pageSize));
+}
+
 export function formatExpenseType(type: ExpenseType): string {
 	return type === "need" ? "Need" : "Want";
 }

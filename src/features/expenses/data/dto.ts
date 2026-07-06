@@ -72,13 +72,16 @@ export function toExpenseBody(
 // Map the client ExpenseFilter to API query params. Note the API's `type` is a
 // single value, so a multi-select that includes both need+want is treated as
 // "no filter" (omitted).
-// The API defaults to limit=50 if omitted; always request its max (200) so
-// the list isn't silently truncated for trackers with more expenses.
-const MAX_EXPENSE_LIMIT = "200";
-
-export function toExpenseQuery(filter?: ExpenseFilter): string {
+// Pagination is page/pageSize-based; the BE clamps `limit` to [1, 200] and
+// returns the unpaged total via the `X-Total-Count` response header.
+export function toExpenseQuery(
+	filter?: ExpenseFilter,
+	page = 1,
+	pageSize = 100,
+): string {
 	const params = new URLSearchParams();
-	params.set("limit", MAX_EXPENSE_LIMIT);
+	params.set("limit", String(pageSize));
+	params.set("offset", String((page - 1) * pageSize));
 	if (filter?.dateRange?.start)
 		params.set("start_date", filter.dateRange.start);
 	if (filter?.dateRange?.end) params.set("end_date", filter.dateRange.end);

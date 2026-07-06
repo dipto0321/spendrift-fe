@@ -1,6 +1,8 @@
-import { apiFetch } from "@/shared/api/client";
+import { apiFetch, apiFetchWithMeta } from "@/shared/api/client";
 import type {
 	CategoryRepository,
+	ExpenseListParams,
+	ExpenseListResult,
 	ExpenseRepository,
 } from "../domain/repository";
 import {
@@ -21,12 +23,25 @@ function expensesPath(trackerId: string) {
 	return `/trackers/${trackerId}/expenses`;
 }
 
+// The BE caps `limit` at 200; bulk operations (e.g. category reassignment) ask
+// for the maximum so a single round-trip covers most trackers.
+const MAX_EXPENSE_LIMIT = 200;
+
 export const expenseRepository: ExpenseRepository = {
-	async getAll(trackerId, filter) {
-		const dtos = await apiFetch<ExpenseResponseDto[]>(
-			`${expensesPath(trackerId)}${toExpenseQuery(filter)}`,
+	async getAll(
+		trackerId,
+		params: ExpenseListParams = {},
+	): Promise<ExpenseListResult> {
+		const { filter, page = 1, pageSize = 100 } = params;
+		const { data, headers } = await apiFetchWithMeta<ExpenseResponseDto[]>(
+			`${expensesPath(trackerId)}${toExpenseQuery(filter, page, pageSize)}`,
 		);
-		return dtos.map(mapExpense);
+		const totalHeader = headers.get("x-total-count");
+		const total = totalHeader ? Number.parseInt(totalHeader, 10) : data.length;
+		return {
+			items: data.map(mapExpense),
+			total: Number.isFinite(total) ? total : data.length,
+		};
 	},
 
 	async getById(trackerId, id) {
@@ -93,14 +108,14 @@ export const categoryRepository: CategoryRepository = {
 
 	async delete(trackerId, id) {
 		// The API refuses to delete a category that still has expenses, so move
-		// them to "Uncategorized" first.
+		// them to "Uncategorized" first. Fetch up to the BE's max page size.
 		const categories = await apiFetch<CategoryResponseDto[]>(
 			categoriesPath(trackerId),
 		);
 		const uncategorized = categories.find((c) => c.name === UNCATEGORIZED_NAME);
 		if (uncategorized && uncategorized.id !== id) {
 			const expenses = await apiFetch<ExpenseResponseDto[]>(
-				`${expensesPath(trackerId)}?category_ids=${id}&limit=200`,
+				`${expensesPath(trackerId)}?category_ids=${id}&limit=${MAX_EXPENSE_LIMIT}`,
 			);
 			await Promise.all(
 				expenses.map((expense) =>

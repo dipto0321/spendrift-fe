@@ -139,10 +139,10 @@ async function toResult<T>(res: Response): Promise<T> {
 	return body as T;
 }
 
-export async function apiFetch<T>(
+async function ensureFreshResponse(
 	path: string,
-	options: ApiFetchOptions = {},
-): Promise<T> {
+	options: ApiFetchOptions,
+): Promise<Response> {
 	let res = await rawFetch(path, options);
 
 	// On an expired access token, refresh once and retry the original request.
@@ -156,5 +156,25 @@ export async function apiFetch<T>(
 		}
 	}
 
+	return res;
+}
+
+export async function apiFetch<T>(
+	path: string,
+	options: ApiFetchOptions = {},
+): Promise<T> {
+	const res = await ensureFreshResponse(path, options);
 	return toResult<T>(res);
+}
+
+// Sibling of `apiFetch` that also returns the response Headers so callers can
+// read metadata like `X-Total-Count` for pagination. Refresh-dance and error
+// handling mirror `apiFetch`.
+export async function apiFetchWithMeta<T>(
+	path: string,
+	options: ApiFetchOptions = {},
+): Promise<{ data: T; headers: Headers }> {
+	const res = await ensureFreshResponse(path, options);
+	const data = await toResult<T>(res);
+	return { data, headers: res.headers };
 }

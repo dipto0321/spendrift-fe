@@ -7,8 +7,22 @@ import type {
 	ExpenseUpdateInput,
 } from "./types";
 
+export type ExpenseListParams = {
+	filter?: ExpenseFilter;
+	page?: number;
+	pageSize?: number;
+};
+
+export type ExpenseListResult = {
+	items: Expense[];
+	total: number;
+};
+
 export interface ExpenseRepository {
-	getAll(trackerId: string, filter?: ExpenseFilter): Promise<Expense[]>;
+	getAll(
+		trackerId: string,
+		params?: ExpenseListParams,
+	): Promise<ExpenseListResult>;
 	getById(trackerId: string, id: string): Promise<Expense | null>;
 	create(trackerId: string, input: ExpenseCreateInput): Promise<Expense>;
 	update(

@@ -1,18 +1,34 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { expenseKeys } from "../data/queryKeys";
+import { type ExpenseListKeyArgs, expenseKeys } from "../data/queryKeys";
 import { expenseRepository } from "../data/repository";
-import type { ExpenseCreateInput, ExpenseUpdateInput } from "../domain/types";
+import type {
+	ExpenseCreateInput,
+	ExpenseFilter,
+	ExpenseUpdateInput,
+} from "../domain/types";
 
 // Query + mutation hooks for expenses. Pages stay thin: the hooks own the
 // query key, cache invalidation, and the generic success/error toasts, while
 // the call site can still pass a per-call `onSuccess` for UI side effects
 // (e.g. closing a modal).
 
-export function useExpenses(trackerId: string | undefined) {
+export type UseExpensesParams = ExpenseListKeyArgs & {
+	filter?: ExpenseFilter;
+};
+
+export function useExpenses(
+	trackerId: string | undefined,
+	params: UseExpensesParams = {},
+) {
 	return useQuery({
-		queryKey: expenseKeys.all(trackerId as string),
-		queryFn: () => expenseRepository.getAll(trackerId as string),
+		queryKey: expenseKeys.list(trackerId as string, params),
+		queryFn: () =>
+			expenseRepository.getAll(trackerId as string, {
+				filter: params.filter,
+				page: params.page,
+				pageSize: params.pageSize,
+			}),
 		enabled: Boolean(trackerId),
 	});
 }
