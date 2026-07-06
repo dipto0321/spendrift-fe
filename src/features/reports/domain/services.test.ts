@@ -6,6 +6,7 @@ import {
 	computeAnalytics,
 	computeCategoryBreakdown,
 	daySpanInRange,
+	elapsedDaysInRange,
 	granularityForRange,
 	groupByMonth,
 	groupByWeek,
@@ -361,5 +362,45 @@ describe("yearlyRangeFromComparison", () => {
 			startDate: "2026-01-01",
 			endDate: "2026-12-31",
 		});
+	});
+});
+
+describe("elapsedDaysInRange", () => {
+	const today = new Date("2026-07-06T12:00:00Z");
+
+	it("returns 1 for open-ended ranges", () => {
+		expect(elapsedDaysInRange(undefined, undefined)).toBe(1);
+		expect(elapsedDaysInRange("2026-07-01", undefined)).toBe(1);
+	});
+
+	it("returns the inclusive span when the range ends in the past", () => {
+		expect(elapsedDaysInRange("2026-06-01", "2026-06-30", today)).toBe(30);
+		expect(elapsedDaysInRange("2026-07-01", "2026-07-05", today)).toBe(5);
+	});
+
+	it("clips to today when the range extends into the future (Monthly view, Jul 6)", () => {
+		// current month range Jul 1 → Jul 31, today is Jul 6 → 6 days elapsed
+		expect(elapsedDaysInRange("2026-07-01", "2026-07-31", today)).toBe(6);
+	});
+
+	it("clips to today for the current week (Weekly view)", () => {
+		// Week Jun 29 (Mon) → Jul 5 (Sun), today is Jul 6 (Mon of next week)
+		// The week is already fully past, so the span is the whole 7 days.
+		expect(elapsedDaysInRange("2026-06-29", "2026-07-05", today)).toBe(7);
+		// Mid-week, Mon → Sun, today is Wed → 3 days elapsed.
+		const wed = new Date("2026-07-01T12:00:00Z");
+		expect(elapsedDaysInRange("2026-06-29", "2026-07-05", wed)).toBe(3);
+	});
+
+	it("falls back to 1 for invalid dates", () => {
+		expect(elapsedDaysInRange("nope", "also-nope", today)).toBe(1);
+	});
+
+	it("uses the actual local 'today' when not given", () => {
+		// A range ending today should always include today.
+		const t = new Date();
+		const todayStr = t.toISOString().slice(0, 10);
+		const monthStart = `${todayStr.slice(0, 8)}01`;
+		expect(elapsedDaysInRange(monthStart, todayStr)).toBeGreaterThanOrEqual(1);
 	});
 });

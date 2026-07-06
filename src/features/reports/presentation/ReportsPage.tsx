@@ -27,7 +27,7 @@ import type { ReportRange } from "../data/queryKeys";
 import {
 	analyticsFromBuckets,
 	analyticsFromDailyBuckets,
-	daySpanInRange,
+	elapsedDaysInRange,
 	granularityForRange,
 	yearlyRangeFromComparison,
 } from "../domain/services";
@@ -236,12 +236,14 @@ function ReportsPage() {
 
 	// Derive analytics from the stats series (per-day when statsGranularity
 	// is daily, otherwise from the chart series itself). Avg uses
-	// daySpanInRange so a Monthly view on July 9 divides by 9, not 30.
+	// `elapsedDaysInRange` so a Monthly view on July 9 divides by 9, not
+	// 31 (the rest of the month is in the future and not part of the
+	// user's "average so far" mental model).
 	const analytics: AnalyticsResult = useMemo(() => {
 		if (statsGranularity === "daily") {
 			return analyticsFromDailyBuckets(
 				statsData,
-				daySpanInRange(range.startDate, range.endDate),
+				elapsedDaysInRange(range.startDate, range.endDate),
 			);
 		}
 		return analyticsFromBuckets(statsData);

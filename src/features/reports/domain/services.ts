@@ -121,6 +121,37 @@ export function daySpanInRange(
 }
 
 /**
+ * Number of days elapsed so far in the active period, used as the
+ * Average divisor for the "current month" / "current week" presets.
+ *
+ * For a current-period range (e.g. Jul 1 → Jul 31 viewed on Jul 6), the
+ * raw day-span (31) would understate the user's expected average — they
+ * think of it as "what I've spent per day, so far". So we clip the end
+ * to today's date when the range extends into the future.
+ *
+ * For historical / custom ranges (e.g. Jun 1 → Jun 15) the span stays
+ * as-is. The optional `today` parameter makes this pure-function testable.
+ */
+export function elapsedDaysInRange(
+	startDate: string | undefined,
+	endDate: string | undefined,
+	today: Date = new Date(),
+): number {
+	if (!startDate || !endDate) return 1;
+	const start = new Date(`${startDate}T00:00:00`);
+	const end = new Date(`${endDate}T00:00:00`);
+	if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return 1;
+	const todayMidnight = new Date(
+		Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()),
+	);
+	const effectiveEnd = end.getTime() > todayMidnight.getTime() ? todayMidnight : end;
+	return Math.max(
+		1,
+		Math.round((effectiveEnd.getTime() - start.getTime()) / 86_400_000) + 1,
+	);
+}
+
+/**
  * Derive the date range the "Yearly" preset should span from the tracker's
  * actual history. Capped to the most recent `maxYears` years (default 5) so
  * long-tenured trackers don't blow up the chart with 20 bars.
