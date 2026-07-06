@@ -1,8 +1,6 @@
 import { useMemo, useState } from "react";
-import type { DateRange as PickerDateRange } from "react-day-picker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
 import {
 	Card,
 	CardContent,
@@ -10,14 +8,6 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { getCurrentMonth } from "@/features/budgets/domain/services";
@@ -25,6 +15,12 @@ import { useCurrentBudgetStatus } from "@/features/budgets/presentation/useCurre
 import { useFormatCurrency } from "@/features/preferences/presentation/useFormatCurrency";
 import { useTracker } from "@/features/trackers/presentation/TrackerContext";
 import { BudgetProgress } from "@/shared/ui/BudgetProgress";
+import {
+	formatDateLabel,
+	formatDateValue,
+	parseDateValue,
+} from "@/shared/ui/DatePicker";
+import { DateRangePicker } from "@/shared/ui/DateRangePicker";
 import { MoneyText } from "@/shared/ui/MoneyText";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import type { ReportRange } from "../data/queryKeys";
@@ -41,34 +37,102 @@ import {
 } from "./useReports";
 import { YearComparisonChart } from "./YearComparisonChart";
 
-function formatCalendarDate(date: Date) {
-	return date.toLocaleDateString(undefined, {
-		month: "short",
-		day: "numeric",
-		year: "numeric",
-	});
+// Period values: weekly/monthly/yearly are *date-range presets* (they
+// re-derive start/end so analytics cards actually update). "custom" lets the
+// user override via the DateRangePicker. "all" clears the range entirely.
+type RangePreset = ReportPeriod | "custom" | "all";
+
+function startOfWeek(date: Date): Date {
+	const d = new Date(date);
+	const day = d.getDay(); // 0 = Sunday
+	const diff = (day + 6) % 7; // make Monday the start
+	d.setDate(d.getDate() - diff);
+	d.setHours(0, 0, 0, 0);
+	return d;
 }
 
-function getRangeLabel(range: PickerDateRange | undefined) {
-	if (!range?.from && !range?.to) return "All time";
-	const fromLabel = range.from ? formatCalendarDate(range.from) : "Start";
-	const toLabel = range.to ? formatCalendarDate(range.to) : "End";
+function endOfWeek(date: Date): Date {
+	const d = new Date(date);
+	const day = d.getDay();
+	const diff = (day + 6) % 7; // Monday-based
+	d.setDate(d.getDate() - diff + 6);
+	d.setHours(23, 59, 59, 999);
+	return d;
+}
+
+function startOfYear(date: Date): Date {
+	return new Date(date.getFullYear(), 0, 1);
+}
+
+function endOfYear(date: Date): Date {
+	return new Date(date.getFullYear(), 11, 31, 23, 59, 59, 999);
+}
+
+function endOfMonth(date: Date): Date {
+	return new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
+}
+
+/**
+ * Derive the active `ReportRange` from a preset. "custom" needs the
+ * caller-supplied date picker values; "all" yields an open-ended range.
+ */
+function presetToRange(
+	preset: RangePreset,
+	customStart?: string,
+	customEnd?: string,
+): ReportRange {
+	const now = new Date();
+	switch (preset) {
+		case "weekly":
+			return {
+				startDate: formatDateValue(startOfWeek(now)),
+				endDate: formatDateValue(endOfWeek(now)),
+			};
+		case "monthly":
+			return {
+				startDate: formatDateValue(
+					new Date(now.getFullYear(), now.getMonth(), 1),
+				),
+				endDate: formatDateValue(endOfMonth(now)),
+			};
+		case "yearly":
+			return {
+				startDate: formatDateValue(startOfYear(now)),
+				endDate: formatDateValue(endOfYear(now)),
+			};
+		case "custom":
+			return {
+				startDate: customStart,
+				endDate: customEnd,
+			};
+		default:
+			return {};
+	}
+}
+
+function rangeLabel(range: ReportRange, preset: RangePreset): string {
+	if (preset === "all") return "All time";
+	if (preset !== "custom") {
+		const from = range.startDate ? parseDateValue(range.startDate) : undefined;
+		const to = range.endDate ? parseDateValue(range.endDate) : undefined;
+		if (from && to) return `${formatDateLabel(from)} – ${formatDateLabel(to)}`;
+	}
+	const from = range.startDate ? parseDateValue(range.startDate) : undefined;
+	const to = range.endDate ? parseDateValue(range.endDate) : undefined;
+	if (!from && !to) return "All time";
+	const fromLabel = from ? formatDateLabel(from) : "Start";
+	const toLabel = to ? formatDateLabel(to) : "End";
 	return `${fromLabel} – ${toLabel}`;
-}
-
-function toApiDate(date: Date): string {
-	const year = date.getFullYear();
-	const month = String(date.getMonth() + 1).padStart(2, "0");
-	const day = String(date.getDate()).padStart(2, "0");
-	return `${year}-${month}-${day}`;
 }
 
 const EMPTY_ANALYTICS = { total: 0, min: 0, max: 0, avg: 0, count: 0 };
 
-const PERIOD_LABELS: { value: ReportPeriod; label: string }[] = [
+const PRESET_LABELS: { value: RangePreset; label: string }[] = [
 	{ value: "weekly", label: "Weekly" },
 	{ value: "monthly", label: "Monthly" },
 	{ value: "yearly", label: "Yearly" },
+	{ value: "custom", label: "Custom" },
+	{ value: "all", label: "All time" },
 ];
 
 const SKELETON_KEYS = ["total", "avg", "low", "high"] as const;
@@ -78,23 +142,31 @@ function ReportsPage() {
 	const trackerId = activeTracker?.id;
 	const currency = activeTracker?.currency ?? "";
 	const formatCurrency = useFormatCurrency();
-	const [period, setPeriod] = useState<ReportPeriod>("monthly");
-	const [customRange, setCustomRange] = useState<PickerDateRange | undefined>();
-	const [customRangeOpen, setCustomRangeOpen] = useState(false);
+	const [preset, setPreset] = useState<RangePreset>("monthly");
+	const [customRange, setCustomRange] = useState<{
+		start?: string;
+		end?: string;
+	}>({});
 
 	const range = useMemo<ReportRange>(
-		() => ({
-			startDate: customRange?.from ? toApiDate(customRange.from) : undefined,
-			endDate: customRange?.to ? toApiDate(customRange.to) : undefined,
-		}),
-		[customRange?.from, customRange?.to],
+		() => presetToRange(preset, customRange.start, customRange.end),
+		[preset, customRange.start, customRange.end],
 	);
+
+	// The spending chart needs the bucket *label* period (weekly/monthly/yearly)
+	// separate from the date-range filter — a "weekly" preset over a custom
+	// range still makes sense, so we bucket by the user's chosen period when
+	// one is selected, falling back to monthly for custom/all.
+	const bucketPeriod: ReportPeriod =
+		preset === "weekly" || preset === "monthly" || preset === "yearly"
+			? preset
+			: "monthly";
 
 	const { data: analytics = EMPTY_ANALYTICS, isLoading } = useReportSummary(
 		trackerId,
 		range,
 	);
-	const { data: periodData = [] } = useSpending(trackerId, period, range);
+	const { data: periodData = [] } = useSpending(trackerId, bucketPeriod, range);
 	const { data: categoryBreakdown = [] } = useCategoryBreakdown(
 		trackerId,
 		range,
@@ -108,7 +180,7 @@ function ReportsPage() {
 		const [year, month] = currentMonth.split("-").map(Number);
 		return {
 			startDate: `${currentMonth}-01`,
-			endDate: toApiDate(new Date(year, month, 0)),
+			endDate: formatDateValue(new Date(year, month, 0)),
 		};
 	}, [currentMonth]);
 	const { data: catBudgetData = [] } = useCategoryBreakdown(
@@ -122,8 +194,8 @@ function ReportsPage() {
 			? monthlyLimit / catBudgetData.length
 			: 0;
 
-	const rangeLabel = getRangeLabel(customRange);
-	const isCustomRangeActive = customRangeOpen || Boolean(customRange);
+	const rangeLabelText = rangeLabel(range, preset);
+	const isCustomActive = preset === "custom";
 
 	const analyticsStats = [
 		{ key: "total", label: "Total", value: analytics.total },
@@ -177,88 +249,58 @@ function ReportsPage() {
 				<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 					<div className="flex flex-wrap items-center gap-2">
 						<span className="text-sm text-muted-foreground">Showing</span>
-						<Badge variant="outline">{rangeLabel}</Badge>
-						{customRange ? (
+						<Badge variant="outline">{rangeLabelText}</Badge>
+						{preset !== "monthly" && preset !== "all" ? (
 							<Button
 								type="button"
 								variant="ghost"
 								size="sm"
-								onClick={() => setCustomRange(undefined)}
+								onClick={() => {
+									setPreset("monthly");
+									setCustomRange({});
+								}}
 							>
-								Clear custom range
+								Reset to monthly
 							</Button>
 						) : null}
 					</div>
-					<ToggleGroup
-						type="single"
-						value={isCustomRangeActive ? "custom" : period}
-						onValueChange={(value) => {
-							if (!value) return;
-							if (value === "custom") {
-								setCustomRangeOpen(true);
-								return;
-							}
-							setPeriod(value as ReportPeriod);
-						}}
-						className="rounded-full border border-border/60 bg-muted/30 p-1"
-					>
-						{PERIOD_LABELS.map(({ value, label }) => (
-							<ToggleGroupItem
-								key={value}
-								value={value}
-								className="rounded-full px-3 py-1 text-xs font-medium data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-							>
-								{label}
-							</ToggleGroupItem>
-						))}
-						<ToggleGroupItem
-							value="custom"
-							className="rounded-full px-3 py-1 text-xs font-medium data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+					<div className="flex flex-wrap items-center gap-2">
+						<ToggleGroup
+							type="single"
+							value={preset}
+							onValueChange={(value) => {
+								if (!value) return;
+								setPreset(value as RangePreset);
+							}}
+							className="rounded-full border border-border/60 bg-muted/30 p-1"
 						>
-							Custom
-						</ToggleGroupItem>
-					</ToggleGroup>
+							{PRESET_LABELS.map(({ value, label }) => (
+								<ToggleGroupItem
+									key={value}
+									value={value}
+									className="rounded-full px-3 py-1 text-xs font-medium data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+								>
+									{label}
+								</ToggleGroupItem>
+							))}
+						</ToggleGroup>
+						{isCustomActive ? (
+							<DateRangePicker
+								aria-label="Custom date range"
+								className="h-9"
+								value={customRange}
+								onChange={setCustomRange}
+							/>
+						) : null}
+					</div>
 				</div>
 
-				<SpendingChart data={periodData} period={period} currency={currency} />
+				<SpendingChart
+					data={periodData}
+					period={bucketPeriod}
+					currency={currency}
+				/>
 			</div>
-
-			<Dialog open={customRangeOpen} onOpenChange={setCustomRangeOpen}>
-				<DialogContent className="sm:max-w-4xl">
-					<DialogHeader>
-						<DialogTitle>Select custom date range</DialogTitle>
-						<DialogDescription>
-							Pick a start and end date. Reports update once the range is
-							complete.
-						</DialogDescription>
-					</DialogHeader>
-					<div className="overflow-hidden rounded-xl border border-border/60 bg-background p-2">
-						<Calendar
-							mode="range"
-							selected={customRange}
-							onSelect={setCustomRange}
-							numberOfMonths={2}
-							className="w-full"
-						/>
-					</div>
-					<DialogFooter>
-						<Button
-							type="button"
-							variant="outline"
-							onClick={() => {
-								setCustomRange(undefined);
-								setCustomRangeOpen(false);
-							}}
-							disabled={!customRange?.from && !customRange?.to}
-						>
-							Clear range
-						</Button>
-						<Button type="button" onClick={() => setCustomRangeOpen(false)}>
-							Done
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
 
 			<div className="grid gap-6 lg:grid-cols-2">
 				<Card>
