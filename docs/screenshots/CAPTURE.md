@@ -37,76 +37,29 @@ need to (re)capture:
 
 ### Option B — Playwright (recommended, deterministic)
 
+The repo ships `playwright` as a devDependency and a script alias. One-time
+setup, then capture:
+
 ```bash
-pnpm dlx playwright install chromium
-pnpm dlx tsx scripts/capture-screenshots.ts
+pnpm capture:screenshots:install   # downloads chromium (~150 MB)
+pnpm capture:screenshots           # walks every route, writes PNGs
 ```
 
-`scripts/capture-screenshots.ts` (template below) signs in, navigates to
-each route at the correct viewport, and writes the PNGs.
+The script (`scripts/capture-screenshots.ts`) signs in against the running
+dev server and writes PNGs to `docs/screenshots/`. It expects:
 
-> **Auth note:** the script needs a working dev login. Either seed a
-> fixture user, or expose a dev-only auth bypass behind `import.meta.env.DEV`.
-> The script below uses email/password from env vars.
+| Env var | Default | Notes |
+|---|---|---|
+| `SCREENSHOT_BASE` | `http://localhost:3000` | Frontend dev URL. |
+| `SCREENSHOT_EMAIL` / `SCREENSHOT_PASSWORD` | `demo@example.com` / `demopass` | Login credentials. |
+| `SCREENSHOT_API_BASE` | *(unused, FE reads `VITE_API_BASE_URL`)* | — |
 
-```ts
-// scripts/capture-screenshots.ts
-import { chromium } from "playwright";
-import { mkdir } from "node:fs/promises";
-import { join } from "node:path";
-
-const BASE = process.env.SCREENSHOT_BASE ?? "http://localhost:3000";
-const EMAIL = process.env.SCREENSHOT_EMAIL ?? "demo@example.com";
-const PASSWORD = process.env.SCREENSHOT_PASSWORD ?? "demopass";
-const OUT = join(process.cwd(), "docs/screenshots");
-
-type Shot = { name: string; path: string; width: number; height: number; setup?: (page: import("playwright").Page) => Promise<void> };
-
-const SHOTS: Shot[] = [
-  { name: "sign-in",  path: "/sign-in",  width: 1400, height: 900 },
-  { name: "sign-up",  path: "/sign-up",  width: 1400, height: 900 },
-  { name: "dashboard",path: "/",         width: 1400, height: 908,
-    setup: async (page) => {
-      // Pick a past month so the BudgetAlertBanner is *likely* empty
-      // (or, to force a visible banner, run with a seed that has a
-      // category over its limit — see scripts/seed-alert.ts).
-      await page.getByRole("combobox", { name: /month/i }).selectOption({ label: /2026-06/i });
-    } },
-  { name: "expenses", path: "/expenses", width: 1400, height: 908 },
-  { name: "budget",   path: "/budget",   width: 1400, height: 908 },
-  { name: "reports",  path: "/reports",  width: 1400, height: 1347 },
-  { name: "settings", path: "/settings", width: 1400, height: 1100,
-    setup: async (page) => {
-      // Scroll to the Preferences card so the banner shot makes sense.
-      await page.getByText("Preferences").scrollIntoViewIfNeeded();
-    } },
-];
-
-await mkdir(OUT, { recursive: true });
-
-const browser = await chromium.launch();
-const ctx = await browser.newContext({ viewport: { width: 1400, height: 900 } });
-const page = await ctx.newPage();
-
-await page.goto(`${BASE}/sign-in`, { waitUntil: "networkidle" });
-await page.getByLabel(/email/i).fill(EMAIL);
-await page.getByLabel(/password/i).fill(PASSWORD);
-await page.getByRole("button", { name: /sign in/i }).click();
-await page.waitForURL(`${BASE}/`);
-
-for (const shot of SHOTS) {
-  await page.setViewportSize({ width: shot.width, height: shot.height });
-  await page.goto(`${BASE}${shot.path}`, { waitUntil: "networkidle" });
-  await shot.setup?.(page);
-  await page.screenshot({
-    path: join(OUT, `${shot.name}.png`),
-    fullPage: false, // set true to capture beyond the fold (matches prior full-page reports.png)
-  });
-  console.log(`captured ${shot.name}.png`);
-}
-
-await browser.close();
-```
+> **Backend in Docker?** No special handling needed — as long as the FE can
+> reach the API at the URL in `VITE_API_BASE_URL`, Playwright talks to it
+> the same way the browser would. `localhost:8000` works for both
+> `docker run -p 8000:8000` and `docker compose up` against the host
+> network; use `host.docker.internal:8000` only if the FE were running
+> inside a container too (it isn't here).
 
 ### Capturing the alert banner
 
