@@ -11,7 +11,9 @@ import {
 	groupByWeek,
 	groupByYear,
 	multiYearComparison,
+	yearlyRangeFromComparison,
 } from "./services";
+import type { YearComparison } from "./types";
 
 function expense(overrides: Partial<Expense> = {}): Expense {
 	return {
@@ -304,5 +306,60 @@ describe("computeCategoryBreakdown", () => {
 		expect(result[0].categoryName).toBe("Uncategorized");
 		expect(result[0].categoryColor).toBe("#78716C");
 		expect(result[0].percentage).toBe(100);
+	});
+});
+
+describe("yearlyRangeFromComparison", () => {
+	function yc(year: string): YearComparison {
+		return { year, total: 0, avg: 0, count: 0 };
+	}
+
+	it("returns undefined when the tracker has no data", () => {
+		expect(yearlyRangeFromComparison([])).toBeUndefined();
+	});
+
+	it("returns the single year for a one-year tracker", () => {
+		expect(yearlyRangeFromComparison([yc("2026")])).toEqual({
+			startDate: "2026-01-01",
+			endDate: "2026-12-31",
+		});
+	});
+
+	it("spans min..max when the data fits within the cap", () => {
+		expect(
+			yearlyRangeFromComparison([yc("2024"), yc("2025"), yc("2026")]),
+		).toEqual({
+			startDate: "2024-01-01",
+			endDate: "2026-12-31",
+		});
+	});
+
+	it("caps to the most recent 5 years by default", () => {
+		const years = ["2018", "2019", "2020", "2021", "2022", "2023", "2024"].map(
+			yc,
+		);
+		expect(yearlyRangeFromComparison(years)).toEqual({
+			startDate: "2020-01-01", // 2024 - 4
+			endDate: "2024-12-31",
+		});
+	});
+
+	it("honors a custom maxYears cap", () => {
+		const years = ["2018", "2019", "2020", "2021", "2022", "2023", "2024"].map(
+			yc,
+		);
+		expect(yearlyRangeFromComparison(years, 2)).toEqual({
+			startDate: "2023-01-01",
+			endDate: "2024-12-31",
+		});
+	});
+
+	it("ignores years that don't parse as numbers", () => {
+		expect(
+			yearlyRangeFromComparison([yc("nope"), yc("2026"), yc("garbage")]),
+		).toEqual({
+			startDate: "2026-01-01",
+			endDate: "2026-12-31",
+		});
 	});
 });

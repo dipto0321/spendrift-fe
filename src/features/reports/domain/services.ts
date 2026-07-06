@@ -3,6 +3,7 @@ import type {
 	AnalyticsResult,
 	CategoryBreakdown,
 	PeriodData,
+	ReportPeriod,
 	YearComparison,
 } from "./types";
 
@@ -117,6 +118,32 @@ export function daySpanInRange(
 		1,
 		Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1,
 	);
+}
+
+/**
+ * Derive the date range the "Yearly" preset should span from the tracker's
+ * actual history. Capped to the most recent `maxYears` years (default 5) so
+ * long-tenured trackers don't blow up the chart with 20 bars.
+ *
+ * Returns `undefined` when there's no data yet — the caller should fall back
+ * to the current calendar year in that case so the chart isn't empty.
+ */
+export function yearlyRangeFromComparison(
+	years: readonly YearComparison[],
+	maxYears = 5,
+): { startDate: string; endDate: string } | undefined {
+	if (years.length === 0) return undefined;
+	const parsed = years
+		.map((y) => Number.parseInt(y.year, 10))
+		.filter((n) => Number.isFinite(n));
+	if (parsed.length === 0) return undefined;
+	const min = Math.min(...parsed);
+	const max = Math.max(...parsed);
+	const startYear = Math.max(min, max - (maxYears - 1));
+	return {
+		startDate: `${startYear}-01-01`,
+		endDate: `${max}-12-31`,
+	};
 }
 
 export function groupByWeek(expenses: Expense[]): PeriodData[] {

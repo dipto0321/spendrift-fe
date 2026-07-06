@@ -29,6 +29,7 @@ import {
 	analyticsFromDailyBuckets,
 	daySpanInRange,
 	granularityForRange,
+	yearlyRangeFromComparison,
 } from "../domain/services";
 import type { AnalyticsResult, ReportPeriod } from "../domain/types";
 import { CategoryBreakdownChart } from "./CategoryBreakdownChart";
@@ -65,14 +66,6 @@ function endOfWeek(date: Date): Date {
 	return d;
 }
 
-function startOfYear(date: Date): Date {
-	return new Date(date.getFullYear(), 0, 1);
-}
-
-function endOfYear(date: Date): Date {
-	return new Date(date.getFullYear(), 11, 31, 23, 59, 59, 999);
-}
-
 function endOfMonth(date: Date): Date {
 	return new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
 }
@@ -80,6 +73,11 @@ function endOfMonth(date: Date): Date {
 /**
  * Derive the active `ReportRange` from a preset. "custom" needs the
  * caller-supplied date picker values; "all" yields an open-ended range.
+ *
+ * "yearly" intentionally returns `{}` here — the component layer substitutes
+ * the actual data span (capped to the last 5 years) once `useYearComparison`
+ * has loaded. That way the chart spans the user's entire history, not just
+ * the current calendar year.
  */
 function presetToRange(
 	preset: RangePreset,
@@ -101,10 +99,8 @@ function presetToRange(
 				endDate: formatDateValue(endOfMonth(now)),
 			};
 		case "yearly":
-			return {
-				startDate: formatDateValue(startOfYear(now)),
-				endDate: formatDateValue(endOfYear(now)),
-			};
+			// Resolved by the caller using the tracker's actual history.
+			return {};
 		case "custom":
 			return {
 				startDate: customStart,
@@ -151,21 +147,6 @@ function ReportsPage() {
 		end?: string;
 	}>({});
 
-	const range = useMemo<ReportRange>(
-		() => presetToRange(preset, customRange.start, customRange.end),
-		[preset, customRange.start, customRange.end],
-	);
-
-	// Chart bucket granularity: for weekly/monthly/yearly presets the user
-	// picks the bucket explicitly. For custom/all-time presets we derive
-	// the granularity from the range span so a 5-day custom range renders
-	// per-day bars (not a single monthly bar with all the spend squashed
-	// into one column).
-	const bucketPeriod: ReportPeriod =
-		preset === "weekly" || preset === "monthly" || preset === "yearly"
-			? preset
-			: granularityForRange(range.startDate, range.endDate);
-
 	// yearComparison's dataUpdatedAt is monotonic (independent of `range`),
 	// so once it's non-zero we know the user has been on the page long
 	// enough for at least one fetch to land and we should never replace
@@ -176,6 +157,41 @@ function ReportsPage() {
 	const { data: yearComparison = [] } = yearComparisonQuery;
 	const yearComparisonUpdatedAt = yearComparisonQuery.dataUpdatedAt;
 
+	const range = useMemo<ReportRange>(() => {
+		const base = presetToRange(preset, customRange.start, customRange.end);
+		// For "yearly" we span the tracker's actual history (capped to the
+		// last 5 years) instead of locking to the current calendar year.
+		// Before the year-comparison query has returned, fall back to the
+		// current calendar year so the chart isn't empty mid-load.
+		if (preset === "yearly") {
+			const fromData = yearlyRangeFromComparison(yearComparison);
+			if (fromData) return fromData;
+			const now = new Date();
+			return {
+				startDate: `${now.getFullYear()}-01-01`,
+				endDate: `${now.getFullYear()}-12-31`,
+			};
+		}
+		return base;
+	}, [preset, customRange.start, customRange.end, yearComparison]);
+
+	// Chart bucket granularity: for weekly/monthly/yearly presets the user
+	// picks the bucket explicitly. For custom ranges we derive from the span
+	// (a 5-day range renders per-day bars; not a single monthly bar with all
+	// the spend squashed into one column). For "all time" we have no bounds
+	// to measure, so fall back to yearly when the tracker's history spans
+	// multiple years (the user finds monthly buckets noisy past ~2 years) and
+	// monthly otherwise.
+	const bucketPeriod: ReportPeriod = useMemo(() => {
+		if (preset === "weekly" || preset === "monthly" || preset === "yearly") {
+			return preset;
+		}
+		if (preset === "all") {
+			return yearComparison.length >= 2 ? "yearly" : "monthly";
+		}
+		return granularityForRange(range.startDate, range.endDate);
+	}, [preset, range.startDate, range.endDate, yearComparison.length]);
+
 	// Effective granularity for the stat cards and chart:
 	//   - Weekly / Monthly presets: stat cards go per-day (current-week /
 	//     current-month basis as the user requested); chart stays at the
@@ -183,12 +199,17 @@ function ReportsPage() {
 	//   - Yearly: if only one year of data exists, fall back to monthly
 	//     granularity so we have something to compare across. Multi-year
 	//     keeps yearly cards.
-	//   - Custom / All: derive from the range span (≤7d daily, ≤90d weekly,
-	//     ≤730d monthly, else yearly). Open-ended ranges default to monthly.
+	//   - All time: mirror the chart — yearly when the tracker has ≥2 years
+	//     of history, monthly otherwise.
+	//   - Custom: derive from the range span (≤7d daily, ≤90d weekly,
+	//     ≤730d monthly, else yearly).
 	const statsGranularity: ReportPeriod = useMemo(() => {
 		if (preset === "weekly" || preset === "monthly") return "daily";
 		if (preset === "yearly") {
 			return yearComparison.length <= 1 ? "monthly" : "yearly";
+		}
+		if (preset === "all") {
+			return yearComparison.length >= 2 ? "yearly" : "monthly";
 		}
 		return granularityForRange(range.startDate, range.endDate);
 	}, [preset, range.startDate, range.endDate, yearComparison.length]);
