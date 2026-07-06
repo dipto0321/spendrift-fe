@@ -1,15 +1,33 @@
 import { cn } from "@/lib/utils";
 import { MoneyText } from "./MoneyText";
 
+type BudgetProgressKind = "spending" | "savings";
+
 interface BudgetProgressProps {
 	label: string;
 	budget: number;
 	actual: number;
 	currency: string;
 	className?: string;
+	/**
+	 * `spending` (default) — exceeding `budget` is bad and renders the bar in
+	 * destructive red. `savings` — exceeding `budget` is good; the bar fills
+	 * to 100% and the label celebrates hitting/passing the goal instead of
+	 * flagging it as over budget.
+	 */
+	kind?: BudgetProgressKind;
 }
 
-function getState(pct: number): "under" | "warning" | "over" {
+function getState(
+	pct: number,
+	kind: BudgetProgressKind,
+): "under" | "warning" | "over" {
+	if (kind === "savings") {
+		// For savings, hitting 100% is the best outcome — not "over".
+		if (pct >= 100) return "under";
+		if (pct >= 80) return "warning";
+		return "under";
+	}
 	if (pct >= 100) return "over";
 	if (pct >= 80) return "warning";
 	return "under";
@@ -21,10 +39,15 @@ export function BudgetProgress({
 	actual,
 	currency,
 	className,
+	kind = "spending",
 }: BudgetProgressProps) {
 	const pct = budget > 0 ? (actual / budget) * 100 : 0;
-	const state = getState(pct);
+	const state = getState(pct, kind);
+	// Spending caps at 100% — we don't want a 200% overspend to fill the
+	// bar past the edge. Savings also caps at 100% visually, but a >100%
+	// value still renders the "Goal hit" state instead of "Over budget".
 	const clamped = Math.min(pct, 100);
+	const passedGoal = kind === "savings" && pct >= 100;
 
 	return (
 		<div className={cn("flex flex-col gap-2", className)}>
@@ -55,17 +78,23 @@ export function BudgetProgress({
 				<span
 					className={cn(
 						"text-xs font-medium",
-						state === "under" && "text-muted-foreground",
-						state === "warning" &&
-							"text-warning-foreground dark:text-warning",
+						state === "under" &&
+							(kind === "savings" ? "text-success" : "text-muted-foreground"),
+						state === "warning" && "text-warning-foreground dark:text-warning",
 						state === "over" && "text-destructive",
 					)}
 				>
-					{state === "over"
-						? "Over budget"
-						: state === "warning"
-							? "Approaching limit"
-							: "Under budget"}
+					{kind === "savings"
+						? passedGoal
+							? "Goal hit"
+							: state === "warning"
+								? "Almost there"
+								: "Behind on goal"
+						: state === "over"
+							? "Over budget"
+							: state === "warning"
+								? "Approaching limit"
+								: "Under budget"}
 				</span>
 				<span className="text-xs tabular-nums text-muted-foreground">
 					{Math.round(pct)}%

@@ -82,6 +82,7 @@ export function BudgetStatusCard({
 						budget={savingsTarget}
 						actual={Math.max(status.remaining, 0)}
 						currency={currency}
+						kind="savings"
 					/>
 				)}
 			</CardContent>
