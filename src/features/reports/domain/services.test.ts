@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 import type { Category, Expense } from "@/features/expenses/domain/types";
 import {
 	analyticsFromBuckets,
+	analyticsFromDailyBuckets,
 	computeAnalytics,
 	computeCategoryBreakdown,
+	daySpanInRange,
+	granularityForRange,
 	groupByMonth,
 	groupByWeek,
 	groupByYear,
@@ -110,6 +113,101 @@ describe("analyticsFromBuckets", () => {
 				{ label: "c", total: 0, count: 0 },
 			]).avg,
 		).toBe(33.33);
+	});
+});
+
+describe("analyticsFromDailyBuckets", () => {
+	it("returns zeros for no buckets", () => {
+		expect(analyticsFromDailyBuckets([], 30)).toEqual({
+			total: 0,
+			min: 0,
+			max: 0,
+			avg: 0,
+			count: 0,
+		});
+	});
+
+	it("returns zeros when daySpanInRange is 0 or negative", () => {
+		expect(
+			analyticsFromDailyBuckets(
+				[{ label: "2026-07-01", total: 100, count: 1 }],
+				0,
+			).total,
+		).toBe(0);
+	});
+
+	it("averages over the range span (not the days-with-expenses)", () => {
+		// July 1–9 inclusive = 9 days. Two days had expenses (৳10 + ৳40 = ৳50).
+		// Average = total / 9 = 5.56, NOT total / 2 = 25 — matches the
+		// user-stated rule: 'if today is the 9th, divide by 9'.
+		const result = analyticsFromDailyBuckets(
+			[
+				{ label: "2026-07-01", total: 10, count: 1 },
+				{ label: "2026-07-05", total: 40, count: 1 },
+			],
+			9,
+		);
+		expect(result.total).toBe(50);
+		expect(result.min).toBe(10);
+		expect(result.max).toBe(40);
+		expect(result.avg).toBe(5.56);
+		expect(result.count).toBe(2);
+	});
+
+	it("single-day case: avg = total / daySpan", () => {
+		expect(
+			analyticsFromDailyBuckets(
+				[{ label: "2026-07-01", total: 100, count: 1 }],
+				1,
+			).avg,
+		).toBe(100);
+		expect(
+			analyticsFromDailyBuckets(
+				[{ label: "2026-07-01", total: 300, count: 1 }],
+				30,
+			).avg,
+		).toBe(10);
+	});
+});
+
+describe("granularityForRange", () => {
+	it("returns daily for short ranges", () => {
+		expect(granularityForRange("2026-07-01", "2026-07-07")).toBe("daily");
+		expect(granularityForRange("2026-07-01", "2026-07-01")).toBe("daily");
+	});
+
+	it("returns weekly for medium ranges", () => {
+		expect(granularityForRange("2026-07-01", "2026-07-31")).toBe("weekly");
+		expect(granularityForRange("2026-06-01", "2026-07-31")).toBe("weekly");
+	});
+
+	it("returns monthly for year-scale ranges", () => {
+		expect(granularityForRange("2026-01-01", "2026-12-31")).toBe("monthly");
+		expect(granularityForRange("2025-01-01", "2026-12-31")).toBe("monthly");
+	});
+
+	it("returns yearly for multi-year ranges", () => {
+		expect(granularityForRange("2024-01-01", "2026-12-31")).toBe("yearly");
+	});
+
+	it("falls back to monthly for open-ended ranges", () => {
+		expect(granularityForRange(undefined, undefined)).toBe("monthly");
+		expect(granularityForRange("2026-07-01", undefined)).toBe("monthly");
+		expect(granularityForRange(undefined, "2026-07-31")).toBe("monthly");
+	});
+});
+
+describe("daySpanInRange", () => {
+	it("counts inclusive days between two dates", () => {
+		expect(daySpanInRange("2026-07-01", "2026-07-01")).toBe(1);
+		expect(daySpanInRange("2026-07-01", "2026-07-09")).toBe(9);
+		expect(daySpanInRange("2026-07-01", "2026-07-31")).toBe(31);
+	});
+
+	it("returns 1 for open-ended or invalid ranges", () => {
+		expect(daySpanInRange(undefined, undefined)).toBe(1);
+		expect(daySpanInRange("2026-07-01", undefined)).toBe(1);
+		expect(daySpanInRange(undefined, "2026-07-31")).toBe(1);
 	});
 });
 

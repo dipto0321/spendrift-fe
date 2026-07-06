@@ -23,14 +23,14 @@ import {
 } from "@/components/ui/chart";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useFormatCurrency } from "@/features/preferences/presentation/useFormatCurrency";
-import { getMonthLabel, getWeekLabel } from "../domain/services";
+import { getDayLabel, getMonthLabel, getWeekLabel } from "../domain/services";
 import type { PeriodData } from "../domain/types";
 
 type ChartType = "line" | "bar";
 
 type SpendingChartProps = {
 	readonly data: PeriodData[];
-	readonly period: "weekly" | "monthly" | "yearly";
+	readonly period: "daily" | "weekly" | "monthly" | "yearly";
 	readonly currency: string;
 };
 
@@ -39,6 +39,7 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 const PERIOD_LABELS: Record<string, string> = {
+	daily: "Spending by day",
 	weekly: "Spending by week",
 	monthly: "Spending by month",
 	yearly: "Spending by year",
@@ -63,6 +64,7 @@ export function SpendingChart({ data, period, currency }: SpendingChartProps) {
 		let label = d.label;
 		if (period === "monthly") label = getMonthLabel(d.label);
 		else if (period === "weekly") label = getWeekLabel(d.label);
+		else if (period === "daily") label = getDayLabel(d.label);
 		return { label, total: d.total };
 	});
 

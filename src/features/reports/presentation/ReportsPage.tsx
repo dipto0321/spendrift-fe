@@ -24,8 +24,13 @@ import { DateRangePicker } from "@/shared/ui/DateRangePicker";
 import { MoneyText } from "@/shared/ui/MoneyText";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import type { ReportRange } from "../data/queryKeys";
-import { analyticsFromBuckets } from "../domain/services";
-import type { ReportPeriod } from "../domain/types";
+import {
+	analyticsFromBuckets,
+	analyticsFromDailyBuckets,
+	daySpanInRange,
+	granularityForRange,
+} from "../domain/services";
+import type { AnalyticsResult, ReportPeriod } from "../domain/types";
 import { CategoryBreakdownChart } from "./CategoryBreakdownChart";
 import { NeedsVsWantsPie } from "./NeedsVsWantsPie";
 import { SpendingChart } from "./SpendingChart";
@@ -151,41 +156,81 @@ function ReportsPage() {
 		[preset, customRange.start, customRange.end],
 	);
 
-	// The spending chart needs the bucket *label* period (weekly/monthly/yearly)
-	// separate from the date-range filter — a "weekly" preset over a custom
-	// range still makes sense, so we bucket by the user's chosen period when
-	// one is selected, falling back to monthly for custom/all.
+	// Chart bucket granularity: for weekly/monthly/yearly presets the user
+	// picks the bucket explicitly. For custom/all-time presets we derive
+	// the granularity from the range span so a 5-day custom range renders
+	// per-day bars (not a single monthly bar with all the spend squashed
+	// into one column).
 	const bucketPeriod: ReportPeriod =
 		preset === "weekly" || preset === "monthly" || preset === "yearly"
 			? preset
-			: "monthly";
+			: granularityForRange(range.startDate, range.endDate);
 
-	// Stat cards (total/min/max/avg) and the spending chart both consume
-	// the same pre-aggregated series — deriving analytics from `periodData`
-	// guarantees the two always agree (per-row aggregation previously
-	// produced lowest=৳20, highest=৳30,809, average=৳2,549 against monthly
-	// buckets of ৳36,003 / ৳95,569 / ৳73,929).
-	const spendingQuery = useSpending(trackerId, bucketPeriod, range);
+	// yearComparison's dataUpdatedAt is monotonic (independent of `range`),
+	// so once it's non-zero we know the user has been on the page long
+	// enough for at least one fetch to land and we should never replace
+	// the page chrome with the cold-start skeleton again (that unmount
+	// would yank the open popover's anchor tree and close the date picker
+	// mid-selection, looking like a page refresh).
+	const yearComparisonQuery = useYearComparison(trackerId);
+	const { data: yearComparison = [] } = yearComparisonQuery;
+	const yearComparisonUpdatedAt = yearComparisonQuery.dataUpdatedAt;
+
+	// Effective granularity for the stat cards and chart:
+	//   - Weekly / Monthly presets: stat cards go per-day (current-week /
+	//     current-month basis as the user requested); chart stays at the
+	//     user's chosen period.
+	//   - Yearly: if only one year of data exists, fall back to monthly
+	//     granularity so we have something to compare across. Multi-year
+	//     keeps yearly cards.
+	//   - Custom / All: derive from the range span (≤7d daily, ≤90d weekly,
+	//     ≤730d monthly, else yearly). Open-ended ranges default to monthly.
+	const statsGranularity: ReportPeriod = useMemo(() => {
+		if (preset === "weekly" || preset === "monthly") return "daily";
+		if (preset === "yearly") {
+			return yearComparison.length <= 1 ? "monthly" : "yearly";
+		}
+		return granularityForRange(range.startDate, range.endDate);
+	}, [preset, range.startDate, range.endDate, yearComparison.length]);
+
+	// Chart and stats share the same series when their granularities match.
+	// They diverge in two cases:
+	//   1. Weekly/Monthly preset → chart at week/month, cards per-day.
+	//   2. Yearly with 1 year of data → chart at year (1 bar), cards per-month.
+	const chartGranularity: ReportPeriod = bucketPeriod;
+	const statsNeedsSeparateFetch = statsGranularity !== chartGranularity;
+
+	// Chart series at the user's chosen period (weekly/monthly/yearly).
+	const spendingQuery = useSpending(trackerId, chartGranularity, range);
 	const periodData = spendingQuery.data ?? [];
-	const analytics = useMemo(
-		() => analyticsFromBuckets(periodData),
-		[periodData],
+
+	// Optional second fetch for the stats series whenever the cards want
+	// a finer (or coarser) granularity than the chart shows.
+	const statsSpendingQuery = useSpending(
+		statsNeedsSeparateFetch ? trackerId : undefined,
+		statsGranularity,
+		range,
 	);
+	const statsData = statsSpendingQuery.data ?? periodData;
+
+	// Derive analytics from the stats series (per-day when statsGranularity
+	// is daily, otherwise from the chart series itself). Avg uses
+	// daySpanInRange so a Monthly view on July 9 divides by 9, not 30.
+	const analytics: AnalyticsResult = useMemo(() => {
+		if (statsGranularity === "daily") {
+			return analyticsFromDailyBuckets(
+				statsData,
+				daySpanInRange(range.startDate, range.endDate),
+			);
+		}
+		return analyticsFromBuckets(statsData);
+	}, [statsGranularity, statsData, range.startDate, range.endDate]);
+
 	const { data: categoryBreakdown = [] } = useCategoryBreakdown(
 		trackerId,
 		range,
 	);
 	const { data: needsWantsSplit } = useReportNeedsWants(trackerId, range);
-	// `useYearComparison` is independent of the date range, so its
-	// `dataUpdatedAt` is monotonic across the page lifetime — once it's
-	// non-zero we know the user has been on the page long enough for at
-	// least one fetch to land, and we should never replace the page chrome
-	// with the cold-start skeleton again (that unmount would yank the open
-	// popover's anchor tree and close the popover mid-selection, looking
-	// like a page refresh).
-	const yearComparisonQuery = useYearComparison(trackerId);
-	const { data: yearComparison = [] } = yearComparisonQuery;
-	const yearComparisonUpdatedAt = yearComparisonQuery.dataUpdatedAt;
 	// Cold-start decision: only on the *very first* fetch do we replace the
 	// whole page with a skeleton. After any successful query lands, range
 	// changes must keep the page chrome mounted so the open date-picker
@@ -218,21 +263,47 @@ function ReportsPage() {
 	const isCustomActive = preset === "custom";
 
 	const analyticsStats = useMemo(() => {
-		// Average / Lowest / Highest are "compare across periods" stats — they
-		// only make sense when the bucket series has more than one entry.
-		// On a single-bucket view (e.g. Yearly over one year, All time with
-		// one year of data, Weekly over one week), every value collapses to
-		// the Total and the cards become noise. Keep only Total in that case.
+		// Card labels adapt to the granularity the stats series is bucketed
+		// at. Daily: "Daily Average" / "Lowest Day" / "Highest Day" — what
+		// a Monthly preset actually means in the user's mental model.
+		// Weekly/Monthly/Yearly: "Average" / "Lowest" / "Highest" of the
+		// period totals. Single-bucket views (count === 1) drop the three
+		// compare-across stats since they'd equal Total.
+		const avgLabel =
+			statsGranularity === "daily"
+				? "Daily Average"
+				: statsGranularity === "weekly"
+					? "Weekly Average"
+					: statsGranularity === "monthly"
+						? "Monthly Average"
+						: "Yearly Average";
+		const lowLabel =
+			statsGranularity === "daily"
+				? "Lowest Day"
+				: statsGranularity === "weekly"
+					? "Lowest Week"
+					: statsGranularity === "monthly"
+						? "Lowest Month"
+						: "Lowest Year";
+		const highLabel =
+			statsGranularity === "daily"
+				? "Highest Day"
+				: statsGranularity === "weekly"
+					? "Highest Week"
+					: statsGranularity === "monthly"
+						? "Highest Month"
+						: "Highest Year";
+
 		const stats = [{ key: "total", label: "Total", value: analytics.total }];
 		if (analytics.count > 1) {
 			stats.push(
-				{ key: "avg", label: "Average", value: analytics.avg },
-				{ key: "low", label: "Lowest", value: analytics.min },
-				{ key: "high", label: "Highest", value: analytics.max },
+				{ key: "avg", label: avgLabel, value: analytics.avg },
+				{ key: "low", label: lowLabel, value: analytics.min },
+				{ key: "high", label: highLabel, value: analytics.max },
 			);
 		}
 		return stats;
-	}, [analytics]);
+	}, [analytics, statsGranularity]);
 
 	if (isColdStart) {
 		return (

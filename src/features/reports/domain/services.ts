@@ -44,6 +44,81 @@ export function analyticsFromBuckets(buckets: PeriodData[]): AnalyticsResult {
 	};
 }
 
+/**
+ * Per-day analytics over a daily-bucketed spending series. Unlike
+ * `analyticsFromBuckets` (which compares across buckets and so collapses
+ * to the same value when there's only one entry), this computes the
+ * lowest/highest day-total and averages the total over the *span* of
+ * the active range — so on a Monthly view that shows "9 of 30 days have
+ * passed", Average = total / 9, not total / days-with-expenses. The
+ * caller passes `daySpanInRange` to control the divisor.
+ */
+export function analyticsFromDailyBuckets(
+	buckets: PeriodData[],
+	daySpanInRange: number,
+): AnalyticsResult {
+	if (buckets.length === 0 || daySpanInRange <= 0) {
+		return { total: 0, min: 0, max: 0, avg: 0, count: 0 };
+	}
+	const totals = buckets.map((b) => b.total);
+	const total = totals.reduce((sum, t) => sum + t, 0);
+	return {
+		total,
+		min: Math.min(...totals),
+		max: Math.max(...totals),
+		avg: Math.round((total / daySpanInRange) * 100) / 100,
+		count: buckets.length,
+	};
+}
+
+/**
+ * Pick a bucket granularity for "compare-across-period" stat cards based
+ * on the active date-range span. Open-ended ranges (no start or no end,
+ * like the "All time" preset) fall back to monthly — there's no way to
+ * measure the span without the lifetime data, and month-bucketed cards
+ * stay meaningful regardless.
+ *
+ * Rules:
+ *   ≤ 7 days  → daily
+ *   ≤ 90 days → weekly
+ *   ≤ 730 d   → monthly
+ *   else      → yearly
+ */
+export function granularityForRange(
+	startDate: string | undefined,
+	endDate: string | undefined,
+): ReportPeriod {
+	if (!startDate || !endDate) return "monthly";
+	const start = new Date(`${startDate}T00:00:00`);
+	const end = new Date(`${endDate}T00:00:00`);
+	const days = Math.max(
+		1,
+		Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1,
+	);
+	if (days <= 7) return "daily";
+	if (days <= 90) return "weekly";
+	if (days <= 730) return "monthly";
+	return "yearly";
+}
+
+/**
+ * Number of days covered by a date range (inclusive on both ends).
+ * Falls back to 1 for open-ended ranges so callers can still divide.
+ */
+export function daySpanInRange(
+	startDate: string | undefined,
+	endDate: string | undefined,
+): number {
+	if (!startDate || !endDate) return 1;
+	const start = new Date(`${startDate}T00:00:00`);
+	const end = new Date(`${endDate}T00:00:00`);
+	if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return 1;
+	return Math.max(
+		1,
+		Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1,
+	);
+}
+
 export function groupByWeek(expenses: Expense[]): PeriodData[] {
 	const weeks = new Map<string, { total: number; count: number }>();
 
@@ -173,6 +248,14 @@ export function getMonthLabel(monthKey: string): string {
 }
 
 export function getWeekLabel(dateStr: string): string {
+	const date = new Date(`${dateStr}T12:00:00`);
+	return date.toLocaleDateString(undefined, {
+		month: "short",
+		day: "numeric",
+	});
+}
+
+export function getDayLabel(dateStr: string): string {
 	const date = new Date(`${dateStr}T12:00:00`);
 	return date.toLocaleDateString(undefined, {
 		month: "short",
