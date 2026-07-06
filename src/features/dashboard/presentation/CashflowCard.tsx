@@ -12,7 +12,6 @@ import {
 	ChartTooltip,
 	ChartTooltipContent,
 } from "@/components/ui/chart";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useFormatCurrency } from "@/features/preferences/presentation/useFormatCurrency";
 
 const chartConfig = {
@@ -94,20 +93,6 @@ export function CashflowCard({ data, currency }: CashflowCardProps) {
 						</AreaChart>
 					</ChartContainer>
 				)}
-			</CardContent>
-		</Card>
-	);
-}
-
-export function CashflowCardSkeleton() {
-	return (
-		<Card>
-			<CardHeader>
-				<Skeleton className="h-5 w-32" />
-				<Skeleton className="h-4 w-52" />
-			</CardHeader>
-			<CardContent>
-				<Skeleton className="h-[260px] w-full" />
 			</CardContent>
 		</Card>
 	);

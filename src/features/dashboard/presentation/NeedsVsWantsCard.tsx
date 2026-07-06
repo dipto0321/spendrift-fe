@@ -12,7 +12,6 @@ import {
 	ChartTooltipContent,
 	type ChartConfig,
 } from "@/components/ui/chart";
-import { Skeleton } from "@/components/ui/skeleton";
 import type { NeedsWantsSplit } from "@/features/expenses/domain/types";
 import { getCurrencySymbol } from "@/shared/utils/currency";
 
@@ -130,20 +129,6 @@ export function NeedsVsWantsCard({
 						No expenses yet.
 					</p>
 				)}
-			</CardContent>
-		</Card>
-	);
-}
-
-export function NeedsVsWantsCardSkeleton() {
-	return (
-		<Card>
-			<CardHeader>
-				<Skeleton className="h-5 w-32" />
-				<Skeleton className="h-4 w-44" />
-			</CardHeader>
-			<CardContent>
-				<Skeleton className="mx-auto h-[260px] w-[260px] rounded-full" />
 			</CardContent>
 		</Card>
 	);
