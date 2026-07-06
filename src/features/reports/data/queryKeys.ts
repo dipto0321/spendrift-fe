@@ -11,8 +11,6 @@ export type ReportRange = {
 // for spending) is part of the key so each filter combination caches
 // independently.
 export const reportKeys = {
-	summary: (trackerId: string, range: ReportRange) =>
-		["reports", trackerId, "summary", range] as const,
 	spending: (trackerId: string, period: ReportPeriod, range: ReportRange) =>
 		["reports", trackerId, "spending", period, range] as const,
 	categoryBreakdown: (trackerId: string, range: ReportRange) =>

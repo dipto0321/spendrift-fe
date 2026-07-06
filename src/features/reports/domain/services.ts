@@ -23,6 +23,27 @@ export function computeAnalytics(expenses: Expense[]): AnalyticsResult {
 	};
 }
 
+/**
+ * Aggregate analytics over a pre-bucketed spending series (one entry per
+ * week/month/year). Matches the chart's bucket granularity, so the stat
+ * cards above the chart and the chart bars tell the same story. With an
+ * empty series (e.g. no expenses in the range) every field is zero.
+ */
+export function analyticsFromBuckets(buckets: PeriodData[]): AnalyticsResult {
+	if (buckets.length === 0) {
+		return { total: 0, min: 0, max: 0, avg: 0, count: 0 };
+	}
+	const totals = buckets.map((b) => b.total);
+	const total = totals.reduce((sum, t) => sum + t, 0);
+	return {
+		total,
+		min: Math.min(...totals),
+		max: Math.max(...totals),
+		avg: Math.round((total / buckets.length) * 100) / 100,
+		count: buckets.length,
+	};
+}
+
 export function groupByWeek(expenses: Expense[]): PeriodData[] {
 	const weeks = new Map<string, { total: number; count: number }>();
 

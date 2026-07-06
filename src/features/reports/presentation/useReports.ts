@@ -5,17 +5,9 @@ import type { ReportPeriod } from "../domain/types";
 
 // Query hooks for the reports feature. Every report is server-computed and
 // tracker-scoped; the page stays thin and just feeds the active range/period.
-
-export function useReportSummary(
-	trackerId: string | undefined,
-	range: ReportRange,
-) {
-	return useQuery({
-		queryKey: reportKeys.summary(trackerId as string, range),
-		queryFn: () => reportRepository.getSummary(trackerId as string, range),
-		enabled: Boolean(trackerId),
-	});
-}
+// (useReportSummary was removed — the analytics stat cards now derive
+// total/min/max/avg from the same per-bucket series as the spending chart,
+// via `analyticsFromBuckets`, so they can't drift out of sync.)
 
 export function useSpending(
 	trackerId: string | undefined,

@@ -24,6 +24,7 @@ import { DateRangePicker } from "@/shared/ui/DateRangePicker";
 import { MoneyText } from "@/shared/ui/MoneyText";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import type { ReportRange } from "../data/queryKeys";
+import { analyticsFromBuckets } from "../domain/services";
 import type { ReportPeriod } from "../domain/types";
 import { CategoryBreakdownChart } from "./CategoryBreakdownChart";
 import { NeedsVsWantsPie } from "./NeedsVsWantsPie";
@@ -31,7 +32,6 @@ import { SpendingChart } from "./SpendingChart";
 import {
 	useCategoryBreakdown,
 	useReportNeedsWants,
-	useReportSummary,
 	useSpending,
 	useYearComparison,
 } from "./useReports";
@@ -125,8 +125,6 @@ function rangeLabel(range: ReportRange, preset: RangePreset): string {
 	return `${fromLabel} – ${toLabel}`;
 }
 
-const EMPTY_ANALYTICS = { total: 0, min: 0, max: 0, avg: 0, count: 0 };
-
 const PRESET_LABELS: { value: RangePreset; label: string }[] = [
 	{ value: "weekly", label: "Weekly" },
 	{ value: "monthly", label: "Monthly" },
@@ -162,11 +160,17 @@ function ReportsPage() {
 			? preset
 			: "monthly";
 
-	const { data: analytics = EMPTY_ANALYTICS, isLoading } = useReportSummary(
-		trackerId,
-		range,
+	// Stat cards (total/min/max/avg) and the spending chart both consume
+	// the same pre-aggregated series — deriving analytics from `periodData`
+	// guarantees the two always agree (per-row aggregation previously
+	// produced lowest=৳20, highest=৳30,809, average=৳2,549 against monthly
+	// buckets of ৳36,003 / ৳95,569 / ৳73,929).
+	const spendingQuery = useSpending(trackerId, bucketPeriod, range);
+	const periodData = spendingQuery.data ?? [];
+	const analytics = useMemo(
+		() => analyticsFromBuckets(periodData),
+		[periodData],
 	);
-	const { data: periodData = [] } = useSpending(trackerId, bucketPeriod, range);
 	const { data: categoryBreakdown = [] } = useCategoryBreakdown(
 		trackerId,
 		range,
@@ -188,7 +192,7 @@ function ReportsPage() {
 	// popover survives the refetch (otherwise the user sees what looks
 	// like a page refresh after every click). `yearComparisonUpdatedAt`
 	// serves as the monotonic "ever loaded" signal.
-	const isColdStart = isLoading && yearComparisonUpdatedAt === 0;
+	const isColdStart = spendingQuery.isLoading && yearComparisonUpdatedAt === 0;
 
 	// Category budgets — always current month, independent of the custom range
 	const currentMonth = useMemo(() => getCurrentMonth(), []);

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Category, Expense } from "@/features/expenses/domain/types";
 import {
+	analyticsFromBuckets,
 	computeAnalytics,
 	computeCategoryBreakdown,
 	groupByMonth,
@@ -52,6 +53,63 @@ describe("computeAnalytics", () => {
 			expense({ amount: 11 }),
 		]);
 		expect(result.avg).toBe(10.33);
+	});
+});
+
+describe("analyticsFromBuckets", () => {
+	it("returns zeros for no buckets", () => {
+		expect(analyticsFromBuckets([])).toEqual({
+			total: 0,
+			min: 0,
+			max: 0,
+			avg: 0,
+			count: 0,
+		});
+	});
+
+	it("computes total/min/max/avg over the bucket totals (not the rows)", () => {
+		// The fix-up story: before this helper, ReportsPage used per-row
+		// aggregation, so a handful of ৳20 coffee entries plus a ৳30,809
+		// one-off would give lowest=৳20 / highest=৳30,809 even when the
+		// monthly buckets were ~৳73k. Now we get the per-bucket values.
+		const result = analyticsFromBuckets([
+			{ label: "2026-04", total: 95_569, count: 41 },
+			{ label: "2026-05", total: 80_121, count: 38 },
+			{ label: "2026-06", total: 80_024, count: 33 },
+			{ label: "2026-07", total: 36_003.4, count: 4 },
+		]);
+		expect(result.total).toBeCloseTo(291_717.4, 1);
+		expect(result.min).toBe(36_003.4);
+		expect(result.max).toBe(95_569);
+		expect(result.count).toBe(4);
+		expect(result.avg).toBe(Math.round((291_717.4 / 4) * 100) / 100);
+	});
+
+	it("single-bucket case: avg equals that bucket's total", () => {
+		expect(
+			analyticsFromBuckets([{ label: "a", total: 100, count: 1 }]).avg,
+		).toBe(100);
+	});
+
+	it("rounds the average to two decimals", () => {
+		// 100 + 100 + 10 = 210, / 3 = 70 (already exact).
+		// For a non-terminating case: 100 + 100 + 100 + 1 = 301 / 4 = 75.25.
+		expect(
+			analyticsFromBuckets([
+				{ label: "a", total: 100, count: 1 },
+				{ label: "b", total: 100, count: 1 },
+				{ label: "c", total: 100, count: 1 },
+				{ label: "d", total: 1, count: 1 },
+			]).avg,
+		).toBe(75.25);
+		// And a case that actually needs rounding: 100 / 3 = 33.333...
+		expect(
+			analyticsFromBuckets([
+				{ label: "a", total: 100, count: 1 },
+				{ label: "b", total: 0, count: 0 },
+				{ label: "c", total: 0, count: 0 },
+			]).avg,
+		).toBe(33.33);
 	});
 });
 
