@@ -11,7 +11,7 @@
  *   SCREENSHOT_BASE=http://localhost:3000
  *   SCREENSHOT_API_BASE=http://localhost:8000/api/v1
  *   SCREENSHOT_EMAIL=demo@example.com
- *   SCREENSHOT_PASSWORD=demopass
+ *   SCREENSHOT_PASSWORD=Demo@1234
  *   SCREENSHOT_TRACKER_ID=<id>          # skip auto-detection
  *   SCREENSHOT_MONTH=YYYY-MM            # defaults to current UTC month
  *   SCREENSHOT_FORCE_ALERT=1            # capture dashboard-alert.png even
@@ -27,7 +27,7 @@ const BASE = process.env.SCREENSHOT_BASE ?? "http://localhost:3000";
 const API_RAW = process.env.SCREENSHOT_API_BASE ?? "http://localhost:8000/api/v1";
 const API_ORIGIN = API_RAW.replace(/\/api\/v\d+$/, "");
 const EMAIL = process.env.SCREENSHOT_EMAIL ?? "demo@example.com";
-const PASSWORD = process.env.SCREENSHOT_PASSWORD ?? "demopass";
+const PASSWORD = process.env.SCREENSHOT_PASSWORD ?? "Demo@1234";
 const OUT = join(process.cwd(), "docs", "screenshots");
 
 type Shot = {
