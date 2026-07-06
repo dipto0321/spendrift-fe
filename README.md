@@ -269,6 +269,12 @@ This project leans on AI for architecture planning, code explanation, UI explora
 
 ![Dashboard](docs/screenshots/dashboard.png)
 
+> When the capture run finds active alerts, it also writes
+> `dashboard-alert.png` so the banner is documented with real data
+> instead of a mock.
+
+![Dashboard — alert banner](docs/screenshots/dashboard-alert.png)
+
 ### Expense List
 
 ![Expenses](docs/screenshots/expenses.png)

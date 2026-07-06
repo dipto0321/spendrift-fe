@@ -16,6 +16,7 @@ need to (re)capture:
 | File | Page | Why it changed |
 |---|---|---|
 | `dashboard.png` | `/` | New `BudgetAlertBanner` may render at the top when categories cross threshold; month selector now drives the data |
+| `dashboard-alert.png` *(conditional)* | `/` | Only written when an alert is active (see below). Documents the banner with real data. |
 | `settings.png` *(new)* | `/settings` | New `Preferences` card with three server-backed toggles (Budget alerts, Weekly summary, Round amounts) — supersedes the localStorage version |
 | `budget.png` | `/budget` | Layout unchanged in this batch, but the formatter flows through `useFormatCurrency()` — only matters if Round amounts is on |
 | `expenses.png` | `/expenses` | Same — formatter change is conditional on the Round amounts toggle |
@@ -51,8 +52,11 @@ dev server and writes PNGs to `docs/screenshots/`. It expects:
 | Env var | Default | Notes |
 |---|---|---|
 | `SCREENSHOT_BASE` | `http://localhost:3000` | Frontend dev URL. |
+| `SCREENSHOT_API_BASE` | `http://localhost:8000/api/v1` | BE root. Used for the preflight probe and the (optional) alert-frame toggle. |
 | `SCREENSHOT_EMAIL` / `SCREENSHOT_PASSWORD` | `demo@example.com` / `demopass` | Login credentials. |
-| `SCREENSHOT_API_BASE` | *(unused, FE reads `VITE_API_BASE_URL`)* | — |
+| `SCREENSHOT_TRACKER_ID` | first tracker for the user | Skip auto-detection when you have multiple trackers. |
+| `SCREENSHOT_MONTH` | current UTC month (`YYYY-MM`) | Month to query for `/budget-alerts`. |
+| `SCREENSHOT_FORCE_ALERT` | `0` | `1` = capture `dashboard-alert.png` even with no active alerts (script will flip the *Budget alerts* toggle on and fail loudly if no category crosses threshold). |
 
 > **Backend in Docker?** No special handling needed — as long as the FE can
 > reach the API at the URL in `VITE_API_BASE_URL`, Playwright talks to it
@@ -60,6 +64,24 @@ dev server and writes PNGs to `docs/screenshots/`. It expects:
 > `docker run -p 8000:8000` and `docker compose up` against the host
 > network; use `host.docker.internal:8000` only if the FE were running
 > inside a container too (it isn't here).
+
+### How the alert frame is decided
+
+Before signing in, the script probes the BE directly (so it doesn't depend
+on FE rendering):
+
+1. `GET /preferences` — if `budget_alerts_enabled === false`, the FE never
+   fetches `/budget-alerts` regardless of data, so the frame is skipped
+   (set `SCREENSHOT_FORCE_ALERT=1` to flip it on automatically).
+2. `GET /trackers` — picks the first tracker (or `SCREENSHOT_TRACKER_ID`).
+3. `GET /trackers/{id}/budget-alerts?month=YYYY-MM` — if any entry has
+   `level !== "ok"`, the frame is queued.
+
+If the alert frame is queued, the script signs in, navigates to
+`/settings`, and ensures the *Budget alerts* switch is on (so the FE will
+have issued the request by the time we land on `/`). If no alert is
+active even with the toggle forced on, the script fails with a clear
+error pointing at this section.
 
 ### Capturing the alert banner
 
