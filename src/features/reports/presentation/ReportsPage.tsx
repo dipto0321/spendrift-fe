@@ -217,12 +217,22 @@ function ReportsPage() {
 	const rangeLabelText = rangeLabel(range, preset);
 	const isCustomActive = preset === "custom";
 
-	const analyticsStats = [
-		{ key: "total", label: "Total", value: analytics.total },
-		{ key: "avg", label: "Average", value: analytics.avg },
-		{ key: "low", label: "Lowest", value: analytics.min },
-		{ key: "high", label: "Highest", value: analytics.max },
-	];
+	const analyticsStats = useMemo(() => {
+		// Average / Lowest / Highest are "compare across periods" stats — they
+		// only make sense when the bucket series has more than one entry.
+		// On a single-bucket view (e.g. Yearly over one year, All time with
+		// one year of data, Weekly over one week), every value collapses to
+		// the Total and the cards become noise. Keep only Total in that case.
+		const stats = [{ key: "total", label: "Total", value: analytics.total }];
+		if (analytics.count > 1) {
+			stats.push(
+				{ key: "avg", label: "Average", value: analytics.avg },
+				{ key: "low", label: "Lowest", value: analytics.min },
+				{ key: "high", label: "Highest", value: analytics.max },
+			);
+		}
+		return stats;
+	}, [analytics]);
 
 	if (isColdStart) {
 		return (
