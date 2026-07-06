@@ -2,6 +2,8 @@ import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
 import type { ChartConfig } from "@/components/ui/chart";
 import {
 	ChartContainer,
+	ChartLegend,
+	ChartLegendContent,
 	ChartTooltip,
 	ChartTooltipContent,
 } from "@/components/ui/chart";
@@ -14,11 +16,11 @@ type YearComparisonChartProps = {
 
 const chartConfig = {
 	total: {
-		label: "Total",
+		label: "Yearly total",
 		color: "var(--chart-3)",
 	},
 	avg: {
-		label: "Monthly Avg",
+		label: "Monthly average",
 		color: "var(--chart-1)",
 	},
 } satisfies ChartConfig;
@@ -69,6 +71,7 @@ export function YearComparisonChart({
 							/>
 						}
 					/>
+					<ChartLegend content={<ChartLegendContent />} />
 				</BarChart>
 			</ChartContainer>
 		</div>
