@@ -8,86 +8,104 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Spendrift — Emerald / calm fintech (Light) */
-  --brand: oklch(0.68 0.13 162);
-  --brand-strong: oklch(0.6 0.13 162);
-  --success: oklch(0.66 0.15 162);
-  --danger: oklch(0.62 0.21 14);
-
-  /* Shadcn-style system variables */
+  color-scheme: light;
+  --radius: 0.7rem;
   --background: oklch(0.99 0.004 130);
   --foreground: oklch(0.22 0.012 160);
   --card: oklch(1 0 0);
-  --card-foreground: var(--foreground);
-  --popover: var(--card);
-  --popover-foreground: var(--foreground);
-  --primary: var(--brand-strong);
+  --card-foreground: oklch(0.22 0.012 160);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.22 0.012 160);
+  --primary: oklch(0.6 0.13 162);
   --primary-foreground: oklch(0.99 0.01 160);
   --secondary: oklch(0.965 0.006 150);
-  --secondary-foreground: var(--foreground);
+  --secondary-foreground: oklch(0.22 0.012 160);
   --muted: oklch(0.965 0.006 150);
   --muted-foreground: oklch(0.5 0.015 160);
   --accent: oklch(0.95 0.025 162);
   --accent-foreground: oklch(0.35 0.05 162);
-  --destructive: var(--danger);
-  --destructive-foreground: oklch(0.99 0 0);
+  --destructive: oklch(0.62 0.21 14);
+  --destructive-foreground: oklch(0.99 0.01 160);
+  --success: oklch(0.66 0.15 162);
+  --success-foreground: oklch(0.99 0.01 160);
+  --warning: oklch(0.78 0.14 85);
+  --warning-foreground: oklch(0.38 0.10 85);
   --border: oklch(0.91 0.006 150);
-  --input: var(--border);
+  --input: oklch(0.91 0.006 150);
   --ring: oklch(0.68 0.1 162);
   --chart-1: oklch(0.68 0.13 162);
   --chart-2: oklch(0.72 0.1 200);
   --chart-3: oklch(0.76 0.13 85);
   --chart-4: oklch(0.62 0.14 255);
   --chart-5: oklch(0.64 0.2 14);
-
-  --radius: 0.7rem;
   --sidebar: oklch(0.985 0.004 150);
-  --sidebar-foreground: var(--foreground);
-  --sidebar-primary: var(--primary);
-  --sidebar-primary-foreground: var(--primary-foreground);
-  --sidebar-accent: var(--accent);
-  --sidebar-accent-foreground: var(--accent-foreground);
-  --sidebar-border: var(--border);
-  --sidebar-ring: var(--ring);
+  --sidebar-foreground: oklch(0.22 0.012 160);
+  --sidebar-primary: oklch(0.6 0.13 162);
+  --sidebar-primary-foreground: oklch(0.99 0.01 160);
+  --sidebar-accent: oklch(0.95 0.025 162);
+  --sidebar-accent-foreground: oklch(0.35 0.05 162);
+  --sidebar-border: oklch(0.91 0.006 150);
+  --sidebar-ring: oklch(0.68 0.1 162);
 
   /* Design tokens used by current components */
   --surface-strong: var(--card);
   --line: color-mix(in oklab, var(--border) 78%, transparent 22%);
   --inset-glint: color-mix(in oklab, white 60%, transparent 40%);
   --kicker: color-mix(in oklab, var(--foreground) 45%, var(--muted-foreground) 55%);
+  --brand-strong: var(--primary);
 }
 
 .dark {
-  /* Spendrift — Emerald / calm fintech (Dark, warm charcoal) */
-  --brand: oklch(0.74 0.13 162);
-  --brand-strong: oklch(0.78 0.13 162);
-  --success: oklch(0.76 0.14 162);
-  --danger: oklch(0.68 0.19 14);
-
+  color-scheme: dark;
   --background: oklch(0.17 0.008 165);
   --foreground: oklch(0.96 0.006 150);
   --card: oklch(0.205 0.01 165);
-  --card-foreground: var(--foreground);
+  --card-foreground: oklch(0.96 0.006 150);
   --popover: oklch(0.205 0.01 165);
-  --popover-foreground: var(--foreground);
-  --primary: var(--brand-strong);
+  --popover-foreground: oklch(0.96 0.006 150);
+  --primary: oklch(0.78 0.13 162);
   --primary-foreground: oklch(0.16 0.01 165);
   --secondary: oklch(0.25 0.01 165);
-  --secondary-foreground: var(--foreground);
+  --secondary-foreground: oklch(0.96 0.006 150);
   --muted: oklch(0.25 0.01 165);
   --muted-foreground: oklch(0.71 0.015 160);
   --accent: oklch(0.28 0.025 165);
   --accent-foreground: oklch(0.92 0.02 162);
-  --destructive: var(--danger);
-  --destructive-foreground: oklch(0.99 0 0);
+  --destructive: oklch(0.68 0.19 14);
+  --destructive-foreground: oklch(0.98 0.006 150);
+  --success: oklch(0.76 0.14 162);
+  --success-foreground: oklch(0.16 0.01 165);
+  --warning: oklch(0.8 0.13 85);
+  --warning-foreground: oklch(0.22 0.07 85);
   --border: oklch(0.28 0.008 165);
   --input: oklch(0.31 0.009 165);
   --ring: oklch(0.74 0.1 162);
+  --chart-1: oklch(0.74 0.13 162);
+  --chart-2: oklch(0.72 0.1 200);
+  --chart-3: oklch(0.78 0.13 85);
+  --chart-4: oklch(0.66 0.14 255);
+  --chart-5: oklch(0.68 0.2 14);
+  --sidebar: oklch(0.19 0.008 165);
+  --sidebar-foreground: oklch(0.96 0.006 150);
+  --sidebar-primary: oklch(0.78 0.13 162);
+  --sidebar-primary-foreground: oklch(0.16 0.01 165);
+  --sidebar-accent: oklch(0.28 0.025 165);
+  --sidebar-accent-foreground: oklch(0.92 0.02 162);
+  --sidebar-border: oklch(0.28 0.008 165);
+  --sidebar-ring: oklch(0.74 0.1 162);
+
+  /* Design tokens used by current components */
+  --surface-strong: var(--card);
+  --line: color-mix(in oklab, var(--border) 78%, transparent 22%);
   --inset-glint: color-mix(in oklab, white 8%, transparent 92%);
+  --kicker: color-mix(in oklab, var(--foreground) 45%, var(--muted-foreground) 55%);
+  --brand-strong: var(--primary);
 }
 
 @theme inline {
   --font-sans: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-sans);
+  --font-mono: ui-monospace, 'Courier New', monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -104,6 +122,10 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -112,10 +134,13 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-xl: calc(var(--radius) + 1.4rem);
+  --radius-2xl: calc(var(--radius) + 1.8rem);
+  --radius-3xl: calc(var(--radius) + 2.2rem);
+  --radius-4xl: calc(var(--radius) + 2.6rem);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -243,7 +268,9 @@ a {
     @apply border-border outline-ring/50;
   }
   body {
-    background-color: var(--background);
-    color: var(--foreground);
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
   }
 }

@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
 
-type PageHeaderProps = {
-	kicker: string;
-	title: string;
-	description: string;
-	actions?: ReactNode;
-};
+interface PageHeaderProps {
+	readonly title: string;
+	readonly description?: string;
+	readonly kicker?: string;
+	readonly actions?: ReactNode;
+}
 
 export function PageHeader({
 	kicker,
@@ -14,17 +14,21 @@ export function PageHeader({
 	actions,
 }: PageHeaderProps) {
 	return (
-		<header className="mb-6 flex items-end justify-between gap-4">
-			<div className="min-w-0">
-				<p className="island-kicker mb-2">{kicker}</p>
-				<h1 className="display-title m-0 text-3xl font-semibold text-foreground sm:text-5xl">
+		<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+			<div className="min-w-0 flex flex-col gap-1">
+				{kicker && <p className="island-kicker mb-0">{kicker}</p>}
+				<h1 className="display-title m-0 text-2xl font-semibold tracking-tight text-balance text-foreground sm:text-3xl">
 					{title}
 				</h1>
-				<p className="m-0 mt-2 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-					{description}
-				</p>
+				{description ? (
+					<p className="m-0 text-sm text-pretty text-muted-foreground">
+						{description}
+					</p>
+				) : null}
 			</div>
-			{actions && <div className="shrink-0">{actions}</div>}
-		</header>
+			{actions && (
+				<div className="flex shrink-0 items-center gap-2">{actions}</div>
+			)}
+		</div>
 	);
 }

@@ -1,5 +1,7 @@
 import type {
 	Budget,
+	BudgetAlert,
+	BudgetAlertLevel,
 	BudgetCreateInput,
 	BudgetStatus,
 	BudgetUpdateInput,
@@ -47,6 +49,26 @@ export function mapBudgetStatus(dto: BudgetStatusResponseDto): BudgetStatus {
 		savingsProgress: dto.savings_progress,
 		savingsHealth: dto.savings_health,
 		isOverBudget: dto.is_over_budget,
+	};
+}
+
+export type BudgetAlertResponseDto = {
+	category_id: string;
+	category_name: string;
+	spent: string;
+	limit: string;
+	percentage: number;
+	level: BudgetAlertLevel;
+};
+
+export function mapBudgetAlert(dto: BudgetAlertResponseDto): BudgetAlert {
+	return {
+		categoryId: dto.category_id,
+		categoryName: dto.category_name,
+		spent: Number(dto.spent),
+		limit: Number(dto.limit),
+		percentage: dto.percentage,
+		level: dto.level,
 	};
 }
 

@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react";
+import { Globe, Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import {
 	AlertDialog,
@@ -9,29 +9,30 @@ import {
 	AlertDialogFooter,
 	AlertDialogHeader,
 	AlertDialogTitle,
-	AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-	Collapsible,
-	CollapsibleContent,
-	CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
 import type { Tracker } from "../domain/types";
 
 type TrackerManagerProps = {
-	trackers: Tracker[];
-	activeTrackerId: string;
-	onCreate: (name: string, currency: string) => Promise<void>;
-	onUpdate: (id: string, name: string, currency: string) => Promise<void>;
-	onDelete: (id: string) => Promise<void>;
-	onActivate: (id: string) => void;
+	readonly trackers: Tracker[];
+	readonly activeTrackerId: string;
+	readonly onCreate: (name: string, currency: string) => Promise<void>;
+	readonly onUpdate: (
+		id: string,
+		name: string,
+		currency: string,
+	) => Promise<void>;
+	readonly onDelete: (id: string) => Promise<void>;
+	readonly onActivate: (id: string) => void;
 };
 
 export function TrackerManager({
@@ -41,16 +42,17 @@ export function TrackerManager({
 	onUpdate,
 	onDelete,
 	onActivate,
-}: Readonly<TrackerManagerProps>) {
-	const [isExpanded, setIsExpanded] = useState(false);
+}: TrackerManagerProps) {
 	const [editingId, setEditingId] = useState<string | null>(null);
 	const [editName, setEditName] = useState("");
 	const [editCurrency, setEditCurrency] = useState("USD");
 	const [showCreate, setShowCreate] = useState(false);
 	const [newName, setNewName] = useState("");
 	const [newCurrency, setNewCurrency] = useState("USD");
+	const [deleteId, setDeleteId] = useState<string | null>(null);
 
 	const canDelete = trackers.length > 1;
+	const deleteTarget = trackers.find((t) => t.id === deleteId);
 
 	function startEdit(tracker: Tracker) {
 		setEditingId(tracker.id);
@@ -83,29 +85,70 @@ export function TrackerManager({
 	}
 
 	return (
-		<Collapsible
-			open={isExpanded}
-			onOpenChange={setIsExpanded}
-			className="rounded-2xl border border-border/60 bg-card/30"
-		>
-			<CollapsibleTrigger className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-muted/20">
-				<span className="text-sm font-medium text-foreground">
-					Manage Trackers
-				</span>
-				{isExpanded ? (
-					<ChevronDown className="h-4 w-4 text-muted-foreground" />
-				) : (
-					<ChevronRight className="h-4 w-4 text-muted-foreground" />
-				)}
-			</CollapsibleTrigger>
+		<>
+			<Card>
+				<CardHeader>
+					<div className="flex items-center justify-between gap-4">
+						<div className="flex flex-col gap-1">
+							<CardTitle>Trackers</CardTitle>
+							<CardDescription>
+								Each tracker keeps its own currency, budget, and expenses.
+							</CardDescription>
+						</div>
+						<Button size="sm" onClick={() => setShowCreate(true)} disabled={showCreate}>
+							<Plus className="size-4" />
+							Add tracker
+						</Button>
+					</div>
+				</CardHeader>
+				<CardContent className="flex flex-col gap-2">
+					{showCreate && (
+						<div className="flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-border p-3">
+							<Input
+								type="text"
+								placeholder="Tracker name"
+								value={newName}
+								onChange={(e) => setNewName(e.target.value)}
+								className="min-w-32 flex-1"
+								autoFocus
+							/>
+							<Input
+								type="text"
+								placeholder="USD"
+								value={newCurrency}
+								onChange={(e) => setNewCurrency(e.target.value.toUpperCase())}
+								className="w-24 uppercase"
+							/>
+							<Button
+								size="sm"
+								onClick={() => void handleCreate()}
+								disabled={!newName.trim() || !newCurrency.trim()}
+							>
+								Create
+							</Button>
+							<Button
+								size="sm"
+								variant="outline"
+								onClick={() => {
+									setShowCreate(false);
+									setNewName("");
+									setNewCurrency("USD");
+								}}
+							>
+								Cancel
+							</Button>
+						</div>
+					)}
 
-			<CollapsibleContent className="border-t border-border/50 px-4 pb-4">
-				<div className="space-y-2 pt-3">
 					{trackers.map((tracker) => (
 						<div
 							key={tracker.id}
-							className="flex flex-wrap items-center gap-2 rounded-lg border border-border/40 bg-card/50 p-2"
+							className="flex items-center gap-3 rounded-lg border border-border p-3"
 						>
+							<div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+								<Globe className="size-4" />
+							</div>
+
 							{editingId === tracker.id ? (
 								<>
 									<Input
@@ -114,6 +157,7 @@ export function TrackerManager({
 										onChange={(e) => setEditName(e.target.value)}
 										placeholder="Tracker name"
 										className="h-8 min-w-0 flex-1"
+										autoFocus
 									/>
 									<Input
 										type="text"
@@ -122,159 +166,95 @@ export function TrackerManager({
 											setEditCurrency(e.target.value.toUpperCase())
 										}
 										placeholder="USD"
-										className="h-8 w-24 uppercase"
+										className="h-8 w-20 uppercase"
 									/>
-									<Button
-										type="button"
-										size="sm"
-										onClick={handleUpdate}
-										className="shrink-0"
-									>
+									<Button size="sm" onClick={() => void handleUpdate()}>
 										Save
 									</Button>
-									<Button
-										type="button"
-										size="sm"
-										variant="outline"
-										onClick={cancelEdit}
-										className="shrink-0"
-									>
+									<Button size="sm" variant="outline" onClick={cancelEdit}>
 										Cancel
 									</Button>
 								</>
 							) : (
 								<>
-									<div className="min-w-0 flex-1">
+									<div className="flex flex-1 flex-col">
 										<div className="flex items-center gap-2">
-											<span className="truncate text-sm text-foreground">
+											<span className="text-sm font-medium text-foreground">
 												{tracker.name}
 											</span>
-											<span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-												{tracker.currency}
-											</span>
-											{activeTrackerId === tracker.id ? (
-												<span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+											{activeTrackerId === tracker.id && (
+												<Badge variant="secondary" className="text-xs">
 													Active
-												</span>
-											) : null}
+												</Badge>
+											)}
 										</div>
+										<span className="text-xs text-muted-foreground">
+											{tracker.currency}
+										</span>
 									</div>
-									{activeTrackerId !== tracker.id ? (
+									{activeTrackerId !== tracker.id && (
 										<Button
-											type="button"
 											size="sm"
 											variant="outline"
 											onClick={() => onActivate(tracker.id)}
-											className="shrink-0"
 										>
 											Use
 										</Button>
-									) : null}
-									<Tooltip>
-										<TooltipTrigger asChild>
-											<button
-												type="button"
-												onClick={() => startEdit(tracker)}
-												className="shrink-0 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-												aria-label={`Edit ${tracker.name}`}
-											>
-												<Pencil className="h-3.5 w-3.5" />
-											</button>
-										</TooltipTrigger>
-										<TooltipContent>Edit tracker</TooltipContent>
-									</Tooltip>
-									<AlertDialog>
-										<AlertDialogTrigger asChild>
-											<button
-												type="button"
-												disabled={!canDelete}
-												className="shrink-0 rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:cursor-not-allowed disabled:opacity-40"
-												aria-label={`Delete ${tracker.name}`}
-												title={
-													canDelete
-														? `Delete ${tracker.name}`
-														: "At least one tracker is required"
-												}
-											>
-												<Trash2 className="h-3.5 w-3.5" />
-											</button>
-										</AlertDialogTrigger>
-										<AlertDialogContent>
-											<AlertDialogHeader>
-												<AlertDialogTitle>
-													Delete "{tracker.name}"?
-												</AlertDialogTitle>
-												<AlertDialogDescription>
-													This permanently removes the tracker and all of its
-													expenses and budgets. This can't be undone.
-												</AlertDialogDescription>
-											</AlertDialogHeader>
-											<AlertDialogFooter>
-												<AlertDialogCancel>Cancel</AlertDialogCancel>
-												<AlertDialogAction
-													variant="destructive"
-													onClick={() => onDelete(tracker.id)}
-												>
-													Delete
-												</AlertDialogAction>
-											</AlertDialogFooter>
-										</AlertDialogContent>
-									</AlertDialog>
+									)}
+									<Button
+										variant="ghost"
+										size="icon"
+										aria-label={`Edit ${tracker.name}`}
+										onClick={() => startEdit(tracker)}
+									>
+										<Pencil className="size-4" />
+									</Button>
+									<Button
+										variant="ghost"
+										size="icon"
+										aria-label={`Delete ${tracker.name}`}
+										disabled={!canDelete}
+										onClick={() => setDeleteId(tracker.id)}
+									>
+										<Trash2 className="size-4" />
+									</Button>
 								</>
 							)}
 						</div>
 					))}
+				</CardContent>
+			</Card>
 
-					{showCreate ? (
-						<div className="space-y-2 rounded-lg border border-border/40 bg-card/50 p-3">
-							<Input
-								type="text"
-								placeholder="Tracker name"
-								value={newName}
-								onChange={(e) => setNewName(e.target.value)}
-							/>
-							<Input
-								type="text"
-								placeholder="USD"
-								value={newCurrency}
-								onChange={(e) => setNewCurrency(e.target.value.toUpperCase())}
-								className="uppercase"
-							/>
-							<div className="flex gap-2">
-								<Button
-									type="button"
-									variant="outline"
-									onClick={() => {
-										setShowCreate(false);
-										setNewName("");
-										setNewCurrency("USD");
-									}}
-									className="flex-1"
-								>
-									Cancel
-								</Button>
-								<Button
-									type="button"
-									onClick={handleCreate}
-									disabled={!newName.trim() || !newCurrency.trim()}
-									className="flex-1"
-								>
-									Create
-								</Button>
-							</div>
-						</div>
-					) : (
-						<button
-							type="button"
-							onClick={() => setShowCreate(true)}
-							className="flex w-full items-center gap-2 rounded-lg border border-dashed border-border/60 px-3 py-2 text-sm text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"
+			<AlertDialog
+				open={deleteId !== null}
+				onOpenChange={(open) => {
+					if (!open) setDeleteId(null);
+				}}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Delete "{deleteTarget?.name}"?</AlertDialogTitle>
+						<AlertDialogDescription>
+							This permanently removes the tracker and all of its expenses and
+							budgets. This can't be undone.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogAction
+							variant="destructive"
+							onClick={() => {
+								if (deleteId) {
+									void onDelete(deleteId);
+									setDeleteId(null);
+								}
+							}}
 						>
-							<Plus className="h-4 w-4" />
-							Add tracker
-						</button>
-					)}
-				</div>
-			</CollapsibleContent>
-		</Collapsible>
+							Delete
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+		</>
 	);
 }

@@ -138,12 +138,17 @@ Each tracker owns its expenses, categories, budgets, dashboard, and reports. The
 - Monthly limit + savings target
 - Remaining balance and a savings-health indicator (green / yellow / red)
 - Previous months become read-only history
+- **Per-category budget alerts** — a dismissible alert banner on the Dashboard
+  surfaces categories that have crossed their warning / exceeded threshold for
+  the selected month. Backend-driven (`GET /trackers/:id/budget-alerts`) and
+  gated behind the user's "Budget alerts" preference.
 
 ### Dashboard
 
 - Current-month spend, expense count, and budget remaining
 - Needs-vs-Wants split and top categories
 - Cashflow trend + recent expenses
+- Honors the global month selector — pick a past month and every stat follows
 
 ### Reports
 
@@ -152,6 +157,17 @@ Each tracker owns its expenses, categories, budgets, dashboard, and reports. The
 - Year-over-year comparison
 - Total / min / max / average analytics
 - Custom calendar date ranges
+
+### Preferences
+
+Server-backed per-user toggles (`/preferences`):
+
+- **Budget alerts** — enable/disable the dashboard alert banner
+- **Weekly summary** — reserved flag (feature pending)
+- **Round amounts** — round money display app-wide through `useFormatCurrency()`
+
+The Settings page loads preferences via TanStack Query with optimistic updates
+(rollback + toast on error).
 
 ---
 
@@ -247,7 +263,17 @@ This project leans on AI for architecture planning, code explanation, UI explora
 
 ### Dashboard
 
+> Includes the (new) **Budget alerts banner** at the top — appears only when
+> the user's `preferences.budgetAlerts` flag is enabled and the selected
+> month has categories crossing the warning / exceeded threshold.
+
 ![Dashboard](docs/screenshots/dashboard.png)
+
+> When the capture run finds active alerts, it also writes
+> `dashboard-alert.png` so the banner is documented with real data
+> instead of a mock.
+
+![Dashboard — alert banner](docs/screenshots/dashboard-alert.png)
 
 ### Expense List
 
@@ -260,6 +286,18 @@ This project leans on AI for architecture planning, code explanation, UI explora
 ### Reports
 
 ![Reports](docs/screenshots/reports.png)
+
+### Settings — Preferences
+
+> The Preferences card is now backed by `GET/PUT /preferences` (no longer
+> localStorage). Toggling instantly reflects everywhere `useFormatCurrency()`
+> is used when **Round amounts** is on.
+
+![Settings](docs/screenshots/settings.png)
+
+> 📸 To re-capture the screenshots in this section (e.g. after a UI pass),
+> see [`docs/screenshots/CAPTURE.md`](docs/screenshots/CAPTURE.md) and run
+> `pnpm dlx tsx scripts/capture-screenshots.ts`.
 
 ---
 

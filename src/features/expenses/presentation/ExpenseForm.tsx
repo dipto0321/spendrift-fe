@@ -19,6 +19,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { DatePicker } from "@/shared/ui/DatePicker";
 import { type ExpenseFormValues, expenseFormSchema } from "../domain/schema";
 import type { Category, Expense, ExpenseCreateInput } from "../domain/types";
 
@@ -145,7 +146,7 @@ export function ExpenseForm({
 						<FormItem>
 							<FormLabel>Date {requiredMark}</FormLabel>
 							<FormControl>
-								<Input type="date" {...field} />
+								<DatePicker value={field.value} onChange={field.onChange} />
 							</FormControl>
 							<FormMessage />
 						</FormItem>

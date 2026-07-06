@@ -1,10 +1,11 @@
+import { BudgetAlertBanner } from "@/features/budgets/presentation/BudgetAlertBanner";
+import { useBudgetAlerts } from "@/features/budgets/presentation/useBudgetAlerts";
 import type { Category } from "@/features/expenses/domain/types";
 import { useCategories } from "@/features/expenses/presentation/useCategories";
 import { useExpenses } from "@/features/expenses/presentation/useExpenses";
 import { groupByMonth } from "@/features/reports/domain/services";
 import { useTracker } from "@/features/trackers/presentation/TrackerContext";
-import { PageHeader } from "@/shared/ui/PageHeader";
-import { BudgetCard } from "./BudgetCard";
+import { useMonth } from "@/shared/ui/MonthContext";
 import { CashflowCard } from "./CashflowCard";
 import { DashboardStats } from "./DashboardStats";
 import { NeedsVsWantsCard } from "./NeedsVsWantsCard";
@@ -15,14 +16,17 @@ export function DashboardPage() {
 	const { activeTracker } = useTracker();
 	const trackerId = activeTracker?.id;
 	const currency = activeTracker?.currency ?? "";
+	const { selectedMonth } = useMonth();
 
-	const { data: summary, isLoading: summaryLoading } = useDashboard(trackerId);
+	const { data: summary, isLoading: summaryLoading } = useDashboard(
+		trackerId,
+		selectedMonth,
+	);
 	const { data: categories = [] } = useCategories(trackerId);
 	const { data: expenses = [], isLoading: expensesLoading } =
 		useExpenses(trackerId);
+	const { data: budgetAlerts = [] } = useBudgetAlerts(trackerId, selectedMonth);
 
-	// The dashboard endpoint summarizes the current month only; the multi-month
-	// cashflow trend and the recent-activity list come from the expenses list.
 	const monthlyData = groupByMonth(expenses)
 		.slice(-6)
 		.map((d) => ({
@@ -38,15 +42,11 @@ export function DashboardPage() {
 
 	const recentExpenses = [...expenses]
 		.sort((a, b) => b.date.localeCompare(a.date))
-		.slice(0, 5);
+		.slice(0, 6);
 
 	return (
-		<main className="page-wrap rise-in px-4 pb-14 pt-10 sm:pt-12">
-			<PageHeader
-				kicker="Dashboard"
-				title="Spendrift overview"
-				description="Track what matters: this month's spending, budget health, and recent activity."
-			/>
+		<main className="flex flex-col gap-6 px-4 pb-14 pt-6">
+			<BudgetAlertBanner alerts={budgetAlerts} currency={currency} />
 
 			<DashboardStats
 				summary={summary}
@@ -54,23 +54,22 @@ export function DashboardPage() {
 				isLoading={summaryLoading}
 			/>
 
-			<section className="mt-6 grid gap-6 lg:grid-cols-2">
-				<CashflowCard data={monthlyData} currency={currency} />
+			<div className="grid items-stretch gap-6 lg:grid-cols-3">
+				<div className="h-full lg:col-span-2">
+					<CashflowCard data={monthlyData} currency={currency} />
+				</div>
 				<NeedsVsWantsCard
 					needsWants={summary?.needsWants}
 					currency={currency}
 				/>
-			</section>
+			</div>
 
-			<section className="mt-6 grid gap-6 lg:grid-cols-2">
-				<BudgetCard budget={summary?.budget ?? null} currency={currency} />
-				<RecentExpenses
-					expenses={recentExpenses}
-					categoryMap={categoryMap}
-					currency={currency}
-					isLoading={expensesLoading}
-				/>
-			</section>
+			<RecentExpenses
+				expenses={recentExpenses}
+				categoryMap={categoryMap}
+				currency={currency}
+				isLoading={expensesLoading}
+			/>
 		</main>
 	);
 }

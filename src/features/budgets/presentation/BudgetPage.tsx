@@ -1,200 +1,228 @@
+import { ShoppingBag, TrendingDown } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useFormatCurrency } from "@/features/preferences/presentation/useFormatCurrency";
 import { useTracker } from "@/features/trackers/presentation/TrackerContext";
+import { EmptyState } from "@/shared/ui/EmptyState";
+import { MoneyText } from "@/shared/ui/MoneyText";
+import { useMonth } from "@/shared/ui/MonthContext";
 import { PageHeader } from "@/shared/ui/PageHeader";
-import { StatCard } from "@/shared/ui/StatCard";
-import { formatCurrency } from "@/shared/utils/format";
-import { calculateBudgetStatus } from "../domain/services";
-import type { Budget, BudgetCreateInput } from "../domain/types";
+import { StatCard, StatCardSkeleton } from "@/shared/ui/StatCard";
+import { calculateBudgetStatus, getCurrentMonth } from "../domain/services";
+import type { BudgetCreateInput, BudgetStatus } from "../domain/types";
 import { BudgetForm } from "./BudgetForm";
 import { BudgetStatusCard } from "./BudgetStatusCard";
 import { useCreateBudget, useUpdateBudget } from "./useBudgets";
 import { useCurrentBudgetStatus } from "./useCurrentBudgetStatus";
 
+const STAT_SKELETON_KEYS = ["spent", "needs", "wants"] as const;
+
+function prevBudgetColorClass(status: BudgetStatus): string {
+	if (status.isOverBudget) return "text-destructive";
+	if (status.remaining > 0) return "text-success";
+	return "text-warning-foreground dark:text-warning";
+}
+
 function BudgetPage() {
 	const { activeTracker } = useTracker();
 	const trackerId = activeTracker?.id;
 	const currency = activeTracker?.currency ?? "";
-	const [showForm, setShowForm] = useState(false);
-	const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
+	const formatCurrency = useFormatCurrency();
+
+	const { selectedMonth } = useMonth();
+	const isPastMonth = selectedMonth < getCurrentMonth();
 
 	const {
 		budgets,
 		expenses,
-		currentMonth,
 		currentBudget,
 		status,
 		needsWantsSplit,
 		budgetsLoading,
-	} = useCurrentBudgetStatus(trackerId);
+	} = useCurrentBudgetStatus(trackerId, selectedMonth);
 
 	const createMutation = useCreateBudget(trackerId);
 	const updateMutation = useUpdateBudget(trackerId);
+	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	function handleFormSubmit(data: BudgetCreateInput) {
-		if (editingBudget) {
+		setIsSubmitting(true);
+		if (currentBudget) {
 			updateMutation.mutate(
-				{ id: editingBudget.id, patch: data },
-				{
-					onSuccess: () => {
-						setShowForm(false);
-						setEditingBudget(null);
-					},
-				},
+				{ id: currentBudget.id, patch: data },
+				{ onSettled: () => setIsSubmitting(false) },
 			);
 		} else {
-			createMutation.mutate(data, { onSuccess: () => setShowForm(false) });
+			createMutation.mutate(data, { onSettled: () => setIsSubmitting(false) });
 		}
 	}
 
-	// Opening the form for an existing current-month budget must edit it, not
-	// create a second one (only one budget per tracker per month is allowed).
-	function handleOpenForm() {
-		if (currentBudget) setEditingBudget(currentBudget);
-		setShowForm(true);
-	}
+	const totalSpent = needsWantsSplit.needs + needsWantsSplit.wants;
+	const otherBudgets = budgets.filter((b) => b.month !== selectedMonth);
 
-	function handleCancel() {
-		setShowForm(false);
-		setEditingBudget(null);
-	}
+	const selectedMonthLabel = new Date(`${selectedMonth}-01`).toLocaleDateString(
+		"en",
+		{ month: "long", year: "numeric" },
+	);
 
-	const isFormSubmitting = createMutation.isPending || updateMutation.isPending;
-
-	if (budgetsLoading) {
-		return (
-			<main className="page-wrap rise-in px-4 pb-14 pt-10 sm:pt-12">
-				<PageHeader
-					kicker="Budget"
-					title="Budget workspace"
-					description="Set monthly budgets, track savings targets, and monitor spending health."
+	let budgetStatusContent = <Skeleton className="h-full min-h-64 rounded-xl" />;
+	if (!budgetsLoading && status && currentBudget) {
+		budgetStatusContent = (
+			<BudgetStatusCard
+				budgetName={selectedMonthLabel}
+				monthlyLimit={currentBudget.monthlyLimit}
+				savingsTarget={currentBudget.savingsTarget}
+				status={status}
+				currency={currency}
+			/>
+		);
+	} else if (!budgetsLoading) {
+		budgetStatusContent = (
+			<Card className="flex h-full min-h-48 items-center justify-center">
+				<EmptyState
+					icon={TrendingDown}
+					title={`No budget for ${selectedMonthLabel}`}
+					description={
+						isPastMonth
+							? "No budget was set for this month."
+							: "Fill in the form to create a budget for this month."
+					}
 				/>
-				<Skeleton className="h-48 rounded-2xl" />
-			</main>
+			</Card>
 		);
 	}
 
 	return (
-		<main className="page-wrap rise-in px-4 pb-14 pt-10 sm:pt-12">
+		<main className="flex flex-col gap-6 px-4 pb-14 pt-6">
 			<PageHeader
-				kicker="Budget"
-				title="Budget workspace"
+				title="Budget"
 				description="Set monthly budgets, track savings targets, and monitor spending health."
 			/>
 
-			<div className="space-y-6">
-				{!showForm && !editingBudget && (
-					<div className="flex justify-end">
-						<Button type="button" onClick={handleOpenForm}>
-							{currentBudget ? "Edit Budget" : "Create Budget"}
-						</Button>
-					</div>
-				)}
+			<div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-5">
+				<div className="lg:col-span-2">
+					<Card className="h-full">
+						<CardHeader>
+							<CardTitle>Monthly setup</CardTitle>
+							<CardDescription>
+								{isPastMonth
+									? `Viewing ${selectedMonthLabel} — read only.`
+									: "Set your spending budget and savings goal for this tracker."}
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							{budgetsLoading ? (
+								<div className="space-y-4">
+									<Skeleton className="h-10 rounded-lg" />
+									<Skeleton className="h-10 rounded-lg" />
+									<Skeleton className="h-10 rounded-lg" />
+								</div>
+							) : (
+								<BudgetForm
+									initialData={currentBudget ?? undefined}
+									month={selectedMonth}
+									currency={currency}
+									onSubmit={handleFormSubmit}
+									isSubmitting={isSubmitting}
+									readOnly={isPastMonth}
+								/>
+							)}
+						</CardContent>
+					</Card>
+				</div>
 
-				{(showForm || editingBudget) && (
-					<div className="rounded-2xl border border-border/60 bg-card/30 p-6">
-						<h3 className="m-0 mb-4 text-base font-semibold text-foreground">
-							{editingBudget ? "Edit Budget" : "Create Budget"}
-						</h3>
-						<BudgetForm
-							initialData={editingBudget ?? undefined}
-							onSubmit={handleFormSubmit}
-							onCancel={handleCancel}
-							isSubmitting={isFormSubmitting}
-						/>
-					</div>
-				)}
+				<div className="lg:col-span-3">{budgetStatusContent}</div>
+			</div>
 
-				{status && currentBudget ? (
-					<BudgetStatusCard
-						budgetName={currentBudget.name}
-						monthlyLimit={currentBudget.monthlyLimit}
-						savingsTarget={currentBudget.savingsTarget}
-						status={status}
-						currency={currency}
-					/>
+			<div className="grid gap-4 sm:grid-cols-3">
+				{budgetsLoading ? (
+					STAT_SKELETON_KEYS.map((k) => <StatCardSkeleton key={k} />)
 				) : (
-					!showForm && (
-						<div className="rounded-2xl border border-border/60 bg-card/30 p-12 text-center">
-							<p className="m-0 text-sm text-muted-foreground">
-								No budget set for this month.
-							</p>
-							<p className="m-0 mt-1 text-xs text-muted-foreground">
-								Click "Create Budget" above to get started.
-							</p>
-						</div>
-					)
-				)}
-
-				<section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-					<StatCard
-						label="This Month Spent"
-						value={formatCurrency(
-							needsWantsSplit.needs + needsWantsSplit.wants,
-							currency,
-						)}
-					/>
-					<StatCard
-						label="Needs"
-						value={formatCurrency(needsWantsSplit.needs, currency)}
-						subtext={`${needsWantsSplit.percentage.needs}% of spending`}
-					/>
-					<StatCard
-						label="Wants"
-						value={formatCurrency(needsWantsSplit.wants, currency)}
-						subtext={`${needsWantsSplit.percentage.wants}% of spending`}
-					/>
-				</section>
-
-				{budgets.length > 0 && (
-					<section>
-						<h2 className="m-0 mb-3 text-base font-semibold text-foreground">
-							Previous Budgets
-						</h2>
-						<div className="space-y-2">
-							{budgets
-								.filter((b) => b.month !== currentMonth)
-								.sort((a, b) => b.month.localeCompare(a.month))
-								.map((budget) => {
-									const monthExpenses = expenses.filter((e) =>
-										e.date.startsWith(budget.month),
-									);
-									const prevStatus = calculateBudgetStatus(
-										budget.monthlyLimit,
-										budget.savingsTarget,
-										monthExpenses,
-									);
-									return (
-										<div
-											key={budget.id}
-											className="flex items-center justify-between rounded-xl border border-border/60 bg-card/30 p-4"
-										>
-											<div>
-												<p className="m-0 text-sm font-medium text-foreground">
-													{budget.name}
-												</p>
-												<p className="m-0 text-xs text-muted-foreground">
-													Spent {formatCurrency(prevStatus.spent, currency)} of{" "}
-													{formatCurrency(budget.monthlyLimit, currency)}
-												</p>
-											</div>
-											<div className="flex items-center gap-2">
-												<span
-													className={`text-xs font-medium ${prevStatus.isOverBudget ? "text-red-500" : prevStatus.remaining > 0 ? "text-green-500" : "text-yellow-500"}`}
-												>
-													{prevStatus.isOverBudget
-														? "Over"
-														: `${formatCurrency(prevStatus.remaining, currency)} left`}
-												</span>
-											</div>
-										</div>
-									);
-								})}
-						</div>
-					</section>
+					<>
+						<StatCard
+							label="This month spent"
+							value={<MoneyText amount={totalSpent} currency={currency} />}
+							icon={TrendingDown}
+							tone="destructive"
+						/>
+						<StatCard
+							label="Needs"
+							value={
+								<MoneyText amount={needsWantsSplit.needs} currency={currency} />
+							}
+							icon={ShoppingBag}
+							hint={`${needsWantsSplit.percentage.needs}% of spending`}
+						/>
+						<StatCard
+							label="Wants"
+							value={
+								<MoneyText amount={needsWantsSplit.wants} currency={currency} />
+							}
+							icon={ShoppingBag}
+							hint={`${needsWantsSplit.percentage.wants}% of spending`}
+						/>
+					</>
 				)}
 			</div>
+
+			{otherBudgets.length > 0 ? (
+				<Card>
+					<CardHeader>
+						<CardTitle>Previous budgets</CardTitle>
+					</CardHeader>
+					<CardContent className="space-y-2">
+						{otherBudgets
+							.sort((a, b) => b.month.localeCompare(a.month))
+							.map((budget) => {
+								const monthExpenses = expenses.filter((e) =>
+									e.date.startsWith(budget.month),
+								);
+								const prevStatus = calculateBudgetStatus(
+									budget.monthlyLimit,
+									budget.savingsTarget,
+									monthExpenses,
+								);
+								const label = prevStatus.isOverBudget
+									? "Over"
+									: `${formatCurrency(prevStatus.remaining, currency)} left`;
+								const monthLabel = new Date(
+									`${budget.month}-01`,
+								).toLocaleDateString("en", {
+									month: "short",
+									year: "numeric",
+								});
+								return (
+									<div
+										key={budget.id}
+										className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/20 p-4"
+									>
+										<div>
+											<p className="m-0 text-sm font-medium text-foreground">
+												{budget.name || monthLabel}
+											</p>
+											<p className="m-0 text-xs text-muted-foreground">
+												Spent {formatCurrency(prevStatus.spent, currency)} of{" "}
+												{formatCurrency(budget.monthlyLimit, currency)}
+											</p>
+										</div>
+										<span
+											className={`text-xs font-medium tabular-nums ${prevBudgetColorClass(prevStatus)}`}
+										>
+											{label}
+										</span>
+									</div>
+								);
+							})}
+					</CardContent>
+				</Card>
+			) : null}
 		</main>
 	);
 }
