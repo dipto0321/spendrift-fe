@@ -1,4 +1,4 @@
-export type ReportPeriod = "weekly" | "monthly" | "yearly";
+export type ReportPeriod = "daily" | "weekly" | "monthly" | "yearly";
 
 export type AnalyticsResult = {
 	total: number;
