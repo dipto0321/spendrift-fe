@@ -113,15 +113,14 @@ export function BulkExpenseForm({
 	// batch date stays authoritative, so a parsed row's own `date` is ignored here.
 	function handleParsed(parsed: ParsedExpense[]) {
 		const keep = form.getValues("rows").filter((row) => !isBlankBulkRow(row));
-		replace([
-			...keep,
-			...parsed.map((p) => ({
-				amount: String(p.amount),
-				categoryId: p.categoryId ?? "",
-				description: p.description,
-				type: p.type,
-			})),
-		]);
+		const parsedMapped = parsed.map((p) => ({
+			amount: String(p.amount),
+			categoryId: p.categoryId ?? "",
+			description: p.description,
+			type: p.type,
+		}));
+		const next = [...keep, ...parsedMapped];
+		replace(next.length > 0 ? next : [emptyRow()]);
 	}
 
 	return (

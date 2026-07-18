@@ -61,6 +61,7 @@ export function SmartPasteSection({
 						placeholder={"coffee 120, bus 40, lunch 350 need\ngroceries 800"}
 						rows={3}
 						aria-label="Expenses text to parse"
+						disabled={parseMutation.isPending}
 					/>
 					<div className="flex justify-end">
 						<Button

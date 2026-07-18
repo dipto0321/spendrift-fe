@@ -24,7 +24,7 @@ export function BulkExpenseModal({
 	isSubmitting,
 }: BulkExpenseModalProps) {
 	return (
-		<Dialog open onOpenChange={(open) => !open && onClose()}>
+		<Dialog open onOpenChange={(open) => !open && !isSubmitting && onClose()}>
 			<DialogContent className="sm:max-w-3xl">
 				<DialogTitle>Add multiple expenses</DialogTitle>
 				<DialogDescription>

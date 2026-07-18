@@ -33,7 +33,7 @@ describe("mapParsedExpense", () => {
 });
 
 describe("toParseExpensesBody", () => {
-	it("emits snake_case keys and trimmed category descriptors", () => {
+	it("emits snake_case keys and id/name category descriptors", () => {
 		expect(
 			toParseExpensesBody({
 				text: "coffee 120, bus 40",

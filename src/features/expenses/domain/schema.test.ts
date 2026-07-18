@@ -50,6 +50,14 @@ describe("bulkExpenseFormSchema", () => {
 		expect(result.success).toBe(false);
 	});
 
+	it("rejects a row with a non-numeric amount", () => {
+		const result = bulkExpenseFormSchema.safeParse({
+			date: "2026-07-18",
+			rows: [row({ amount: "abc" })],
+		});
+		expect(result.success).toBe(false);
+	});
+
 	it("rejects a row with a missing category or description", () => {
 		expect(
 			bulkExpenseFormSchema.safeParse({
