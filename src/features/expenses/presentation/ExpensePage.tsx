@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { ListPlus, Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -6,6 +6,7 @@ import { useTracker } from "@/features/trackers/presentation/TrackerContext";
 import { MoneyText } from "@/shared/ui/MoneyText";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { getCurrencySymbol } from "@/shared/utils/currency";
+import type { BulkCreateResult } from "../domain/services";
 import {
 	calculateTotal,
 	filterExpenses,
@@ -17,12 +18,14 @@ import type {
 	ExpenseCreateInput,
 	ExpenseFilter,
 } from "../domain/types";
+import { BulkExpenseModal } from "./BulkExpenseModal";
 import { ExpenseModal } from "./ExpenseModal";
 import { ExpensePagination } from "./ExpensePagination";
 import { ExpenseTable, type SortKey, type SortState } from "./ExpenseTable";
 import { ExpenseToolbar } from "./ExpenseToolbar";
 import { useCategories } from "./useCategories";
 import {
+	useBulkCreateExpenses,
 	useCreateExpense,
 	useDeleteExpense,
 	useExpenses,
@@ -55,6 +58,7 @@ export function ExpensePage() {
 		open: boolean;
 		expense?: Expense;
 	}>({ open: false });
+	const [bulkOpen, setBulkOpen] = useState(false);
 
 	const {
 		data,
@@ -81,6 +85,7 @@ export function ExpensePage() {
 	const createMutation = useCreateExpense(trackerId);
 	const updateMutation = useUpdateExpense(trackerId);
 	const deleteMutation = useDeleteExpense(trackerId);
+	const bulkCreateMutation = useBulkCreateExpenses(trackerId);
 
 	// Search is debounced via `debouncedFilter`, so the page query sees a
 	// stable filter set per search burst. The other filters apply
@@ -151,6 +156,16 @@ export function ExpensePage() {
 		closeModal();
 	}
 
+	async function handleBulkSubmit(
+		inputs: ExpenseCreateInput[],
+	): Promise<BulkCreateResult> {
+		const result = await bulkCreateMutation.mutateAsync(inputs);
+		// Only fully successful batches close the modal — failed rows stay in the
+		// grid for retry.
+		if (result.failed.length === 0) setBulkOpen(false);
+		return result;
+	}
+
 	const isFormSubmitting = createMutation.isPending || updateMutation.isPending;
 
 	if (expensesError) {
@@ -169,10 +184,16 @@ export function ExpensePage() {
 				title="Expenses"
 				description={`All transactions for ${activeTracker?.name ?? "your tracker"}, in ${getCurrencySymbol(currency)}.`}
 				actions={
-					<Button onClick={openAddModal}>
-						<Plus className="size-4" />
-						Add expense
-					</Button>
+					<div className="flex gap-2">
+						<Button variant="outline" onClick={() => setBulkOpen(true)}>
+							<ListPlus className="size-4" />
+							Add multiple
+						</Button>
+						<Button onClick={openAddModal}>
+							<Plus className="size-4" />
+							Add expense
+						</Button>
+					</div>
 				}
 			/>
 
@@ -233,6 +254,15 @@ export function ExpensePage() {
 					onSubmit={handleFormSubmit}
 					onClose={closeModal}
 					isSubmitting={isFormSubmitting}
+				/>
+			)}
+
+			{bulkOpen && (
+				<BulkExpenseModal
+					categories={categories}
+					onSubmit={handleBulkSubmit}
+					onClose={() => setBulkOpen(false)}
+					isSubmitting={bulkCreateMutation.isPending}
 				/>
 			)}
 		</main>
