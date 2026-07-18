@@ -5,6 +5,8 @@ import type {
 	ExpenseCreateInput,
 	ExpenseFilter,
 	ExpenseUpdateInput,
+	ParsedExpense,
+	ParseExpensesInput,
 } from "./types";
 
 export type ExpenseListParams = {
@@ -47,4 +49,11 @@ export interface CategoryRepository {
 		patch: { name?: string; color?: CategoryColor },
 	): Promise<Category | null>;
 	delete(trackerId: string, id: string): Promise<void>;
+}
+
+// AI smart paste. Not tracker-scoped: the endpoint receives the category list
+// explicitly and returns candidate rows only — persistence still goes through
+// ExpenseRepository.create after user review (never directly from the AI).
+export interface ExpenseParseRepository {
+	parseText(input: ParseExpensesInput): Promise<ParsedExpense[]>;
 }

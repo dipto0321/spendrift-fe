@@ -35,6 +35,7 @@ tracker-based personal finance web app (Spendrift). ∀ tracker → own currency
 - api: `GET /trackers/:id/dashboard?month=YYYY-MM`
 - api: `GET /trackers/:id/reports/{summary,spending,category-breakdown,needs-vs-wants,year-comparison}`
 - api: `GET|PUT /preferences` → `Preferences { budgetAlerts, weeklySummary, roundAmounts }`
+- api: `POST /ai/parse-expenses` {text, default_date, categories[{id,name}]} → {expenses[{amount, description, category_id|null, type, date}]} (candidate rows only, ⊥ persistence; BE pending)
 - storage: localStorage `spendrift.last-tracker` (last active tracker id, client-only convenience)
 - storage: localStorage access/refresh tokens (`shared/api/tokens.ts`)
 - env: `VITE_API_BASE_URL`, `VITE_SENTRY_{DSN,ORG,PROJECT}`, `SENTRY_AUTH_TOKEN`, `SENTRY_ENVIRONMENT`
@@ -57,6 +58,7 @@ V14: money crosses dto boundary as decimal-string ↔ `number`, keys snake_case 
 V15: ∀ route ∈ `MONTH_PAGES` (`routes/__root.tsx`) ! consume `useMonth().selectedMonth` for its data query — see B1
 V16: preferences (Budget alerts / Weekly summary / Round amounts) ! read via `usePreferences()`, mutations via `useUpdatePreferences()` (optimistic, rollback on error); ⊥ direct `apiFetch(/preferences)` in pages
 V17: money rendering ! threaded thru `useFormatCurrency()` so the `roundAmounts` preference applies app-wide; raw `formatCurrency()` only acceptable in tests / non-UI utilities
+V18: AI-parsed rows ! land in bulk review grid (`BulkExpenseForm`) → user edits/saves via `POST /trackers/:id/expenses`; ⊥ direct persistence from `/ai/parse-expenses`
 
 ## §T TASKS
 id|status|task|cites
@@ -79,6 +81,8 @@ T16|.|delete dead `features/expenses/presentation/CategoryColorPicker.tsx` — 0
 T17|x|fix B1: wire dashboard to `selectedMonth` (`DashboardPage.tsx` + `dashboardRepository.getSummary(month)` + `useDashboard(trackerId, month)`)|V15,B1
 T18|x|server-backed user preferences: `features/preferences/{data,domain,presentation}` reads/writes `/preferences`; replaces prior localStorage stub — UI flag now persists per user|V16,V17
 T19|x|budget alerts banner: `BudgetAlertBanner` on `/` lists warning/exceeded categories for `useMonth().selectedMonth`, gated on `preferences.budgetAlerts` so the request is skipped when disabled|I.budget-alerts,V16
+T20|x|bulk expense entry: `BulkExpenseModal` grid (shared date + `useFieldArray` rows) + parallel `POST /expenses` (`Promise.allSettled`) w/ per-row failure retry|V10,V18
+T21|~|AI smart paste: FE shipped (`SmartPasteSection` → `useParseExpenses` → `expenseParseRepository`), BE `POST /ai/parse-expenses` (Gemini Flash proxy) pending|V18,I.ai-parse-expenses
 
 ## §B BUGS
 id|date|cause|fix

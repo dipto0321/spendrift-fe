@@ -9,6 +9,7 @@ import {
 	groupByMonth,
 	isWithinDateRange,
 	pageCount,
+	partitionSettled,
 	sortExpensesByDate,
 } from "./services";
 import type { Expense } from "./types";
@@ -232,5 +233,31 @@ describe("buildPageList", () => {
 		expect(out.every((p) => p === "ellipsis" || (p >= 1 && p <= 10))).toBe(
 			true,
 		);
+	});
+});
+
+describe("partitionSettled", () => {
+	it("splits settled results into succeeded and failed index lists", () => {
+		const results: PromiseSettledResult<string>[] = [
+			{ status: "fulfilled", value: "a" },
+			{ status: "rejected", reason: new Error("boom") },
+			{ status: "fulfilled", value: "c" },
+		];
+		expect(partitionSettled(results)).toEqual({
+			succeeded: [0, 2],
+			failed: [1],
+		});
+	});
+
+	it("handles all-success and all-failure batches", () => {
+		expect(partitionSettled([{ status: "fulfilled", value: 1 }])).toEqual({
+			succeeded: [0],
+			failed: [],
+		});
+		expect(partitionSettled([{ status: "rejected", reason: "x" }])).toEqual({
+			succeeded: [],
+			failed: [0],
+		});
+		expect(partitionSettled([])).toEqual({ succeeded: [], failed: [] });
 	});
 });

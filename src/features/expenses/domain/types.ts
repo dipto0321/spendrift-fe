@@ -70,3 +70,20 @@ export type NeedsWantsSplit = {
 };
 
 export type GroupedExpenses<T extends Expense> = Map<string, T[]>;
+
+// AI smart paste: one parsed candidate row. categoryId is undefined when the
+// model couldn't confidently map to an existing category — the review grid
+// forces the user to pick one before saving.
+export type ParsedExpense = {
+	amount: number;
+	description: string;
+	categoryId?: string;
+	type: ExpenseType;
+	date: string;
+};
+
+export type ParseExpensesInput = {
+	text: string;
+	defaultDate: string;
+	categories: Pick<Category, "id" | "name">[];
+};

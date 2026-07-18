@@ -180,3 +180,21 @@ export function pageCount(total: number, pageSize: number): number {
 	if (total <= 0 || pageSize <= 0) return 1;
 	return Math.max(1, Math.ceil(total / pageSize));
 }
+
+export type BulkCreateResult = {
+	succeeded: number[];
+	failed: number[];
+};
+
+// Index-based partition of Promise.allSettled results so the bulk-save UI can
+// keep failed rows (by position) in the grid for retry.
+export function partitionSettled<T>(
+	results: PromiseSettledResult<T>[],
+): BulkCreateResult {
+	const succeeded: number[] = [];
+	const failed: number[] = [];
+	results.forEach((result, index) => {
+		(result.status === "fulfilled" ? succeeded : failed).push(index);
+	});
+	return { succeeded, failed };
+}

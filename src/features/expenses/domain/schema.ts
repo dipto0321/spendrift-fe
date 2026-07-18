@@ -16,3 +16,26 @@ export const expenseFormSchema = z.object({
 });
 
 export type ExpenseFormValues = z.infer<typeof expenseFormSchema>;
+
+// Bulk entry: one shared date for the whole batch, each row re-uses the
+// single-expense field rules (V10) minus the per-row date.
+export const bulkExpenseRowSchema = expenseFormSchema.omit({ date: true });
+
+export type BulkExpenseRowValues = z.infer<typeof bulkExpenseRowSchema>;
+
+export const bulkExpenseFormSchema = z.object({
+	date: z.string().min(1, "Date is required"),
+	rows: z.array(bulkExpenseRowSchema).min(1, "Add at least one expense"),
+});
+
+export type BulkExpenseFormValues = z.infer<typeof bulkExpenseFormSchema>;
+
+// A row the user never touched: safe to drop silently before validating so
+// unused starter rows don't block Save.
+export function isBlankBulkRow(row: BulkExpenseRowValues): boolean {
+	return (
+		row.amount.trim() === "" &&
+		row.description.trim() === "" &&
+		row.categoryId === ""
+	);
+}
