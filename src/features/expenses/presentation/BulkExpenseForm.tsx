@@ -27,7 +27,8 @@ import {
 	isBlankBulkRow,
 } from "../domain/schema";
 import type { BulkCreateResult } from "../domain/services";
-import type { Category, ExpenseCreateInput } from "../domain/types";
+import type { Category, ExpenseCreateInput, ParsedExpense } from "../domain/types";
+import { SmartPasteSection } from "./SmartPasteSection";
 
 type BulkExpenseFormProps = {
 	categories: Category[];
@@ -104,6 +105,21 @@ export function BulkExpenseForm({
 		if (index === fields.length - 1) append(emptyRow());
 	}
 
+	// Parsed rows replace blank starter rows and append after real ones; the
+	// batch date stays authoritative, so a parsed row's own `date` is ignored here.
+	function handleParsed(parsed: ParsedExpense[]) {
+		const keep = form.getValues("rows").filter((row) => !isBlankBulkRow(row));
+		replace([
+			...keep,
+			...parsed.map((p) => ({
+				amount: String(p.amount),
+				categoryId: p.categoryId ?? "",
+				description: p.description,
+				type: p.type,
+			})),
+		]);
+	}
+
 	return (
 		<Form {...form}>
 			<form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
@@ -122,6 +138,12 @@ export function BulkExpenseForm({
 								<FormMessage />
 							</FormItem>
 						)}
+					/>
+
+					<SmartPasteSection
+						categories={selectableCategories}
+						defaultDate={form.watch("date")}
+						onParsed={handleParsed}
 					/>
 
 					{failedCount > 0 && (

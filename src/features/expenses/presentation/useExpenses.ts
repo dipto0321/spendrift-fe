@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { type ExpenseListKeyArgs, expenseKeys } from "../data/queryKeys";
-import { expenseRepository } from "../data/repository";
+import { expenseParseRepository, expenseRepository } from "../data/repository";
 import type {
 	ExpenseCreateInput,
 	ExpenseFilter,
 	ExpenseUpdateInput,
+	ParseExpensesInput,
 } from "../domain/types";
 import { type BulkCreateResult, partitionSettled } from "../domain/services";
 
@@ -113,5 +114,17 @@ export function useDeleteExpense(trackerId: string | undefined) {
 			toast.success("Expense deleted");
 		},
 		onError: () => toast.error("Could not delete expense. Please try again."),
+	});
+}
+
+// Smart paste: turn free text into candidate rows. No cache to invalidate —
+// results only pre-fill the bulk grid; saving still goes through
+// useBulkCreateExpenses after the user reviews the rows.
+export function useParseExpenses() {
+	return useMutation({
+		mutationFn: (input: ParseExpensesInput) =>
+			expenseParseRepository.parseText(input),
+		onError: () =>
+			toast.error("Could not parse the text. Try again or add rows manually."),
 	});
 }
