@@ -5,6 +5,8 @@ import type {
 	ExpenseCreateInput,
 	ExpenseFilter,
 	ExpenseUpdateInput,
+	ParsedExpense,
+	ParseExpensesInput,
 } from "../domain/types";
 
 // API wire shapes (snake_case). Money is a Decimal serialized as a string; the
@@ -91,4 +93,38 @@ export function toExpenseQuery(
 	if (filter?.types?.length === 1) params.set("type", filter.types[0]);
 	if (filter?.search) params.set("search", filter.search);
 	return `?${params.toString()}`;
+}
+
+// AI smart-paste wire shapes (POST /ai/parse-expenses).
+
+export type ParsedExpenseDto = {
+	amount: string;
+	description: string;
+	category_id: string | null;
+	type: Expense["type"];
+	date: string;
+};
+
+export type ParseExpensesResponseDto = {
+	expenses: ParsedExpenseDto[];
+};
+
+export function mapParsedExpense(dto: ParsedExpenseDto): ParsedExpense {
+	return {
+		amount: Number(dto.amount),
+		description: dto.description,
+		categoryId: dto.category_id ?? undefined,
+		type: dto.type,
+		date: dto.date,
+	};
+}
+
+export function toParseExpensesBody(
+	input: ParseExpensesInput,
+): Record<string, unknown> {
+	return {
+		text: input.text,
+		default_date: input.defaultDate,
+		categories: input.categories.map(({ id, name }) => ({ id, name })),
+	};
 }
