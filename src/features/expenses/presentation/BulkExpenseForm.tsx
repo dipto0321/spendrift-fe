@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { type KeyboardEvent, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import {
@@ -95,7 +95,7 @@ export function BulkExpenseForm({
 	}
 
 	function handleRowKeyDown(
-		event: React.KeyboardEvent<HTMLDivElement>,
+		event: KeyboardEvent<HTMLDivElement>,
 		index: number,
 	) {
 		if (event.key !== "Enter") return;
@@ -107,156 +107,164 @@ export function BulkExpenseForm({
 	return (
 		<Form {...form}>
 			<form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-				<FormField
-					control={form.control}
-					name="date"
-					render={({ field }) => (
-						<FormItem className="max-w-xs">
-							<FormLabel>
-								Date <span className="text-destructive">*</span>
-							</FormLabel>
-							<FormControl>
-								<DatePicker value={field.value} onChange={field.onChange} />
-							</FormControl>
-							<FormMessage />
-						</FormItem>
+				<fieldset disabled={isSubmitting} className="contents">
+					<FormField
+						control={form.control}
+						name="date"
+						render={({ field }) => (
+							<FormItem className="max-w-xs">
+								<FormLabel>
+									Date <span className="text-destructive">*</span>
+								</FormLabel>
+								<FormControl>
+									<DatePicker value={field.value} onChange={field.onChange} />
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+
+					{failedCount > 0 && (
+						<p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+							{failedCount} {failedCount === 1 ? "expense" : "expenses"} failed
+							to save. The rows below were kept — fix or remove them, then save
+							again.
+						</p>
 					)}
-				/>
 
-				{failedCount > 0 && (
-					<p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-						{failedCount} {failedCount === 1 ? "expense" : "expenses"} failed to
-						save. The rows below were kept — fix or remove them, then save
-						again.
-					</p>
-				)}
-
-				<div className="flex flex-col gap-2">
-					<div className="hidden gap-2 text-xs font-medium text-muted-foreground sm:grid sm:grid-cols-[110px_1fr_160px_110px_32px]">
-						<span>Amount</span>
-						<span>Description</span>
-						<span>Category</span>
-						<span>Type</span>
-						<span />
-					</div>
-					{fields.map((rowField, index) => (
-						// biome-ignore lint/a11y/noStaticElementInteractions: event delegation for Enter key handling
-						<div
-							key={rowField.id}
-							tabIndex={-1}
-							onKeyDown={(event) => handleRowKeyDown(event, index)}
-							className="grid grid-cols-2 items-start gap-2 rounded-md border border-border/60 p-2 sm:grid-cols-[110px_1fr_160px_110px_32px] sm:border-0 sm:p-0"
-						>
-							<FormField
-								control={form.control}
-								name={`rows.${index}.amount`}
-								render={({ field }) => (
-									<FormItem>
-										<FormControl>
-											<Input
-												type="number"
-												inputMode="decimal"
-												step="0.01"
-												min={0}
-												placeholder="0.00"
-												aria-label={`Row ${index + 1} amount`}
-												{...field}
-											/>
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-							<FormField
-								control={form.control}
-								name={`rows.${index}.description`}
-								render={({ field }) => (
-									<FormItem>
-										<FormControl>
-											<Input
-												type="text"
-												placeholder="What was it for?"
-												aria-label={`Row ${index + 1} description`}
-												{...field}
-											/>
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-							<FormField
-								control={form.control}
-								name={`rows.${index}.categoryId`}
-								render={({ field }) => (
-									<FormItem>
-										<Select value={field.value} onValueChange={field.onChange}>
-											<FormControl>
-												<SelectTrigger
-													className="w-full"
-													aria-label={`Row ${index + 1} category`}
-												>
-													<SelectValue placeholder="Category" />
-												</SelectTrigger>
-											</FormControl>
-											<SelectContent>
-												{selectableCategories.map((c) => (
-													<SelectItem key={c.id} value={c.id}>
-														{c.name}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-							<FormField
-								control={form.control}
-								name={`rows.${index}.type`}
-								render={({ field }) => (
-									<FormItem>
-										<Select value={field.value} onValueChange={field.onChange}>
-											<FormControl>
-												<SelectTrigger
-													className="w-full"
-													aria-label={`Row ${index + 1} type`}
-												>
-													<SelectValue />
-												</SelectTrigger>
-											</FormControl>
-											<SelectContent>
-												<SelectItem value="need">Need</SelectItem>
-												<SelectItem value="want">Want</SelectItem>
-											</SelectContent>
-										</Select>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-							<Button
-								type="button"
-								variant="ghost"
-								size="icon"
-								className="text-muted-foreground hover:text-destructive"
-								aria-label={`Remove row ${index + 1}`}
-								disabled={fields.length === 1}
-								onClick={() => remove(index)}
-							>
-								<Trash2 className="size-4" />
-							</Button>
+					<div className="flex flex-col gap-2">
+						<div className="hidden gap-2 text-xs font-medium text-muted-foreground sm:grid sm:grid-cols-[110px_1fr_160px_110px_32px]">
+							<span>Amount</span>
+							<span>Description</span>
+							<span>Category</span>
+							<span>Type</span>
+							<span />
 						</div>
-					))}
-				</div>
+						{fields.map((rowField, index) => (
+							// biome-ignore lint/a11y/noStaticElementInteractions: event delegation for Enter key handling
+							<div
+								key={rowField.id}
+								tabIndex={-1}
+								onKeyDown={(event) => handleRowKeyDown(event, index)}
+								className="grid grid-cols-2 items-start gap-2 rounded-md border border-border/60 p-2 sm:grid-cols-[110px_1fr_160px_110px_32px] sm:border-0 sm:p-0"
+							>
+								<FormField
+									control={form.control}
+									name={`rows.${index}.amount`}
+									render={({ field }) => (
+										<FormItem>
+											<FormControl>
+												<Input
+													type="number"
+													inputMode="decimal"
+													step="0.01"
+													min={0}
+													placeholder="0.00"
+													aria-label={`Row ${index + 1} amount`}
+													{...field}
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+								<FormField
+									control={form.control}
+									name={`rows.${index}.description`}
+									render={({ field }) => (
+										<FormItem>
+											<FormControl>
+												<Input
+													type="text"
+													placeholder="What was it for?"
+													aria-label={`Row ${index + 1} description`}
+													{...field}
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+								<FormField
+									control={form.control}
+									name={`rows.${index}.categoryId`}
+									render={({ field }) => (
+										<FormItem>
+											<Select
+												value={field.value}
+												onValueChange={field.onChange}
+											>
+												<FormControl>
+													<SelectTrigger
+														className="w-full"
+														aria-label={`Row ${index + 1} category`}
+													>
+														<SelectValue placeholder="Category" />
+													</SelectTrigger>
+												</FormControl>
+												<SelectContent>
+													{selectableCategories.map((c) => (
+														<SelectItem key={c.id} value={c.id}>
+															{c.name}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+								<FormField
+									control={form.control}
+									name={`rows.${index}.type`}
+									render={({ field }) => (
+										<FormItem>
+											<Select
+												value={field.value}
+												onValueChange={field.onChange}
+											>
+												<FormControl>
+													<SelectTrigger
+														className="w-full"
+														aria-label={`Row ${index + 1} type`}
+													>
+														<SelectValue />
+													</SelectTrigger>
+												</FormControl>
+												<SelectContent>
+													<SelectItem value="need">Need</SelectItem>
+													<SelectItem value="want">Want</SelectItem>
+												</SelectContent>
+											</Select>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+								<Button
+									type="button"
+									variant="ghost"
+									size="icon"
+									className="text-muted-foreground hover:text-destructive"
+									aria-label={`Remove row ${index + 1}`}
+									disabled={fields.length === 1}
+									onClick={() => remove(index)}
+								>
+									<Trash2 className="size-4" />
+								</Button>
+							</div>
+						))}
+					</div>
 
-				<Button
-					type="button"
-					variant="outline"
-					size="sm"
-					onClick={() => append(emptyRow())}
-				>
-					<Plus className="size-4" />
-					Add row
-				</Button>
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						onClick={() => append(emptyRow())}
+					>
+						<Plus className="size-4" />
+						Add row
+					</Button>
+				</fieldset>
 
 				<div className="flex justify-end gap-2 pt-2">
 					<Button
