@@ -7,6 +7,7 @@ import type {
 	ExpenseFilter,
 	ExpenseUpdateInput,
 } from "../domain/types";
+import { type BulkCreateResult, partitionSettled } from "../domain/services";
 
 // Query + mutation hooks for expenses. Pages stay thin: the hooks own the
 // query key, cache invalidation, and the generic success/error toasts, while
@@ -45,6 +46,43 @@ export function useCreateExpense(trackerId: string | undefined) {
 			toast.success("Expense added");
 		},
 		onError: () => toast.error("Could not add expense. Please try again."),
+	});
+}
+
+// Bulk add: fire one POST per row in parallel and report which input indexes
+// failed so the modal can keep those rows for retry. Per-row failures resolve
+// (not reject) — the caller inspects `failed`.
+export function useBulkCreateExpenses(trackerId: string | undefined) {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: async (
+			inputs: ExpenseCreateInput[],
+		): Promise<BulkCreateResult> => {
+			const results = await Promise.allSettled(
+				inputs.map((input) =>
+					expenseRepository.create(trackerId as string, input),
+				),
+			);
+			return partitionSettled(results);
+		},
+		onSuccess: ({ succeeded, failed }) => {
+			if (succeeded.length > 0) {
+				queryClient.invalidateQueries({
+					queryKey: expenseKeys.all(trackerId as string),
+				});
+			}
+			if (failed.length === 0) {
+				toast.success(
+					succeeded.length === 1
+						? "Expense added"
+						: `${succeeded.length} expenses added`,
+				);
+			} else {
+				toast.error(
+					`${failed.length} of ${failed.length + succeeded.length} expenses failed to save.`,
+				);
+			}
+		},
 	});
 }
 
