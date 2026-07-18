@@ -27,7 +27,11 @@ import {
 	isBlankBulkRow,
 } from "../domain/schema";
 import type { BulkCreateResult } from "../domain/services";
-import type { Category, ExpenseCreateInput, ParsedExpense } from "../domain/types";
+import type {
+	Category,
+	ExpenseCreateInput,
+	ParsedExpense,
+} from "../domain/types";
 import { SmartPasteSection } from "./SmartPasteSection";
 
 type BulkExpenseFormProps = {
