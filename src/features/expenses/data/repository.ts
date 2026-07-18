@@ -3,6 +3,7 @@ import type {
 	CategoryRepository,
 	ExpenseListParams,
 	ExpenseListResult,
+	ExpenseParseRepository,
 	ExpenseRepository,
 } from "../domain/repository";
 import {
@@ -10,8 +11,11 @@ import {
 	type ExpenseResponseDto,
 	mapCategory,
 	mapExpense,
+	mapParsedExpense,
+	type ParseExpensesResponseDto,
 	toExpenseBody,
 	toExpenseQuery,
+	toParseExpensesBody,
 	UNCATEGORIZED_NAME,
 } from "./dto";
 
@@ -129,5 +133,15 @@ export const categoryRepository: CategoryRepository = {
 		await apiFetch<void>(`${categoriesPath(trackerId)}/${id}`, {
 			method: "DELETE",
 		});
+	},
+};
+
+export const expenseParseRepository: ExpenseParseRepository = {
+	async parseText(input) {
+		const dto = await apiFetch<ParseExpensesResponseDto>("/ai/parse-expenses", {
+			method: "POST",
+			body: toParseExpensesBody(input),
+		});
+		return dto.expenses.map(mapParsedExpense);
 	},
 };
