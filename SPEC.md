@@ -35,7 +35,7 @@ tracker-based personal finance web app (Spendrift). ∀ tracker → own currency
 - api: `GET /trackers/:id/dashboard?month=YYYY-MM`
 - api: `GET /trackers/:id/reports/{summary,spending,category-breakdown,needs-vs-wants,year-comparison}`
 - api: `GET|PUT /preferences` → `Preferences { budgetAlerts, weeklySummary, roundAmounts }`
-- api: `POST /ai/parse-expenses` {text, default_date, categories[{id,name}]} → {expenses[{amount, description, category_id|null, type, date}]} (candidate rows only, ⊥ persistence; BE pending)
+- api: `POST /trackers/:id/ai/parse-expenses` {text, default_date} → {expenses[{amount, description, category_id|null, type, date}]} (candidate rows only, ⊥ persistence; categories loaded server-side from tracker ∴ FE ⊥ ships list; BE on spendrift-be PR #24)
 - ui: `/expenses?bulk=1` → auto-open bulk modal once, param stripped (dashboard catch-up nudge deep-link)
 - storage: localStorage `spendrift.last-tracker` (last active tracker id, client-only convenience)
 - storage: localStorage access/refresh tokens (`shared/api/tokens.ts`)

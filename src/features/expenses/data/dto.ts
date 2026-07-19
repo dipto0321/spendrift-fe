@@ -125,6 +125,5 @@ export function toParseExpensesBody(
 	return {
 		text: input.text,
 		default_date: input.defaultDate,
-		categories: input.categories.map(({ id, name }) => ({ id, name })),
 	};
 }

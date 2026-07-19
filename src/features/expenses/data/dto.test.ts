@@ -33,17 +33,15 @@ describe("mapParsedExpense", () => {
 });
 
 describe("toParseExpensesBody", () => {
-	it("emits snake_case keys and id/name category descriptors", () => {
+	it("emits snake_case keys without categories (server loads them)", () => {
 		expect(
 			toParseExpensesBody({
 				text: "coffee 120, bus 40",
 				defaultDate: "2026-07-18",
-				categories: [{ id: "c1", name: "Food" }],
 			}),
 		).toEqual({
 			text: "coffee 120, bus 40",
 			default_date: "2026-07-18",
-			categories: [{ id: "c1", name: "Food" }],
 		});
 	});
 });

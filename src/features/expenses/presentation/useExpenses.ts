@@ -120,10 +120,10 @@ export function useDeleteExpense(trackerId: string | undefined) {
 // Smart paste: turn free text into candidate rows. No cache to invalidate —
 // results only pre-fill the bulk grid; saving still goes through
 // useBulkCreateExpenses after the user reviews the rows.
-export function useParseExpenses() {
+export function useParseExpenses(trackerId: string | undefined) {
 	return useMutation({
 		mutationFn: (input: ParseExpensesInput) =>
-			expenseParseRepository.parseText(input),
+			expenseParseRepository.parseText(trackerId as string, input),
 		onError: () =>
 			toast.error("Could not parse the text. Try again or add rows manually."),
 	});

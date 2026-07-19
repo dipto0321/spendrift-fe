@@ -2,31 +2,27 @@ import { ChevronDown, ChevronRight, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import type { Category, ParsedExpense } from "../domain/types";
+import { useTracker } from "@/features/trackers/presentation/TrackerContext";
+import type { ParsedExpense } from "../domain/types";
 import { useParseExpenses } from "./useExpenses";
 
 type SmartPasteSectionProps = {
-	categories: Category[];
 	defaultDate: string;
 	onParsed: (rows: ParsedExpense[]) => void;
 };
 
 export function SmartPasteSection({
-	categories,
 	defaultDate,
 	onParsed,
 }: Readonly<SmartPasteSectionProps>) {
+	const { activeTracker } = useTracker();
 	const [open, setOpen] = useState(false);
 	const [text, setText] = useState("");
-	const parseMutation = useParseExpenses();
+	const parseMutation = useParseExpenses(activeTracker?.id);
 
 	async function handleParse() {
 		try {
-			const parsed = await parseMutation.mutateAsync({
-				text,
-				defaultDate,
-				categories: categories.map(({ id, name }) => ({ id, name })),
-			});
+			const parsed = await parseMutation.mutateAsync({ text, defaultDate });
 			onParsed(parsed);
 			setText("");
 		} catch {

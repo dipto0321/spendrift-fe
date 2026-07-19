@@ -144,7 +144,6 @@ export function BulkExpenseForm({
 					/>
 
 					<SmartPasteSection
-						categories={selectableCategories}
 						defaultDate={form.watch("date")}
 						onParsed={handleParsed}
 					/>
