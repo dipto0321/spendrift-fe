@@ -3,6 +3,7 @@ import {
 	buildPageList,
 	calculateNeedsWantsSplit,
 	calculateTotal,
+	daysSinceEntry,
 	filterExpenses,
 	getMonthRange,
 	groupByCategory,
@@ -259,5 +260,22 @@ describe("partitionSettled", () => {
 			failed: [0],
 		});
 		expect(partitionSettled([])).toEqual({ succeeded: [], failed: [] });
+	});
+});
+
+describe("daysSinceEntry", () => {
+	it("returns 0 for the same day and 1 for yesterday", () => {
+		expect(daysSinceEntry("2026-07-19", "2026-07-19")).toBe(0);
+		expect(daysSinceEntry("2026-07-18", "2026-07-19")).toBe(1);
+	});
+
+	it("counts an 11-day gap and crosses month boundaries", () => {
+		expect(daysSinceEntry("2026-07-08", "2026-07-19")).toBe(11);
+		expect(daysSinceEntry("2026-06-28", "2026-07-03")).toBe(5);
+	});
+
+	it("clamps future or invalid dates to 0", () => {
+		expect(daysSinceEntry("2026-07-20", "2026-07-19")).toBe(0);
+		expect(daysSinceEntry("not-a-date", "2026-07-19")).toBe(0);
 	});
 });
