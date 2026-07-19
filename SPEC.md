@@ -36,6 +36,7 @@ tracker-based personal finance web app (Spendrift). ∀ tracker → own currency
 - api: `GET /trackers/:id/reports/{summary,spending,category-breakdown,needs-vs-wants,year-comparison}`
 - api: `GET|PUT /preferences` → `Preferences { budgetAlerts, weeklySummary, roundAmounts }`
 - api: `POST /ai/parse-expenses` {text, default_date, categories[{id,name}]} → {expenses[{amount, description, category_id|null, type, date}]} (candidate rows only, ⊥ persistence; BE pending)
+- ui: `/expenses?bulk=1` → auto-open bulk modal once, param stripped (dashboard catch-up nudge deep-link)
 - storage: localStorage `spendrift.last-tracker` (last active tracker id, client-only convenience)
 - storage: localStorage access/refresh tokens (`shared/api/tokens.ts`)
 - env: `VITE_API_BASE_URL`, `VITE_SENTRY_{DSN,ORG,PROJECT}`, `SENTRY_AUTH_TOKEN`, `SENTRY_ENVIRONMENT`
@@ -83,6 +84,7 @@ T18|x|server-backed user preferences: `features/preferences/{data,domain,present
 T19|x|budget alerts banner: `BudgetAlertBanner` on `/` lists warning/exceeded categories for `useMonth().selectedMonth`, gated on `preferences.budgetAlerts` so the request is skipped when disabled|I.budget-alerts,V16
 T20|x|bulk expense entry: `BulkExpenseModal` grid (shared date + `useFieldArray` rows) + parallel `POST /expenses` (`Promise.allSettled`) w/ per-row failure retry|V10,V18
 T21|~|AI smart paste: FE shipped (`SmartPasteSection` → `useParseExpenses` → `expenseParseRepository`), BE `POST /ai/parse-expenses` (Gemini Flash proxy) pending|V18,I.ai-parse-expenses
+T22|x|catch-up recency: `CatchUpBanner` on dashboard (quiet line <2d, nudge ≥2d → `/expenses?bulk=1`); `getLastEntryDate` via `sort=date_desc&limit=1`|V1,I.expenses
 
 ## §B BUGS
 id|date|cause|fix
