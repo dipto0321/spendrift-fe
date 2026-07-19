@@ -146,11 +146,11 @@ export const categoryRepository: CategoryRepository = {
 };
 
 export const expenseParseRepository: ExpenseParseRepository = {
-	async parseText(input) {
-		const dto = await apiFetch<ParseExpensesResponseDto>("/ai/parse-expenses", {
-			method: "POST",
-			body: toParseExpensesBody(input),
-		});
+	async parseText(trackerId, input) {
+		const dto = await apiFetch<ParseExpensesResponseDto>(
+			`/trackers/${trackerId}/ai/parse-expenses`,
+			{ method: "POST", body: toParseExpensesBody(input) },
+		);
 		return dto.expenses.map(mapParsedExpense);
 	},
 };

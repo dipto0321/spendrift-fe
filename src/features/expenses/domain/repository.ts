@@ -57,5 +57,8 @@ export interface CategoryRepository {
 // explicitly and returns candidate rows only — persistence still goes through
 // ExpenseRepository.create after user review (never directly from the AI).
 export interface ExpenseParseRepository {
-	parseText(input: ParseExpensesInput): Promise<ParsedExpense[]>;
+	parseText(
+		trackerId: string,
+		input: ParseExpensesInput,
+	): Promise<ParsedExpense[]>;
 }

@@ -82,8 +82,9 @@ export type ParsedExpense = {
 	date: string;
 };
 
+// Categories are no longer sent: the backend loads them from the tracker
+// (single source of truth), so new/renamed categories are always fresh.
 export type ParseExpensesInput = {
 	text: string;
 	defaultDate: string;
-	categories: Pick<Category, "id" | "name">[];
 };
