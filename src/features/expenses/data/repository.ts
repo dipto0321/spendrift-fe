@@ -55,6 +55,15 @@ export const expenseRepository: ExpenseRepository = {
 		return mapExpense(dto);
 	},
 
+	async getLastEntryDate(trackerId) {
+		// The BE list endpoint already supports sorting; one newest row is all
+		// we need, unfiltered by month.
+		const dtos = await apiFetch<ExpenseResponseDto[]>(
+			`${expensesPath(trackerId)}?sort=date_desc&limit=1`,
+		);
+		return dtos[0]?.date ?? null;
+	},
+
 	async create(trackerId, input) {
 		const dto = await apiFetch<ExpenseResponseDto>(expensesPath(trackerId), {
 			method: "POST",

@@ -15,6 +15,10 @@ export const expenseKeys = {
 	// filter objects (with optional fields) produce stable cache hits.
 	list: (trackerId: string, args: ExpenseListKeyArgs) =>
 		["expenses", trackerId, "list", JSON.stringify(args ?? {})] as const,
+	// Prefix-compatible with `all`, so existing mutation invalidations
+	// refresh the dashboard's recency query automatically.
+	lastEntry: (trackerId: string) =>
+		["expenses", trackerId, "last-entry"] as const,
 };
 
 export const categoryKeys = {
