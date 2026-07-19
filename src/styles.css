@@ -165,13 +165,19 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  color: color-mix(in oklab, var(--brand-strong) 75%, var(--foreground) 25%);
-  text-decoration: none;
-}
+/* In @layer base so Tailwind utilities can override — an unlayered rule
+   here outranks utility classes and breaks link-as-button patterns
+   (e.g. <Button asChild><Link>), painting brand-green text on the
+   brand-green primary background. */
+@layer base {
+  a {
+    color: color-mix(in oklab, var(--brand-strong) 75%, var(--foreground) 25%);
+    text-decoration: none;
+  }
 
-a:hover {
-  color: var(--brand-strong);
+  a:hover {
+    color: var(--brand-strong);
+  }
 }
 
 code {

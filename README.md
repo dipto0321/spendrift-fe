@@ -131,6 +131,13 @@ Each tracker owns its expenses, categories, budgets, dashboard, and reports. The
 - Needs vs Wants tagging
 - Search, date-range, type, and category filtering
 - Per-category management (with safe "reassign to Uncategorized" on delete)
+- **Bulk entry** — "Add multiple" opens a wide modal with a shared date
+  and a row grid (`useFieldArray`); saves in parallel via
+  `Promise.allSettled` with per-row failure retry
+- **AI smart paste** — collapsible "Smart paste" section above the bulk
+  grid turns free-form text into candidate rows via
+  `POST /ai/parse-expenses`. Parsed rows always land back in the review
+  grid — the AI never writes to the API directly
 
 ### Budgeting
 
@@ -149,6 +156,10 @@ Each tracker owns its expenses, categories, budgets, dashboard, and reports. The
 - Needs-vs-Wants split and top categories
 - Cashflow trend + recent expenses
 - Honors the global month selector — pick a past month and every stat follows
+- **Catch-up recency** — ambient "Last entry: today / yesterday" line when
+  caught up; a calm primary-tinted nudge (with a one-click "Catch up"
+  button that opens the bulk-add modal) once 2+ days have passed since
+  the last logged expense
 
 ### Reports
 
@@ -265,7 +276,8 @@ This project leans on AI for architecture planning, code explanation, UI explora
 
 > Includes the (new) **Budget alerts banner** at the top — appears only when
 > the user's `preferences.budgetAlerts` flag is enabled and the selected
-> month has categories crossing the warning / exceeded threshold.
+> month has categories crossing the warning / exceeded threshold. The
+> **Catch-up recency** line/nudge sits just below the header.
 
 ![Dashboard](docs/screenshots/dashboard.png)
 
@@ -277,7 +289,33 @@ This project leans on AI for architecture planning, code explanation, UI explora
 
 ### Expense List
 
+> Toolbar now shows **Add multiple** (bulk entry) alongside the original
+> **Add expense** button.
+
 ![Expenses](docs/screenshots/expenses.png)
+
+### Bulk Expense Entry
+
+> Shared date picker + `useFieldArray` row grid. Blank starter rows are
+> silently pruned before validation; failed rows stay in the grid for
+> retry (parallel `Promise.allSettled` over `POST /expenses`).
+
+![Bulk expense entry](docs/screenshots/expenses-bulk.png)
+
+### AI Smart Paste
+
+> Collapsible section above the bulk grid. Pasting free text and clicking
+> **Parse into rows** sends it to `POST /ai/parse-expenses`; results are
+> always appended to the review grid — the AI never persists directly.
+
+![Smart paste](docs/screenshots/expenses-smart-paste.png)
+
+### Dashboard — catch-up nudge
+
+> The dashboard's catch-up banner deep-links to `/expenses?bulk=1`,
+> which auto-opens the bulk modal once and strips the search param.
+
+![Dashboard — catch-up nudge](docs/screenshots/dashboard-catch-up.png)
 
 ### Budget
 

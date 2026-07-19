@@ -36,6 +36,7 @@ tracker-based personal finance web app (Spendrift). ∀ tracker → own currency
 - api: `GET /trackers/:id/reports/{summary,spending,category-breakdown,needs-vs-wants,year-comparison}`
 - api: `GET|PUT /preferences` → `Preferences { budgetAlerts, weeklySummary, roundAmounts }`
 - api: `POST /ai/parse-expenses` {text, default_date, categories[{id,name}]} → {expenses[{amount, description, category_id|null, type, date}]} (candidate rows only, ⊥ persistence; BE pending)
+- ui: `/expenses?bulk=1` → auto-open bulk modal once, param stripped (dashboard catch-up nudge deep-link)
 - storage: localStorage `spendrift.last-tracker` (last active tracker id, client-only convenience)
 - storage: localStorage access/refresh tokens (`shared/api/tokens.ts`)
 - env: `VITE_API_BASE_URL`, `VITE_SENTRY_{DSN,ORG,PROJECT}`, `SENTRY_AUTH_TOKEN`, `SENTRY_ENVIRONMENT`
@@ -59,6 +60,7 @@ V15: ∀ route ∈ `MONTH_PAGES` (`routes/__root.tsx`) ! consume `useMonth().sel
 V16: preferences (Budget alerts / Weekly summary / Round amounts) ! read via `usePreferences()`, mutations via `useUpdatePreferences()` (optimistic, rollback on error); ⊥ direct `apiFetch(/preferences)` in pages
 V17: money rendering ! threaded thru `useFormatCurrency()` so the `roundAmounts` preference applies app-wide; raw `formatCurrency()` only acceptable in tests / non-UI utilities
 V18: AI-parsed rows ! land in bulk review grid (`BulkExpenseForm`) → user edits/saves via `POST /trackers/:id/expenses`; ⊥ direct persistence from `/ai/parse-expenses`
+V19: global element selectors in `styles.css` ! live in `@layer base` — unlayered author CSS outranks Tailwind utilities ∴ breaks utility overrides (see B2)
 
 ## §T TASKS
 id|status|task|cites
@@ -83,8 +85,10 @@ T18|x|server-backed user preferences: `features/preferences/{data,domain,present
 T19|x|budget alerts banner: `BudgetAlertBanner` on `/` lists warning/exceeded categories for `useMonth().selectedMonth`, gated on `preferences.budgetAlerts` so the request is skipped when disabled|I.budget-alerts,V16
 T20|x|bulk expense entry: `BulkExpenseModal` grid (shared date + `useFieldArray` rows) + parallel `POST /expenses` (`Promise.allSettled`) w/ per-row failure retry|V10,V18
 T21|~|AI smart paste: FE shipped (`SmartPasteSection` → `useParseExpenses` → `expenseParseRepository`), BE `POST /ai/parse-expenses` (Gemini Flash proxy) pending|V18,I.ai-parse-expenses
+T22|x|catch-up recency: `CatchUpBanner` on dashboard (quiet line <2d, nudge ≥2d → `/expenses?bulk=1`); `getLastEntryDate` via `sort=date_desc&limit=1`|V1,I.expenses
 
 ## §B BUGS
 id|date|cause|fix
 B1|2026-07-05|`routes/__root.tsx` `MONTH_PAGES` shows month selector on `/` but `DashboardPage.tsx` never reads `useMonth()`; `dashboardRepository.getSummary()` always hits current-month-only `/dashboard`|V15
 B1.fix|2026-07-06|DashboardPage now consumes `useMonth().selectedMonth` and forwards it to `useDashboard(trackerId, month)` → `dashboardRepository.getSummary(trackerId, month)`. `dashboardKeys.summary` includes `month` so cached entries invalidate per-month.
+B2|2026-07-19|unlayered `a{color:brand}` rule in styles.css outranked `text-primary-foreground` utility on `<Button asChild><Link>` → unreadable green-on-green Catch up button|moved anchor rules into `@layer base`. §V19

@@ -81,3 +81,14 @@ rather than a flat `components/hooks/services/types/utilities` list:
 - `presentation/` — pages + TanStack Query hooks (`use*.ts`)
 
 See [`docs/patterns/repository-pattern.md`](../patterns/repository-pattern.md).
+
+---
+
+# Addendum (2026-07)
+
+`preferences` was promoted to its own cross-cutting feature once the
+budget-alerts and round-amounts toggles needed optimistic mutations and
+a single source of truth (`useFormatCurrency()` consumes the
+`roundAmounts` flag everywhere money is rendered). It still follows the
+same three-layer shape — only its motivation is different: it's consumed
+by other features rather than owning a page route of its own.

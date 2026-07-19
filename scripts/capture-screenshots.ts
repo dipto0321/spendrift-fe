@@ -72,6 +72,38 @@ const SHOTS: Shot[] = [
 		},
 	},
 	{ name: "expenses", path: "/expenses", width: 1400, height: 908, authenticated: true },
+	{
+		name: "expenses-bulk",
+		path: "/expenses",
+		width: 1400,
+		height: 908,
+		authenticated: true,
+		setup: async (page) => {
+			await page.getByRole("button", { name: /add multiple/i }).click();
+			// Wait for the bulk modal title.
+			await page
+				.getByRole("heading", { name: /add multiple expenses/i })
+				.waitFor();
+		},
+	},
+	{
+		name: "expenses-smart-paste",
+		path: "/expenses",
+		width: 1400,
+		height: 908,
+		authenticated: true,
+		setup: async (page) => {
+			await page.getByRole("button", { name: /add multiple/i }).click();
+			await page
+				.getByRole("heading", { name: /add multiple expenses/i })
+				.waitFor();
+			// Expand the Smart paste disclosure.
+			await page.getByRole("button", { name: /smart paste/i }).click();
+			await page
+				.getByRole("textbox", { name: /expenses text to parse/i })
+				.waitFor();
+		},
+	},
 	{ name: "budget", path: "/budget", width: 1400, height: 908, authenticated: true },
 	{
 		name: "reports",
@@ -116,6 +148,28 @@ const SHOTS: Shot[] = [
 						"dashboard-alert shot requested but the BudgetAlertBanner " +
 							"is not visible on /. Run SCREENSHOT_FORCE_ALERT=0 or seed " +
 							"an over-budget expense first (see CAPTURE.md).",
+					);
+				});
+		},
+	},
+	{
+		name: "dashboard-catch-up",
+		path: "/",
+		width: 1400,
+		height: 908,
+		authenticated: true,
+		setup: async (page) => {
+			// The catch-up nudge renders as a calm banner with the
+			// "Catch up" button. It only appears when last entry ≥ 2 days
+			// ago; the seed step below ensures that condition holds.
+			await page
+				.getByRole("button", { name: /catch up/i })
+				.waitFor({ state: "visible", timeout: 5_000 })
+				.catch(() => {
+					throw new Error(
+						"dashboard-catch-up shot requested but the CatchUpBanner " +
+							"nudge is not visible on /. Seed an expense dated 3+ days " +
+							"ago for the current tracker first (see CAPTURE.md).",
 					);
 				});
 		},

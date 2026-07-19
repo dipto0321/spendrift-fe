@@ -198,3 +198,13 @@ export function partitionSettled<T>(
 	});
 	return { succeeded, failed };
 }
+
+// Whole days between the last logged entry and "today" (both ISO dates,
+// compared in UTC so DST shifts can't produce off-by-one gaps). Future or
+// unparseable dates clamp to 0 — the caller treats 0 as "caught up".
+export function daysSinceEntry(lastDate: string, today: string): number {
+	const last = Date.parse(`${lastDate}T00:00:00Z`);
+	const now = Date.parse(`${today}T00:00:00Z`);
+	if (Number.isNaN(last) || Number.isNaN(now) || last >= now) return 0;
+	return Math.round((now - last) / 86_400_000);
+}

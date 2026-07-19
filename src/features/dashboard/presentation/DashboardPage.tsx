@@ -7,10 +7,12 @@ import { groupByMonth } from "@/features/reports/domain/services";
 import { useTracker } from "@/features/trackers/presentation/TrackerContext";
 import { useMonth } from "@/shared/ui/MonthContext";
 import { CashflowCard } from "./CashflowCard";
+import { CatchUpBanner } from "./CatchUpBanner";
 import { DashboardStats } from "./DashboardStats";
 import { NeedsVsWantsCard } from "./NeedsVsWantsCard";
 import { RecentExpenses } from "./RecentExpenses";
 import { useDashboard } from "./useDashboard";
+import { useLastEntryDate } from "./useLastEntryDate";
 
 // Dashboard widgets need a multi-month expense slice (trend chart spans up to
 // six months; recent expenses block shows the latest rows). The BE caps
@@ -52,6 +54,7 @@ export function DashboardPage() {
 	);
 	const expenses = expensesResult?.items ?? [];
 	const { data: budgetAlerts = [] } = useBudgetAlerts(trackerId, selectedMonth);
+	const { data: lastEntryDate } = useLastEntryDate(trackerId);
 
 	const monthlyData = groupByMonth(expenses)
 		.slice(-6)
@@ -72,6 +75,8 @@ export function DashboardPage() {
 
 	return (
 		<main className="flex flex-col gap-6 px-4 pb-14 pt-6">
+			<CatchUpBanner lastEntryDate={lastEntryDate} />
+
 			<BudgetAlertBanner alerts={budgetAlerts} currency={currency} />
 
 			<DashboardStats

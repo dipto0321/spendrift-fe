@@ -27,6 +27,8 @@ export interface ExpenseRepository {
 	): Promise<ExpenseListResult>;
 	getById(trackerId: string, id: string): Promise<Expense | null>;
 	create(trackerId: string, input: ExpenseCreateInput): Promise<Expense>;
+	/** ISO date of the newest expense in the tracker, or null when empty. */
+	getLastEntryDate(trackerId: string): Promise<string | null>;
 	update(
 		trackerId: string,
 		id: string,

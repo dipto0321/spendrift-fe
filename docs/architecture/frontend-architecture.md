@@ -28,6 +28,8 @@ src/
  ├── shared/          # api, ui, hooks, utils
  ├── components/ui/   # ShadCN-generated primitives (CLI-owned)
  ├── routes/          # TanStack Start file-based routes
+ │   └── expenses.tsx # declares the `?bulk=1` search schema consumed by
+ │                    #   the dashboard's CatchUpBanner deep-link
  └── styles.css
 ```
 
@@ -51,6 +53,9 @@ Responsible for:
 - overview UI
 - dashboard widgets
 - summary cards
+- **CatchUpBanner** — ambient "last entry" line / calm nudge ≥2d;
+  deep-links to `/expenses?bulk=1` via `useLastEntryDate` +
+  `daysSinceEntry` from the expenses domain
 
 ---
 
@@ -62,6 +67,14 @@ Responsible for:
 - expense form
 - expense filters
 - expense calculations
+- **BulkExpenseForm + BulkExpenseModal** — shared-date row grid
+  (`useFieldArray`); saves in parallel via `Promise.allSettled`,
+  with per-row failure retry. Wired through `useBulkCreateExpenses`
+  → `partitionSettled` domain helper.
+- **SmartPasteSection** — collapsible AI parser above the bulk grid.
+  Calls `useParseExpenses` → `expenseParseRepository.parseText`
+  (`POST /ai/parse-expenses`); parsed rows are appended to the bulk
+  grid for mandatory review (the AI never persists directly).
 
 ---
 
@@ -158,6 +171,14 @@ through its `data/repository.ts` — the single swap seam — with `data/dto.ts`
 mapping `snake_case ↔ camelCase` and Decimal-money strings `↔ number`. Pages and
 hooks never call `fetch` directly. See
 [`docs/patterns/repository-pattern.md`](../patterns/repository-pattern.md).
+
+Recent additions follow the same seam:
+
+- `expenseParseRepository.parseText` — AI smart-paste (`POST /ai/parse-expenses`).
+  Returns candidate rows only; persistence still goes through
+  `expenseRepository.create` after user review.
+- `expenseRepository.getLastEntryDate` — `GET /trackers/:id/expenses?sort=date_desc&limit=1`
+  for the dashboard's catch-up banner.
 
 > The project started mock-first (in-memory repositories + fixtures) before the
 > backend existed; that scaffolding has been removed now that every feature is

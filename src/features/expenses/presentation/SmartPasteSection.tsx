@@ -41,6 +41,7 @@ export function SmartPasteSection({
 				className="flex w-full items-center gap-2 px-3 py-2.5 text-sm font-medium"
 				onClick={() => setOpen((o) => !o)}
 				aria-expanded={open}
+				aria-controls="smart-paste-panel"
 			>
 				{open ? (
 					<ChevronDown className="size-4 text-muted-foreground" />
@@ -54,7 +55,10 @@ export function SmartPasteSection({
 				</span>
 			</button>
 			{open && (
-				<div className="flex flex-col gap-2 border-t border-border/60 p-3">
+				<div
+					id="smart-paste-panel"
+					className="flex flex-col gap-2 border-t border-border/60 p-3"
+				>
 					<Textarea
 						value={text}
 						onChange={(e) => setText(e.target.value)}

@@ -10,17 +10,19 @@ The UI ships dark-mode first; the existing screenshots are dark.
 
 ## What changed in this batch
 
-The previous batch captured the pre-preferences app. The new screens you
-need to (re)capture:
+The previous batch was the post-preferences / design-migration pass.
+The new screens added since then:
 
 | File | Page | Why it changed |
 |---|---|---|
-| `dashboard.png` | `/` | New `BudgetAlertBanner` may render at the top when categories cross threshold; month selector now drives the data |
-| `dashboard-alert.png` *(conditional)* | `/` | Only written when an alert is active (see below). Documents the banner with real data. |
-| `settings.png` *(new)* | `/settings` | New `Preferences` card with three server-backed toggles (Budget alerts, Weekly summary, Round amounts) — supersedes the localStorage version |
-| `budget.png` | `/budget` | Layout unchanged in this batch, but the formatter flows through `useFormatCurrency()` — only matters if Round amounts is on |
-| `expenses.png` | `/expenses` | Same — formatter change is conditional on the Round amounts toggle |
-| `reports.png` | `/reports` | Same — formatter change is conditional on the Round amounts toggle |
+| `expenses.png` | `/expenses` | Toolbar now has **Add multiple** alongside the original **Add expense** button |
+| `expenses-bulk.png` *(new)* | `/expenses` | Bulk modal open — shared date + `useFieldArray` row grid |
+| `expenses-smart-paste.png` *(new)* | `/expenses` | Smart paste section expanded inside the bulk modal |
+| `dashboard-catch-up.png` *(conditional, new)* | `/` | CatchUpBanner nudge — only written when last entry is ≥ 2 days ago |
+| `dashboard.png` | `/` | Now also shows the CatchUpBanner quiet line (last entry today/yesterday) |
+| `dashboard-alert.png` *(conditional)* | `/` | Unchanged from prior batch |
+| `settings.png` | `/settings` | Unchanged |
+| `budget.png` / `reports.png` | `/budget`, `/reports` | Unchanged layout; only affected if Round amounts is on |
 | `sign-in.png` / `sign-up.png` | auth | Unchanged |
 
 ---
@@ -97,6 +99,28 @@ curl -X POST localhost:8000/api/v1/trackers/$TID/expenses \
 
 Then snapshot the dashboard with the alert banner rendered.
 
+### Capturing the catch-up nudge
+
+`dashboard-catch-up.png` requires a tracker whose **most recent expense
+is ≥ 2 days ago** (the `NUDGE_AFTER_DAYS` threshold). The simplest
+seed is to log an expense dated 3 days before today:
+
+```bash
+DATE=$(date -u -v-3d +%Y-%m-%d 2>/dev/null || date -u -d '3 days ago' +%Y-%m-%d)
+curl -X POST localhost:8000/api/v1/trackers/$TID/expenses \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d "{\"amount\":\"120\",\"category_id\":\"<cat>\",\"date\":\"$DATE\",\"type\":\"want\",\"description\":\"old entry\"}"
+```
+
+If the script can't find the nudge button on `/`, it fails loudly with a
+pointer to this section — re-run after seeding, or skip by deleting the
+`dashboard-catch-up` entry from `SHOTS` for that run.
+
+> **Tip:** the nudge is mutually exclusive with the alert frame in terms
+> of which looks more striking in a single dashboard shot — both can
+> render at once, so consider whether to capture them together or apart
+> based on the README framing you want.
+
 ---
 
 ## After capturing
@@ -110,3 +134,18 @@ git diff --stat docs/screenshots/
 
 Commit the new PNGs in a single commit so the README/SPEC callouts
 (`settings.png`, banner callouts) and the images land together.
+
+---
+
+## Pending captures (this batch)
+
+The following shots are referenced from the README but **not yet checked
+into** `docs/screenshots/`:
+
+- `expenses-bulk.png` — bulk modal open
+- `expenses-smart-paste.png` — smart paste section expanded
+- `dashboard-catch-up.png` — catch-up nudge (≥ 2-day-old last entry)
+
+Run `pnpm capture:screenshots` with the dev server + backend up and the
+seeds from the sections above to generate them; the script will fail
+loudly with a pointer if any required state is missing.
