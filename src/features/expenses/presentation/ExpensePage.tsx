@@ -1,3 +1,4 @@
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { ListPlus, Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -59,6 +60,16 @@ export function ExpensePage() {
 		expense?: Expense;
 	}>({ open: false });
 	const [bulkOpen, setBulkOpen] = useState(false);
+	const search = useSearch({ from: "/expenses" });
+	const navigate = useNavigate();
+	// The dashboard's catch-up nudge deep-links here with ?bulk=1: open the
+	// bulk modal once, then strip the param so refresh/back doesn't re-open.
+	useEffect(() => {
+		if (search.bulk === 1) {
+			setBulkOpen(true);
+			void navigate({ to: "/expenses", search: {}, replace: true });
+		}
+	}, [search.bulk, navigate]);
 
 	const {
 		data,
