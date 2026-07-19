@@ -126,7 +126,7 @@ export function BulkExpenseForm({
 	return (
 		<Form {...form}>
 			<form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-				<fieldset disabled={isSubmitting} className="space-y-4">
+				<fieldset disabled={isSubmitting} className="min-w-0 space-y-4">
 					<FormField
 						control={form.control}
 						name="date"
