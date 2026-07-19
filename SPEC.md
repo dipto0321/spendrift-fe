@@ -60,6 +60,7 @@ V15: ∀ route ∈ `MONTH_PAGES` (`routes/__root.tsx`) ! consume `useMonth().sel
 V16: preferences (Budget alerts / Weekly summary / Round amounts) ! read via `usePreferences()`, mutations via `useUpdatePreferences()` (optimistic, rollback on error); ⊥ direct `apiFetch(/preferences)` in pages
 V17: money rendering ! threaded thru `useFormatCurrency()` so the `roundAmounts` preference applies app-wide; raw `formatCurrency()` only acceptable in tests / non-UI utilities
 V18: AI-parsed rows ! land in bulk review grid (`BulkExpenseForm`) → user edits/saves via `POST /trackers/:id/expenses`; ⊥ direct persistence from `/ai/parse-expenses`
+V19: global element selectors in `styles.css` ! live in `@layer base` — unlayered author CSS outranks Tailwind utilities ∴ breaks utility overrides (see B2)
 
 ## §T TASKS
 id|status|task|cites
@@ -90,3 +91,4 @@ T22|x|catch-up recency: `CatchUpBanner` on dashboard (quiet line <2d, nudge ≥2
 id|date|cause|fix
 B1|2026-07-05|`routes/__root.tsx` `MONTH_PAGES` shows month selector on `/` but `DashboardPage.tsx` never reads `useMonth()`; `dashboardRepository.getSummary()` always hits current-month-only `/dashboard`|V15
 B1.fix|2026-07-06|DashboardPage now consumes `useMonth().selectedMonth` and forwards it to `useDashboard(trackerId, month)` → `dashboardRepository.getSummary(trackerId, month)`. `dashboardKeys.summary` includes `month` so cached entries invalidate per-month.
+B2|2026-07-19|unlayered `a{color:brand}` rule in styles.css outranked `text-primary-foreground` utility on `<Button asChild><Link>` → unreadable green-on-green Catch up button|moved anchor rules into `@layer base`. §V19
