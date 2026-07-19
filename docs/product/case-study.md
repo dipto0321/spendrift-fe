@@ -108,6 +108,24 @@ Users can:
 
 This helps users visualize spending priorities and habits.
 
+### Bulk Entry
+
+The single-expense modal becomes painful at the volume real users hit
+(~8 entries/day on average). The **Add multiple** action opens a wider
+modal with a shared date and a `useFieldArray` row grid; saves run in
+parallel via `Promise.allSettled`, so one failed row doesn't sink the
+batch — failed rows stay in the grid with a banner and a retry action.
+
+### AI Smart Paste
+
+For the most common daily pattern ("I bought three things on the way
+home"), the bulk modal offers a **Smart paste** section: paste free-form
+text like `coffee 120, bus 40, lunch 350 need`, click *Parse*, and the
+backend's `/ai/parse-expenses` proxy returns structured candidate rows
+that are **appended to the review grid**. The AI never persists
+directly — the user always sees and edits the rows before saving. This
+keeps the user in control while removing the typing overhead.
+
 ---
 
 ## Budget Management
@@ -133,6 +151,19 @@ surfaces a dismissible alert banner listing any category that has crossed
 its warning or exceeded threshold for the selected month. The flag itself
 lives server-side (`GET/PUT /preferences`), so it follows the user across
 devices.
+
+---
+
+## Catch-Up Recency
+
+Knowing "when did I last log expenses" used to require opening
+`/expenses` and scanning. The dashboard now carries an ambient **last
+entry** line — a muted one-liner while caught up, a calm primary-tinted
+nudge once 2+ days have passed. The nudge's **Catch up** button deep-links
+to `/expenses?bulk=1`, which auto-opens the bulk modal once and strips
+the search param. The data comes from the existing expenses list
+endpoint with `sort=date_desc&limit=1` — no backend work required, and
+the threshold is tuned to avoid nagging on single quiet days.
 
 ---
 
@@ -178,7 +209,9 @@ Three per-user toggles are stored server-side (`/preferences`):
   `useFormatCurrency()` hook
 
 The Settings page uses optimistic updates so the UI responds instantly;
-mutations are rolled back (with a toast) on API error.
+mutations are rolled back (with a toast) on API error. The whole flag
+lives on the backend — no localStorage shadow state — so it follows the
+user across devices.
 
 ---
 
