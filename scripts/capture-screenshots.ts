@@ -38,6 +38,14 @@ type Shot = {
 	fullPage?: boolean;
 	/** When true, wait for the authenticated app shell (sidebar brand) to render. */
 	authenticated?: boolean;
+	/**
+	 * Selector for a data-driven element that only appears after the page's
+	 * main query has resolved. Used instead of `networkidle` (which times
+	 * out when Sonner/Vite-HMR keep a long-lived connection open).
+	 */
+	ready?: string;
+	/** Skip this shot in the default loop (captured by a dedicated pass). */
+	skip?: boolean;
 	setup?: (page: Page) => Promise<void>;
 };
 
@@ -67,23 +75,38 @@ const SHOTS: Shot[] = [
 		width: 1400,
 		height: 908,
 		authenticated: true,
+		// Wait for any stat card title — they're rendered only after the
+		// dashboard summary query resolves.
+		ready: '[data-slot="card-title"]',
 		setup: async (page) => {
 			await page.waitForSelector("main");
 		},
 	},
-	{ name: "expenses", path: "/expenses", width: 1400, height: 908, authenticated: true },
+	{
+		name: "expenses",
+		path: "/expenses",
+		width: 1400,
+		height: 908,
+		authenticated: true,
+		// The toolbar's "Add expense" button only renders after auth hydration.
+		ready: 'button:has-text("Add expense")',
+	},
 	{
 		name: "expenses-bulk",
 		path: "/expenses",
 		width: 1400,
 		height: 908,
 		authenticated: true,
+		ready: 'button:has-text("Add expense")',
 		setup: async (page) => {
 			await page.getByRole("button", { name: /add multiple/i }).click();
 			// Wait for the bulk modal title.
 			await page
 				.getByRole("heading", { name: /add multiple expenses/i })
 				.waitFor();
+			// Dialog has a fade-in/scale animation; wait for the backdrop
+			// to be fully opaque and the dialog to settle before snapshot.
+			await page.waitForTimeout(500);
 		},
 	},
 	{
@@ -92,19 +115,22 @@ const SHOTS: Shot[] = [
 		width: 1400,
 		height: 908,
 		authenticated: true,
+		ready: 'button:has-text("Add expense")',
 		setup: async (page) => {
 			await page.getByRole("button", { name: /add multiple/i }).click();
 			await page
 				.getByRole("heading", { name: /add multiple expenses/i })
 				.waitFor();
+			await page.waitForTimeout(400);
 			// Expand the Smart paste disclosure.
 			await page.getByRole("button", { name: /smart paste/i }).click();
 			await page
 				.getByRole("textbox", { name: /expenses text to parse/i })
 				.waitFor();
+			await page.waitForTimeout(300);
 		},
 	},
-	{ name: "budget", path: "/budget", width: 1400, height: 908, authenticated: true },
+	{ name: "budget", path: "/budget", width: 1400, height: 908, authenticated: true, ready: '[data-slot="card-title"]' },
 	{
 		name: "reports",
 		path: "/reports",
@@ -112,6 +138,7 @@ const SHOTS: Shot[] = [
 		height: 1347,
 		fullPage: true,
 		authenticated: true,
+		ready: '[data-slot="card-title"]',
 	},
 	{
 		name: "settings",
@@ -119,6 +146,7 @@ const SHOTS: Shot[] = [
 		width: 1400,
 		height: 1100,
 		authenticated: true,
+		ready: '[data-slot="card-title"]',
 		setup: async (page) => {
 			// The Preferences card title is a CardTitle <div> (not a heading
 			// role). Use the shadcn data-slot to disambiguate from the
@@ -135,6 +163,7 @@ const SHOTS: Shot[] = [
 		width: 1400,
 		height: 908,
 		authenticated: true,
+		ready: '[data-slot="card-title"]',
 		setup: async (page) => {
 			// The banner renders above the dashboard stats. Scope to the
 			// shadcn `Alert` data-slot so we don't collide with Sonner toasts
@@ -158,12 +187,21 @@ const SHOTS: Shot[] = [
 		width: 1400,
 		height: 908,
 		authenticated: true,
+		// Skip in the main run by default — the catch-up state requires the
+		// most recent expense to be ≥ 2 days old, which conflicts with the
+		// "today" expenses the other shots rely on. Set
+		// SCREENSHOT_CATCH_UP=1 after running `_ensure-catchup.mjs` to
+		// capture just this one.
+		skip: true,
+		ready: '[data-slot="card-title"]',
 		setup: async (page) => {
 			// The catch-up nudge renders as a calm banner with the
-			// "Catch up" button. It only appears when last entry ≥ 2 days
+			// "Catch up" link. It only appears when last entry ≥ 2 days
 			// ago; the seed step below ensures that condition holds.
+			// (The CTA is `<Button asChild><Link>` → rendered as `<a>`, so
+			// use the link role.)
 			await page
-				.getByRole("button", { name: /catch up/i })
+				.getByRole("link", { name: /catch up/i })
 				.waitFor({ state: "visible", timeout: 5_000 })
 				.catch(() => {
 					throw new Error(
@@ -382,6 +420,7 @@ try {
 
 	for (const shot of SHOTS) {
 		if (shot.name === "sign-in" || shot.name === "sign-up") continue;
+		if (shot.skip) continue;
 		if (shot.name === "dashboard-alert" && !captureAlert) continue;
 
 		if (shot.name === "dashboard-alert") {
@@ -396,6 +435,16 @@ try {
 			// The brand "Spendrift" in the sidebar only renders after the
 			// SPA finishes hydration — wait for it before screenshotting.
 			await page.getByText("Spendrift", { exact: true }).first().waitFor();
+			// Wait for the page's main query to resolve via a data-driven
+			// selector. This is more reliable than `networkidle` (which times
+			// out on long-lived connections — Sonner, Vite HMR websocket).
+			if (shot.ready) {
+				await page.locator(shot.ready).first().waitFor({ timeout: 15_000 });
+			}
+			// Settle a beat for any post-load layout shifts (chart animation,
+			// Sonner toast fade-out). Reports uses Recharts and needs longer.
+			const settleMs = shot.name === "reports" ? 1500 : 500;
+			await page.waitForTimeout(settleMs);
 		}
 		await shot.setup?.(page);
 		await page.screenshot({
