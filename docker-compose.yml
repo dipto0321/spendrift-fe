@@ -1,0 +1,32 @@
+# Frontend-only stack. Assumes the backend is already running somewhere
+# (locally on http://localhost:8000, on Render, etc.) and reachable from
+# wherever this container can resolve it.
+#
+# Usage:
+#   docker compose up --build
+# Then open http://localhost:3000.
+#
+# In Docker Desktop this shows up as the "fintracker-frontend" project;
+# click Run on it to bring the container up.
+#
+# Override the API URL when building against a non-local backend:
+#   VITE_API_BASE_URL=https://spendrift-be.onrender.com/api/v1 \
+#     docker compose up --build
+
+name: fintracker-frontend
+
+services:
+  frontend:
+    build:
+      context: .
+      args:
+        # VITE_API_BASE_URL is baked at build time, so changing it requires
+        # a rebuild. Override via env var or by editing this line.
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000/api/v1}
+    ports:
+      - "3000:3000"
+    environment:
+      # Nitro/TanStack Start honors PORT/HOST for the production server.
+      PORT: "3000"
+      HOST: "0.0.0.0"
+      NODE_ENV: production
