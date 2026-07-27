@@ -150,6 +150,10 @@ export async function loadAiSettingsAsync(): Promise<AiSettings> {
 /**
  * Encrypt and persist the settings. The API key is encrypted with the
  * current JWT subject; if there's no session, throws.
+ *
+ * Note: an empty `apiKey` is treated as "no change" — the existing
+ * encrypted blob (if any) is left in place. Call `clearAiSettings` to
+ * explicitly wipe a saved key.
  */
 export async function saveAiSettings(settings: AiSettings): Promise<void> {
 	if (!isBrowser()) {
@@ -164,19 +168,19 @@ export async function saveAiSettings(settings: AiSettings): Promise<void> {
 	};
 	writeConfig(config);
 
-	if (apiKey.length > 0) {
-		const entropy = getActiveSessionEntropy();
-		if (!entropy) {
-			throw new Error(
-				"Cannot save your API key: no active session. Sign in and try again.",
-			);
-		}
-		const blob = await encrypt(apiKey, entropy);
-		writeJson(ENCRYPTED_KEY, blob);
-	} else {
-		// Saving with an empty key clears any previously stored encrypted blob.
-		remove(ENCRYPTED_KEY);
+	if (apiKey.length === 0) {
+		// No change to the encrypted blob.
+		return;
 	}
+
+	const entropy = getActiveSessionEntropy();
+	if (!entropy) {
+		throw new Error(
+			"Cannot save your API key: no active session. Sign in and try again.",
+		);
+	}
+	const blob = await encrypt(apiKey, entropy);
+	writeJson(ENCRYPTED_KEY, blob);
 }
 
 /**
@@ -191,3 +195,13 @@ export function clearAiSettings(): void {
 
 // Re-export the default for callers that want a typed empty-state.
 export { DEFAULT_SETTINGS };
+
+/**
+ * Returns true when an encrypted blob is stored, without decrypting it.
+ * Use this in UI surfaces that need to know "is a key saved?" without
+ * paying for PBKDF2 (e.g. showing a masked placeholder in a form field).
+ */
+export function hasEncryptedBlob(): boolean {
+	if (!isBrowser()) return false;
+	return globalThis.window.localStorage.getItem(ENCRYPTED_KEY) !== null;
+}

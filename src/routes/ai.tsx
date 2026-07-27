@@ -49,7 +49,9 @@ import { Switch } from "@/components/ui/switch";
 import { requireAuth } from "@/features/auth/presentation/routeGuards";
 import {
 	clearAiSettings,
+	hasEncryptedBlob,
 	loadAiSettings,
+	loadAiSettingsAsync,
 	saveAiSettings,
 } from "@/shared/ai/storage";
 import {
@@ -126,14 +128,27 @@ function AiSettingsPage() {
 	const [storageError, setStorageError] = useState<string | null>(null);
 	const [hasKey, setHasKey] = useState(false);
 
-	// Read on mount. The synchronous loader returns the config but not
-	// the key (decryption is async); we treat the existence of the
-	// encrypted blob as "key is configured" for UI purposes.
+	// Read on mount. Decryption is async, so we kick off the async loader
+	// and pull the non-secret parts synchronously first; once the key has
+	// been decrypted we update hasKey. `hasEncryptedBlob` keeps the UI in
+	// sync during the brief gap before decryption completes (and continues
+	// to reflect "key is saved" even if the active session can't decrypt —
+	// e.g. right after a token refresh).
 	useEffect(() => {
+		setHasKey(hasEncryptedBlob());
 		const loaded = loadAiSettings();
 		setDraft(loaded);
-		setHasKey(loaded.apiKey.length > 0);
 		setStorageError(null);
+		loadAiSettingsAsync()
+			.then((asyncLoaded) => {
+				setDraft(asyncLoaded);
+				setHasKey(asyncLoaded.apiKey.length > 0);
+			})
+			.catch(() => {
+				// Decryption failure already dropped the blob in
+				// loadAiSettingsAsync; nothing more to do.
+				setHasKey(false);
+			});
 	}, []);
 
 	const errors = {
@@ -156,19 +171,24 @@ function AiSettingsPage() {
 	async function handleSave() {
 		setStorageError(null);
 		if (hasErrors) return;
+		const trimmedKey = draft.apiKey.trim();
 		const cleaned: AiSettings = {
-			apiKey: draft.apiKey.trim(),
+			apiKey: trimmedKey,
 			baseUrl: draft.baseUrl.trim(),
 			model: draft.model.trim(),
 			features: { ...draft.features },
 		};
 		try {
 			await saveAiSettings(cleaned);
-			setHasKey(cleaned.apiKey.length > 0);
+			// `hasKey` reflects what's stored: if the user typed a new key
+			// it's there; if not, storage preserved the previous one.
+			setHasKey(trimmedKey.length > 0 || hasKey);
 			toast.success(
-				cleaned.apiKey
+				trimmedKey.length > 0
 					? "API key saved. Your key is encrypted in this browser."
-					: "Settings saved.",
+					: hasKey
+						? "Settings saved. Your saved key is unchanged."
+						: "Settings saved.",
 			);
 		} catch (e) {
 			const msg = e instanceof Error ? e.message : String(e);
