@@ -1,20 +1,11 @@
 import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { getCurrentMonth } from "@/features/budgets/domain/services";
-import { useCurrentBudgetStatus } from "@/features/budgets/presentation/useCurrentBudgetStatus";
 import { useFormatCurrency } from "@/features/preferences/presentation/useFormatCurrency";
 import { useTracker } from "@/features/trackers/presentation/TrackerContext";
-import { BudgetProgress } from "@/shared/ui/BudgetProgress";
 import {
 	formatDateLabel,
 	formatDateValue,
@@ -283,26 +274,6 @@ function ReportsPage() {
 	// serves as the monotonic "ever loaded" signal.
 	const isColdStart = spendingQuery.isLoading && yearComparisonUpdatedAt === 0;
 
-	// Category budgets — always current month, independent of the custom range
-	const currentMonth = useMemo(() => getCurrentMonth(), []);
-	const currentMonthRange = useMemo<ReportRange>(() => {
-		const [year, month] = currentMonth.split("-").map(Number);
-		return {
-			startDate: `${currentMonth}-01`,
-			endDate: formatDateValue(new Date(year, month, 0)),
-		};
-	}, [currentMonth]);
-	const { data: catBudgetData = [] } = useCategoryBreakdown(
-		trackerId,
-		currentMonthRange,
-	);
-	const { currentBudget } = useCurrentBudgetStatus(trackerId);
-	const monthlyLimit = currentBudget?.monthlyLimit ?? 0;
-	const perCategoryBudget =
-		catBudgetData.length > 0 && monthlyLimit > 0
-			? monthlyLimit / catBudgetData.length
-			: 0;
-
 	const rangeLabelText = rangeLabel(range, preset);
 	const isCustomActive = preset === "custom";
 
@@ -530,30 +501,6 @@ function ReportsPage() {
 					</CardContent>
 				</Card>
 			)}
-
-			{catBudgetData.length > 0 && monthlyLimit > 0 ? (
-				<Card>
-					<CardHeader>
-						<CardTitle>Category budgets</CardTitle>
-						<CardDescription>
-							Budget vs actual spending per category this month.
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<div className="grid gap-x-8 gap-y-6 sm:grid-cols-2">
-							{catBudgetData.map((cat) => (
-								<BudgetProgress
-									key={cat.categoryId}
-									label={cat.categoryName}
-									budget={perCategoryBudget}
-									actual={cat.total}
-									currency={currency}
-								/>
-							))}
-						</div>
-					</CardContent>
-				</Card>
-			) : null}
 		</main>
 	);
 }
