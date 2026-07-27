@@ -45,7 +45,7 @@ import { getCurrentMonth } from "@/features/budgets/domain/services";
 import { useFormatCurrency } from "@/features/preferences/presentation/useFormatCurrency";
 import { useTracker } from "@/features/trackers/presentation/TrackerContext";
 import { cn } from "@/lib/utils";
-import { loadAiSettingsAsync } from "@/shared/ai/storage";
+import { loadAiSettings, loadAiSettingsAsync } from "@/shared/ai/storage";
 import { callLlmStructured, LlmError } from "@/shared/llm/client";
 import { MoneyText } from "@/shared/ui/MoneyText";
 import { MonthPicker } from "@/shared/ui/MonthPicker";
@@ -57,8 +57,14 @@ import type {
 	SmartReportNarrative,
 } from "../domain/types";
 
-const TOP_N_CATEGORIES = 5;
+// topNCategories is read from user AI settings (see /ai). Default 20;
+// capped at 20 by both the BE schema and the FE ZAiConfig.
 const TOP_N_EXPENSES = 3;
+
+// Threshold above which the Top categories list collapses behind a
+// "Show all" button so the card stays scannable for users with many
+// categories. Anything ≤ this many rows shows by default.
+const TOP_CATEGORIES_COLLAPSE_THRESHOLD = 8;
 
 type Phase = "idle" | "snapshot" | "narrative" | "done";
 
@@ -415,10 +421,99 @@ function TipCard({
 
 // ---- Main component ------------------------------------------------------
 
+/**
+ * Categories card with a "Show all" / "Show fewer" toggle. The
+ * collapse keeps the card scannable for users with many categories,
+ * but the full list is always one click away.
+ */
+function TopCategoriesCard({
+	snapshot,
+	showAll,
+	onToggleShowAll,
+}: {
+	snapshot: MonthlyInsightsSnapshot;
+	showAll: boolean;
+	onToggleShowAll: () => void;
+}) {
+	const formatCurrency = useFormatCurrency();
+	const all = snapshot.topCategories;
+	const shouldCollapse =
+		!showAll && all.length > TOP_CATEGORIES_COLLAPSE_THRESHOLD;
+	const visible = shouldCollapse ? all.slice(0, 5) : all;
+	const hiddenCount = all.length - visible.length;
+
+	return (
+		<Card>
+			<CardHeader>
+				<div className="flex items-center gap-2">
+					<Wallet className="size-4 text-muted-foreground" />
+					<CardTitle>Categories</CardTitle>
+					<Badge variant="outline" className="text-xs">
+						{all.length}
+					</Badge>
+				</div>
+				<CardDescription>
+					How your spending lines moved month over month.
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<div className="space-y-2">
+					{visible.map((c) => (
+						<div
+							key={c.categoryId}
+							className="flex items-center justify-between text-sm"
+						>
+							<div className="flex items-center gap-2">
+								<span
+									className="h-2.5 w-2.5 rounded-full"
+									style={{ backgroundColor: c.categoryColor }}
+								/>
+								<span className="text-foreground">{c.categoryName}</span>
+							</div>
+							<div className="flex items-center gap-3 tabular-nums">
+								<span className="text-muted-foreground">
+									{formatCurrency(c.currentTotal, snapshot.currency)}
+								</span>
+								<Badge
+									variant={c.deltaPct >= 0 ? "secondary" : "outline"}
+									className="text-xs"
+								>
+									{c.deltaPct >= 0 ? "+" : ""}
+									{c.deltaPct}%
+								</Badge>
+							</div>
+						</div>
+					))}
+				</div>
+				{hiddenCount > 0 ? (
+					<Button
+						type="button"
+						variant="ghost"
+						size="sm"
+						onClick={onToggleShowAll}
+						className="mt-2 -ml-2"
+					>
+						Show all {all.length} categories ({hiddenCount} more)
+					</Button>
+				) : showAll && all.length > 5 ? (
+					<Button
+						type="button"
+						variant="ghost"
+						size="sm"
+						onClick={onToggleShowAll}
+						className="mt-2 -ml-2"
+					>
+						Show fewer
+					</Button>
+				) : null}
+			</CardContent>
+		</Card>
+	);
+}
+
 export function SmartReport() {
 	const { activeTracker } = useTracker();
 	const trackerId = activeTracker?.id;
-	const formatCurrency = useFormatCurrency();
 	const [month, setMonth] = useState<string>(getCurrentMonth());
 	const [phase, setPhase] = useState<Phase>("idle");
 	const [snapshot, setSnapshot] = useState<MonthlyInsightsSnapshot | null>(
@@ -426,6 +521,7 @@ export function SmartReport() {
 	);
 	const [narrative, setNarrative] = useState<SmartReportNarrative | null>(null);
 	const [error, setError] = useState<string | null>(null);
+	const [showAllCategories, setShowAllCategories] = useState(false);
 
 	const generate = useMutation({
 		mutationFn: async (m: string) => {
@@ -437,9 +533,14 @@ export function SmartReport() {
 			setNarrative(null);
 
 			setPhase("snapshot");
+			// topNCategories is plaintext config (no decryption needed) —
+			// the sync loader returns it. If the user hasn't configured a key
+			// yet the snapshot still fetches fine; the LLM call below checks
+			// for the key.
+			const syncSettings = loadAiSettings();
 			const snap = await reportRepository.getMonthlyInsights(trackerId, {
 				month: m,
-				topNCategories: TOP_N_CATEGORIES,
+				topNCategories: syncSettings.topNCategories,
 				topNExpenses: TOP_N_EXPENSES,
 			});
 			setSnapshot(snap);
@@ -713,47 +814,11 @@ export function SmartReport() {
 				) : null}
 
 				{snapshot ? (
-					<Card>
-						<CardHeader>
-							<div className="flex items-center gap-2">
-								<Wallet className="size-4 text-muted-foreground" />
-								<CardTitle>Top categories</CardTitle>
-							</div>
-							<CardDescription>
-								How your biggest spending lines moved month over month.
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							<div className="space-y-2">
-								{snapshot.topCategories.map((c) => (
-									<div
-										key={c.categoryId}
-										className="flex items-center justify-between text-sm"
-									>
-										<div className="flex items-center gap-2">
-											<span
-												className="h-2.5 w-2.5 rounded-full"
-												style={{ backgroundColor: c.categoryColor }}
-											/>
-											<span className="text-foreground">{c.categoryName}</span>
-										</div>
-										<div className="flex items-center gap-3 tabular-nums">
-											<span className="text-muted-foreground">
-												{formatCurrency(c.currentTotal, snapshot.currency)}
-											</span>
-											<Badge
-												variant={c.deltaPct >= 0 ? "secondary" : "outline"}
-												className="text-xs"
-											>
-												{c.deltaPct >= 0 ? "+" : ""}
-												{c.deltaPct}%
-											</Badge>
-										</div>
-									</div>
-								))}
-							</div>
-						</CardContent>
-					</Card>
+					<TopCategoriesCard
+						snapshot={snapshot}
+						showAll={showAllCategories}
+						onToggleShowAll={() => setShowAllCategories((v) => !v)}
+					/>
 				) : null}
 
 				{narrative ? (

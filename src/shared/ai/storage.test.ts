@@ -9,6 +9,7 @@ import {
 	purgeLegacySettings,
 	saveAiSettings,
 } from "./storage";
+import { TOP_N_CATEGORIES_DEFAULT } from "./types";
 
 const ENTROPY = "alice@example.com";
 
@@ -35,6 +36,7 @@ describe("ai/storage", () => {
 			apiKey: "sk-or-v1-very-secret",
 			baseUrl: "https://openrouter.ai/api/v1",
 			model: "anthropic/claude-sonnet-4-5",
+			topNCategories: TOP_N_CATEGORIES_DEFAULT,
 		});
 
 		// Plaintext config is readable synchronously and without a session.
@@ -59,6 +61,7 @@ describe("ai/storage", () => {
 			apiKey: "sk-test",
 			baseUrl: "https://api.anthropic.com",
 			model: "claude-sonnet-4-6",
+			topNCategories: TOP_N_CATEGORIES_DEFAULT,
 		});
 
 		await setSession(null);
@@ -73,6 +76,7 @@ describe("ai/storage", () => {
 			apiKey: "sk-test",
 			baseUrl: "https://api.anthropic.com",
 			model: "claude-sonnet-4-6",
+			topNCategories: TOP_N_CATEGORIES_DEFAULT,
 		});
 
 		// Simulate a token rotation: the JWT subject changes, so decryption
@@ -127,6 +131,7 @@ describe("ai/storage", () => {
 			apiKey: "sk-test",
 			baseUrl: "https://api.anthropic.com",
 			model: "claude-sonnet-4-6",
+			topNCategories: TOP_N_CATEGORIES_DEFAULT,
 		});
 		localStorage.setItem("spendrift:ai-settings", "{}");
 		clearAiSettings();
@@ -140,6 +145,7 @@ describe("ai/storage", () => {
 			apiKey: "sk-first",
 			baseUrl: "https://api.anthropic.com",
 			model: "claude-sonnet-4-6",
+			topNCategories: TOP_N_CATEGORIES_DEFAULT,
 		});
 		const before = localStorage.getItem("spendrift.ai.v1");
 		expect(before).not.toBeNull();
@@ -148,6 +154,7 @@ describe("ai/storage", () => {
 			apiKey: "",
 			baseUrl: "https://api.anthropic.com",
 			model: "claude-sonnet-4-6",
+			topNCategories: TOP_N_CATEGORIES_DEFAULT,
 		});
 		// Empty key on Save = no change. The blob remains; use clearAiSettings
 		// to explicitly wipe.
@@ -159,11 +166,63 @@ describe("ai/storage", () => {
 			apiKey: "sk-or-v1-abc",
 			baseUrl: "https://openrouter.ai/api/v1",
 			model: "anthropic/claude-sonnet-4-5",
+			topNCategories: TOP_N_CATEGORIES_DEFAULT,
 		});
 		const sync = loadAiSettings();
 		// Sync loader can't decrypt; apiKey is empty but the metadata is there.
 		expect(sync.apiKey).toBe("");
 		expect(sync.baseUrl).toBe("https://openrouter.ai/api/v1");
+	});
+
+	it("defaults topNCategories for legacy configs that predate the field", () => {
+		// Older build wrote only baseUrl + model. The reader must fill in
+		// the new topNCategories field with the default rather than return
+		// undefined.
+		localStorage.setItem(
+			"spendrift.ai.config",
+			JSON.stringify({
+				baseUrl: "https://api.anthropic.com",
+				model: "claude-sonnet-4-6",
+			}),
+		);
+		const loaded = loadAiSettings();
+		expect(loaded.topNCategories).toBe(TOP_N_CATEGORIES_DEFAULT);
+	});
+
+	it("clamps out-of-range topNCategories values when reading or writing", async () => {
+		// Stored value above the BE cap must be clamped on read.
+		localStorage.setItem(
+			"spendrift.ai.config",
+			JSON.stringify({
+				baseUrl: "https://api.anthropic.com",
+				model: "claude-sonnet-4-6",
+				topNCategories: 9999,
+			}),
+		);
+		expect(loadAiSettings().topNCategories).toBe(20);
+
+		// Stored value below the floor must be clamped on read.
+		localStorage.setItem(
+			"spendrift.ai.config",
+			JSON.stringify({
+				baseUrl: "https://api.anthropic.com",
+				model: "claude-sonnet-4-6",
+				topNCategories: -3,
+			}),
+		);
+		expect(loadAiSettings().topNCategories).toBe(1);
+
+		// Writing out-of-range via the API also clamps on the way to disk.
+		await saveAiSettings({
+			apiKey: "",
+			baseUrl: "https://api.anthropic.com",
+			model: "claude-sonnet-4-6",
+			topNCategories: 9999,
+		});
+		const onDisk = JSON.parse(
+			localStorage.getItem("spendrift.ai.config") as string,
+		);
+		expect(onDisk.topNCategories).toBe(20);
 	});
 
 	it("hasEncryptedBlob is true after save and false after clearAiSettings", async () => {
@@ -172,6 +231,7 @@ describe("ai/storage", () => {
 			apiKey: "sk-or-v1-abc",
 			baseUrl: "https://openrouter.ai/api/v1",
 			model: "anthropic/claude-sonnet-4-5",
+			topNCategories: TOP_N_CATEGORIES_DEFAULT,
 		});
 		expect(hasEncryptedBlob()).toBe(true);
 		clearAiSettings();
