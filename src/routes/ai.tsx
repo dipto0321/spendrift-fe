@@ -528,7 +528,9 @@ function AiSettingsPage() {
 									How many categories the Smart Report includes in its
 									"Categories" section. Higher = more detail but the prompt sent
 									to your LLM grows, so each generation costs a little more.
-									Default is {TOP_N_CATEGORIES_DEFAULT}.
+									Default is {TOP_N_CATEGORIES_DEFAULT}. The Smart Report caps
+									the LLM input at {TOP_N_CATEGORIES_MAX} categories even if
+									your tracker has more.
 								</HelpHint>
 							</div>
 							<Select
