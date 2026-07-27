@@ -19,6 +19,7 @@ import {
 	AlertTriangle,
 	Bot,
 	CheckCircle2,
+	CircleHelp,
 	Eye,
 	EyeOff,
 	KeyRound,
@@ -30,7 +31,7 @@ import {
 	Trash2,
 	TrendingUp,
 } from "lucide-react";
-import type { ElementType } from "react";
+import type { ElementType, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -46,7 +47,19 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { requireAuth } from "@/features/auth/presentation/routeGuards";
 import {
 	clearAiSettings,
@@ -55,8 +68,42 @@ import {
 	loadAiSettingsAsync,
 	saveAiSettings,
 } from "@/shared/ai/storage";
-import { type AiSettings, DEFAULT_SETTINGS } from "@/shared/ai/types";
+import {
+	type AiSettings,
+	DEFAULT_SETTINGS,
+	TOP_N_CATEGORIES_DEFAULT,
+	TOP_N_CATEGORIES_MAX,
+	TOP_N_CATEGORIES_MIN,
+} from "@/shared/ai/types";
 import { PageHeader } from "@/shared/ui/PageHeader";
+
+/**
+ * Inline `?` icon that reveals a tooltip on hover or focus. Radix's
+ * Tooltip handles keyboard focus, screen-reader announcements, and
+ * escape-to-close — no custom a11y work needed.
+ */
+function HelpHint({ children }: { children: ReactNode }) {
+	return (
+		<Tooltip>
+			<TooltipTrigger asChild>
+				<button
+					type="button"
+					aria-label="Help"
+					className="inline-flex size-4 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+				>
+					<CircleHelp className="size-4" />
+				</button>
+			</TooltipTrigger>
+			<TooltipContent
+				side="top"
+				sideOffset={6}
+				className="max-w-xs text-pretty"
+			>
+				{children}
+			</TooltipContent>
+		</Tooltip>
+	);
+}
 
 export const Route = createFileRoute("/ai")({
 	beforeLoad: requireAuth,
@@ -122,6 +169,12 @@ function AiSettingsPage() {
 	const [showKey, setShowKey] = useState(false);
 	const [storageError, setStorageError] = useState<string | null>(null);
 	const [hasKey, setHasKey] = useState(false);
+	// Report-preference state. Lives outside `draft` (which mirrors the
+	// provider-connection form) so changes to it auto-save without
+	// clobbering any unsaved API-key edits in the form above.
+	const [categoriesPreference, setCategoriesPreference] = useState<number>(
+		DEFAULT_SETTINGS.topNCategories,
+	);
 
 	// Read on mount. Decryption is async, so we surface the masked
 	// "key is saved" state immediately via hasEncryptedBlob() and update
@@ -130,10 +183,12 @@ function AiSettingsPage() {
 		setHasKey(hasEncryptedBlob());
 		const loaded = loadAiSettings();
 		setDraft(loaded);
+		setCategoriesPreference(loaded.topNCategories);
 		setStorageError(null);
 		loadAiSettingsAsync()
 			.then((asyncLoaded) => {
 				setDraft(asyncLoaded);
+				setCategoriesPreference(asyncLoaded.topNCategories);
 				setHasKey(asyncLoaded.apiKey.length > 0);
 			})
 			.catch(() => {
@@ -168,6 +223,7 @@ function AiSettingsPage() {
 			apiKey: trimmedKey,
 			baseUrl: draft.baseUrl.trim(),
 			model: draft.model.trim(),
+			topNCategories: categoriesPreference,
 		};
 		try {
 			await saveAiSettings(cleaned);
@@ -191,9 +247,27 @@ function AiSettingsPage() {
 	function handleClear() {
 		clearAiSettings();
 		setDraft({ ...DEFAULT_SETTINGS });
+		setCategoriesPreference(DEFAULT_SETTINGS.topNCategories);
 		setHasKey(false);
 		setShowKey(false);
 		toast.success("AI settings cleared.");
+	}
+
+	async function handleCategoriesChange(value: number) {
+		setCategoriesPreference(value);
+		try {
+			// Preserve the encrypted API key blob; pass empty apiKey so
+			// saveAiSettings skips the encryption step.
+			await saveAiSettings({
+				apiKey: "",
+				baseUrl: loadAiSettings().baseUrl,
+				model: loadAiSettings().model,
+				topNCategories: value,
+			});
+		} catch (e) {
+			const msg = e instanceof Error ? e.message : String(e);
+			toast.error(msg);
+		}
 	}
 
 	return (
@@ -284,7 +358,17 @@ function AiSettingsPage() {
 							}}
 						>
 							<div className="grid gap-2">
-								<Label htmlFor="ai-api-key">API Key</Label>
+								<div className="flex items-center gap-1.5">
+									<Label htmlFor="ai-api-key">API Key</Label>
+									<HelpHint>
+										Your provider's secret key (e.g.{" "}
+										<code className="rounded bg-background/40 px-1 font-mono text-[11px]">
+											sk-ant-...
+										</code>
+										). It's encrypted with your session and only held in this
+										browser — Spendrift never sees it. Billed to your provider.
+									</HelpHint>
+								</div>
 								<div className="relative">
 									<Input
 										id="ai-api-key"
@@ -323,7 +407,17 @@ function AiSettingsPage() {
 								) : null}
 							</div>
 							<div className="grid gap-2">
-								<Label htmlFor="ai-base-url">Base URL</Label>
+								<div className="flex items-center gap-1.5">
+									<Label htmlFor="ai-base-url">Base URL</Label>
+									<HelpHint>
+										The provider's chat-completions endpoint. Use{" "}
+										<code className="rounded bg-background/40 px-1 font-mono text-[11px]">
+											https://api.anthropic.com
+										</code>{" "}
+										for Anthropic, or any OpenAI-compatible URL (OpenRouter,
+										Groq, Together, your own proxy).
+									</HelpHint>
+								</div>
 								<Input
 									id="ai-base-url"
 									type="url"
@@ -340,7 +434,20 @@ function AiSettingsPage() {
 								) : null}
 							</div>
 							<div className="grid gap-2">
-								<Label htmlFor="ai-model">Model</Label>
+								<div className="flex items-center gap-1.5">
+									<Label htmlFor="ai-model">Model</Label>
+									<HelpHint>
+										The model ID your provider expects. Examples:{" "}
+										<code className="rounded bg-background/40 px-1 font-mono text-[11px]">
+											claude-sonnet-4-6
+										</code>{" "}
+										for Anthropic,{" "}
+										<code className="rounded bg-background/40 px-1 font-mono text-[11px]">
+											anthropic/claude-sonnet-4-5
+										</code>{" "}
+										for OpenRouter. Must be a model your account can access.
+									</HelpHint>
+								</div>
 								<Input
 									id="ai-model"
 									value={draft.model}
@@ -361,9 +468,6 @@ function AiSettingsPage() {
 									variant="ghost"
 									size="sm"
 									onClick={handleClear}
-									disabled={
-										!hasKey && !draft.apiKey && !draft.baseUrl && !draft.model
-									}
 								>
 									<Trash2 className="size-4" />
 									Clear
@@ -401,6 +505,58 @@ function AiSettingsPage() {
 					<CardFooter className="border-t pt-4 text-xs text-muted-foreground">
 						<SavedKeysPrivacyNote />
 					</CardFooter>
+				</Card>
+
+				<Card>
+					<CardHeader>
+						<div className="flex items-center gap-2">
+							<Sparkles className="size-5 text-muted-foreground" />
+							<CardTitle>Report preferences</CardTitle>
+						</div>
+						<CardDescription>
+							Adjust how the Smart Report is presented. Changes save
+							automatically and don't affect your provider connection.
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<div className="grid gap-2">
+							<div className="flex items-center gap-1.5">
+								<Label htmlFor="ai-top-n-categories">
+									Categories per report
+								</Label>
+								<HelpHint>
+									How many categories the Smart Report includes in its
+									"Categories" section. Higher = more detail but the prompt sent
+									to your LLM grows, so each generation costs a little more.
+									Default is {TOP_N_CATEGORIES_DEFAULT}.
+								</HelpHint>
+							</div>
+							<Select
+								value={String(categoriesPreference)}
+								onValueChange={(v) => handleCategoriesChange(Number(v))}
+							>
+								<SelectTrigger
+									id="ai-top-n-categories"
+									className="w-full sm:max-w-xs"
+								>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									{Array.from(
+										{
+											length: TOP_N_CATEGORIES_MAX - TOP_N_CATEGORIES_MIN + 1,
+										},
+										(_, i) => i + TOP_N_CATEGORIES_MIN,
+									).map((n) => (
+										<SelectItem key={n} value={String(n)}>
+											{n}
+											{n === TOP_N_CATEGORIES_DEFAULT ? " (default)" : ""}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
+					</CardContent>
 				</Card>
 			</div>
 		</main>

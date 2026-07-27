@@ -1,13 +1,19 @@
 // Plain types + zod schema for the AI settings stored in the browser.
 //
 // The API key is encrypted at rest (see ./crypto). The other fields
-// (base URL, model) are plain text — they're not secrets.
+// (base URL, model, topNCategories) are plain text — they're not secrets.
 //
 // Feature availability is derived, not stored: a BYO feature is
 // "ready" if and only if an API key is configured. There is no
 // per-user toggle.
 
 import { z } from "zod";
+
+// Capped to match the BE schema for /reports/monthly-insights
+// (top_n_categories: ge=1, le=20). Larger values would 422.
+export const TOP_N_CATEGORIES_MIN = 1;
+export const TOP_N_CATEGORIES_MAX = 20;
+export const TOP_N_CATEGORIES_DEFAULT = 20;
 
 export const ZAiConfig = z.object({
 	baseUrl: z
@@ -16,6 +22,11 @@ export const ZAiConfig = z.object({
 		.min(1, "Base URL is required")
 		.url("Base URL must be a valid URL"),
 	model: z.string().trim().min(1, "Model is required"),
+	topNCategories: z
+		.number()
+		.int()
+		.min(TOP_N_CATEGORIES_MIN)
+		.max(TOP_N_CATEGORIES_MAX),
 });
 export type AiConfig = z.infer<typeof ZAiConfig>;
 
@@ -33,11 +44,13 @@ export type AiSettings = {
 	apiKey: string;
 	baseUrl: string;
 	model: string;
+	topNCategories: number;
 };
 
 export const DEFAULT_CONFIG: AiConfig = {
 	baseUrl: "https://api.anthropic.com",
 	model: "claude-sonnet-4-6",
+	topNCategories: TOP_N_CATEGORIES_DEFAULT,
 };
 
 export const DEFAULT_SETTINGS: AiSettings = {

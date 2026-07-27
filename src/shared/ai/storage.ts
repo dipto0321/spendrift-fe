@@ -81,14 +81,29 @@ export function purgeLegacySettings(): void {
 function readConfig(): AiConfig {
 	const stored = readJson<Partial<AiConfig>>(CONFIG_KEY);
 	if (!stored) return { ...DEFAULT_CONFIG };
-	return {
-		baseUrl:
-			typeof stored.baseUrl === "string"
-				? stored.baseUrl
-				: DEFAULT_CONFIG.baseUrl,
-		model:
-			typeof stored.model === "string" ? stored.model : DEFAULT_CONFIG.model,
-	};
+	const baseUrl =
+		typeof stored.baseUrl === "string"
+			? stored.baseUrl
+			: DEFAULT_CONFIG.baseUrl;
+	const model =
+		typeof stored.model === "string" ? stored.model : DEFAULT_CONFIG.model;
+	const topNCategories = clampTopNCategories(
+		typeof stored.topNCategories === "number"
+			? stored.topNCategories
+			: DEFAULT_CONFIG.topNCategories,
+	);
+	return { baseUrl, model, topNCategories };
+}
+
+// Defensive clamp — protects against out-of-range values written by
+// older builds or hand-edited storage. The BE also validates (ge=1,
+// le=20), so this keeps the FE in lockstep.
+function clampTopNCategories(n: number): number {
+	if (!Number.isFinite(n)) return DEFAULT_CONFIG.topNCategories;
+	const rounded = Math.round(n);
+	if (rounded < 1) return 1;
+	if (rounded > 20) return 20;
+	return rounded;
 }
 
 function writeConfig(config: AiConfig): void {
@@ -161,6 +176,7 @@ export async function saveAiSettings(settings: AiSettings): Promise<void> {
 	const config: AiConfig = {
 		baseUrl: configLike.baseUrl,
 		model: configLike.model,
+		topNCategories: clampTopNCategories(configLike.topNCategories),
 	};
 	writeConfig(config);
 
