@@ -18,9 +18,7 @@ describe("ai/jwt", () => {
 	});
 
 	it("falls back to the payload string when sub is missing", () => {
-		expect(getJwtSubject(NO_SUB_JWT)).toBe(
-			"eyJleHAiOjE3MDAwMDAwMDB9",
-		);
+		expect(getJwtSubject(NO_SUB_JWT)).toBe("eyJleHAiOjE3MDAwMDAwMDB9");
 	});
 
 	it("returns the only segment when the token has no signature", () => {

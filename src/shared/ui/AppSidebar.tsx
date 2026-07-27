@@ -89,7 +89,11 @@ export default function AppSidebar() {
 									: pathname.startsWith(to);
 								return (
 									<SidebarMenuItem key={to}>
-										<SidebarMenuButton isActive={isActive} asChild tooltip={label}>
+										<SidebarMenuButton
+											isActive={isActive}
+											asChild
+											tooltip={label}
+										>
 											<Link to={to}>
 												<Icon />
 												<span>{label}</span>

@@ -1,6 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { callLlmStructured, LlmAuthError, LlmError, LlmSchemaError } from "./client";
 import type { AiSettings } from "../ai/types";
+import {
+	callLlmStructured,
+	LlmAuthError,
+	LlmError,
+	LlmSchemaError,
+} from "./client";
 
 const SETTINGS: AiSettings = {
 	apiKey: "sk-test-abc",
@@ -79,9 +84,13 @@ describe("llm/client", () => {
 	});
 
 	it("strips trailing slashes from the base URL before appending paths", async () => {
-		const fetchMock = vi.fn().mockResolvedValue(
-			new Response(JSON.stringify({ choices: [{ message: { content: "{}" } }] })),
-		);
+		const fetchMock = vi
+			.fn()
+			.mockResolvedValue(
+				new Response(
+					JSON.stringify({ choices: [{ message: { content: "{}" } }] }),
+				),
+			);
 		vi.stubGlobal("fetch", fetchMock);
 
 		await callLlmStructured(
@@ -160,11 +169,13 @@ describe("llm/client", () => {
 	it("throws LlmSchemaError when the response is empty", async () => {
 		vi.stubGlobal(
 			"fetch",
-			vi.fn().mockResolvedValue(
-				new Response(
-					JSON.stringify({ choices: [{ message: { content: "" } }] }),
+			vi
+				.fn()
+				.mockResolvedValue(
+					new Response(
+						JSON.stringify({ choices: [{ message: { content: "" } }] }),
+					),
 				),
-			),
 		);
 		await expect(
 			callLlmStructured(
