@@ -8,6 +8,7 @@ import {
 	PiggyBank,
 	ReceiptText,
 	Settings2,
+	Sparkles,
 	TrendingUp,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -42,6 +43,7 @@ const NAV_ITEMS = [
 	{ to: "/expenses", label: "Expenses", icon: ReceiptText, exact: false },
 	{ to: "/budget", label: "Budget", icon: PiggyBank, exact: false },
 	{ to: "/reports", label: "Reports", icon: BarChart3, exact: false },
+	{ to: "/reports/ai", label: "Smart Report", icon: Sparkles, exact: false },
 	{ to: "/settings", label: "Settings", icon: Settings2, exact: false },
 	{ to: "/ai", label: "AI Settings", icon: Bot, exact: false },
 ] as const;

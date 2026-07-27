@@ -8,7 +8,6 @@ import {
 	useRouterState,
 } from "@tanstack/react-router";
 import React, { useEffect, useState } from "react";
-import { Separator } from "@/components/ui/separator";
 import {
 	Select,
 	SelectContent,
@@ -16,7 +15,12 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
+import {
+	SidebarInset,
+	SidebarProvider,
+	SidebarTrigger,
+} from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import {
@@ -134,6 +138,7 @@ const PAGE_TITLES: Record<string, string> = {
 	"/expenses": "Expenses",
 	"/budget": "Budget",
 	"/reports": "Reports",
+	"/reports/ai": "Smart Report",
 	"/settings": "Settings",
 	"/profile": "Profile",
 	"/ai": "AI Settings",

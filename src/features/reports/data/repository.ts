@@ -3,6 +3,7 @@ import { apiFetch } from "@/shared/api/client";
 import type {
 	AnalyticsResult,
 	CategoryBreakdown,
+	MonthlyInsightsSnapshot,
 	PeriodData,
 	ReportPeriod,
 	YearComparison,
@@ -10,8 +11,11 @@ import type {
 import {
 	type AnalyticsSummaryDto,
 	type CategoryBreakdownItemDto,
+	type MonthlyInsightsRequestBody,
+	type MonthlyInsightsSnapshotDto,
 	mapAnalytics,
 	mapCategoryBreakdown,
+	mapMonthlyInsightsSnapshot,
 	mapNeedsWants,
 	mapPeriodSpend,
 	mapYearComparison,
@@ -19,7 +23,7 @@ import {
 	type PeriodSpendDto,
 	type YearComparisonItemDto,
 } from "./dto";
-import type { ReportRange } from "./queryKeys";
+import type { MonthlyInsightsQuery, ReportRange } from "./queryKeys";
 
 // Builds a `?start_date=…&end_date=…` suffix, omitting absent ends so the
 // server falls back to all-time.
@@ -81,5 +85,21 @@ export const reportRepository = {
 			`/trackers/${trackerId}/reports/year-comparison`,
 		);
 		return dtos.map(mapYearComparison);
+	},
+
+	async getMonthlyInsights(
+		trackerId: string,
+		query: MonthlyInsightsQuery,
+	): Promise<MonthlyInsightsSnapshot> {
+		const body: MonthlyInsightsRequestBody = {
+			month: query.month,
+			top_n_categories: query.topNCategories,
+			top_n_expenses: query.topNExpenses,
+		};
+		const dto = await apiFetch<MonthlyInsightsSnapshotDto>(
+			`/trackers/${trackerId}/reports/monthly-insights`,
+			{ method: "POST", body },
+		);
+		return mapMonthlyInsightsSnapshot(dto);
 	},
 };
