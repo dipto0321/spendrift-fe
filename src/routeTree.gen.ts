@@ -12,13 +12,13 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ReportsAiRouteImport } from './routes/reports-ai'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ExpensesRouteImport } from './routes/expenses'
 import { Route as BudgetRouteImport } from './routes/budget'
 import { Route as AiRouteImport } from './routes/ai'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ReportsAiRouteImport } from './routes/reports.ai'
 
 const SignUpRoute = SignUpRouteImport.update({
   id: '/sign-up',
@@ -33,6 +33,11 @@ const SignInRoute = SignInRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsAiRoute = ReportsAiRouteImport.update({
+  id: '/reports-ai',
+  path: '/reports-ai',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReportsRoute = ReportsRouteImport.update({
@@ -65,11 +70,6 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ReportsAiRoute = ReportsAiRouteImport.update({
-  id: '/ai',
-  path: '/ai',
-  getParentRoute: () => ReportsRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -77,11 +77,11 @@ export interface FileRoutesByFullPath {
   '/budget': typeof BudgetRoute
   '/expenses': typeof ExpensesRoute
   '/profile': typeof ProfileRoute
-  '/reports': typeof ReportsRouteWithChildren
+  '/reports': typeof ReportsRoute
+  '/reports-ai': typeof ReportsAiRoute
   '/settings': typeof SettingsRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
-  '/reports/ai': typeof ReportsAiRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -89,11 +89,11 @@ export interface FileRoutesByTo {
   '/budget': typeof BudgetRoute
   '/expenses': typeof ExpensesRoute
   '/profile': typeof ProfileRoute
-  '/reports': typeof ReportsRouteWithChildren
+  '/reports': typeof ReportsRoute
+  '/reports-ai': typeof ReportsAiRoute
   '/settings': typeof SettingsRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
-  '/reports/ai': typeof ReportsAiRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -102,11 +102,11 @@ export interface FileRoutesById {
   '/budget': typeof BudgetRoute
   '/expenses': typeof ExpensesRoute
   '/profile': typeof ProfileRoute
-  '/reports': typeof ReportsRouteWithChildren
+  '/reports': typeof ReportsRoute
+  '/reports-ai': typeof ReportsAiRoute
   '/settings': typeof SettingsRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
-  '/reports/ai': typeof ReportsAiRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -117,10 +117,10 @@ export interface FileRouteTypes {
     | '/expenses'
     | '/profile'
     | '/reports'
+    | '/reports-ai'
     | '/settings'
     | '/sign-in'
     | '/sign-up'
-    | '/reports/ai'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -129,10 +129,10 @@ export interface FileRouteTypes {
     | '/expenses'
     | '/profile'
     | '/reports'
+    | '/reports-ai'
     | '/settings'
     | '/sign-in'
     | '/sign-up'
-    | '/reports/ai'
   id:
     | '__root__'
     | '/'
@@ -141,10 +141,10 @@ export interface FileRouteTypes {
     | '/expenses'
     | '/profile'
     | '/reports'
+    | '/reports-ai'
     | '/settings'
     | '/sign-in'
     | '/sign-up'
-    | '/reports/ai'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -153,7 +153,8 @@ export interface RootRouteChildren {
   BudgetRoute: typeof BudgetRoute
   ExpensesRoute: typeof ExpensesRoute
   ProfileRoute: typeof ProfileRoute
-  ReportsRoute: typeof ReportsRouteWithChildren
+  ReportsRoute: typeof ReportsRoute
+  ReportsAiRoute: typeof ReportsAiRoute
   SettingsRoute: typeof SettingsRoute
   SignInRoute: typeof SignInRoute
   SignUpRoute: typeof SignUpRoute
@@ -180,6 +181,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports-ai': {
+      id: '/reports-ai'
+      path: '/reports-ai'
+      fullPath: '/reports-ai'
+      preLoaderRoute: typeof ReportsAiRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reports': {
@@ -224,26 +232,8 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/reports/ai': {
-      id: '/reports/ai'
-      path: '/ai'
-      fullPath: '/reports/ai'
-      preLoaderRoute: typeof ReportsAiRouteImport
-      parentRoute: typeof ReportsRoute
-    }
   }
 }
-
-interface ReportsRouteChildren {
-  ReportsAiRoute: typeof ReportsAiRoute
-}
-
-const ReportsRouteChildren: ReportsRouteChildren = {
-  ReportsAiRoute: ReportsAiRoute,
-}
-
-const ReportsRouteWithChildren =
-  ReportsRoute._addFileChildren(ReportsRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -251,7 +241,8 @@ const rootRouteChildren: RootRouteChildren = {
   BudgetRoute: BudgetRoute,
   ExpensesRoute: ExpensesRoute,
   ProfileRoute: ProfileRoute,
-  ReportsRoute: ReportsRouteWithChildren,
+  ReportsRoute: ReportsRoute,
+  ReportsAiRoute: ReportsAiRoute,
   SettingsRoute: SettingsRoute,
   SignInRoute: SignInRoute,
   SignUpRoute: SignUpRoute,

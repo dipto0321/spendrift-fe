@@ -42,8 +42,8 @@ const NAV_ITEMS = [
 	{ to: "/", label: "Dashboard", icon: LayoutDashboard, exact: true },
 	{ to: "/expenses", label: "Expenses", icon: ReceiptText, exact: false },
 	{ to: "/budget", label: "Budget", icon: PiggyBank, exact: false },
-	{ to: "/reports", label: "Reports", icon: BarChart3, exact: false },
-	{ to: "/reports/ai", label: "Smart Report", icon: Sparkles, exact: false },
+	{ to: "/reports", label: "Reports", icon: BarChart3, exact: true },
+	{ to: "/reports-ai", label: "Smart Report", icon: Sparkles, exact: false },
 	{ to: "/settings", label: "Settings", icon: Settings2, exact: false },
 	{ to: "/ai", label: "AI Settings", icon: Bot, exact: false },
 ] as const;

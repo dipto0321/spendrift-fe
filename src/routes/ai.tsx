@@ -423,7 +423,7 @@ function AiSettingsPage() {
 							<p className="mt-2 text-xs text-muted-foreground">
 								Open{" "}
 								<Link
-									to="/reports/ai"
+									to="/reports-ai"
 									className="font-medium text-foreground underline-offset-4 hover:underline"
 								>
 									Smart Report
