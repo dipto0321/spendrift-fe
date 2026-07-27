@@ -1,7 +1,7 @@
 // Persistence for the AI settings. Two localStorage keys:
 //
 //   spendrift.ai.v1      → EncryptedBlob { v, ciphertext, iv, salt }
-//   spendrift.ai.config  → plaintext AiConfig (baseUrl, model, features)
+//   spendrift.ai.config  → plaintext AiConfig (baseUrl, model)
 //
 // The plaintext blob holds only non-sensitive metadata (no API key). The
 // API key is encrypted with a key derived from the active JWT subject and
@@ -51,17 +51,36 @@ function remove(key: string): void {
  * was `{ apiKey, baseUrl, model, features }` in cleartext — we cannot
  * decrypt it, so we silently drop it. Anything written after this point
  * uses the encrypted format.
+ *
+ * Also migrates any v1 config blob that still carries the now-removed
+ * `features` field — we rewrite it as the slim shape so future reads
+ * don't see stale data.
  */
 export function purgeLegacySettings(): void {
 	remove(LEGACY_KEY);
+
+	if (!isBrowser()) return;
+	const raw = globalThis.window.localStorage.getItem(CONFIG_KEY);
+	if (!raw) return;
+	try {
+		const parsed = JSON.parse(raw) as Record<string, unknown>;
+		if ("features" in parsed) {
+			const { features: _features, ...rest } = parsed;
+			globalThis.window.localStorage.setItem(CONFIG_KEY, JSON.stringify(rest));
+		}
+	} catch {
+		// Unparseable — ignore; the next save will overwrite it.
+	}
 }
 
+/**
+ * Strict read — only honours keys that exist on the current schema. Any
+ * unknown field is dropped. This means the stored config always matches
+ * `AiConfig` even after schema changes.
+ */
 function readConfig(): AiConfig {
-	// Best-effort: a malformed config falls back to defaults rather than
-	// throwing. The user can re-enter their base URL and model.
 	const stored = readJson<Partial<AiConfig>>(CONFIG_KEY);
-	if (!stored)
-		return { ...DEFAULT_CONFIG, features: { ...DEFAULT_CONFIG.features } };
+	if (!stored) return { ...DEFAULT_CONFIG };
 	return {
 		baseUrl:
 			typeof stored.baseUrl === "string"
@@ -69,16 +88,6 @@ function readConfig(): AiConfig {
 				: DEFAULT_CONFIG.baseUrl,
 		model:
 			typeof stored.model === "string" ? stored.model : DEFAULT_CONFIG.model,
-		features: {
-			smartReport:
-				typeof stored.features?.smartReport === "boolean"
-					? stored.features.smartReport
-					: DEFAULT_CONFIG.features.smartReport,
-			receiptOcr:
-				typeof stored.features?.receiptOcr === "boolean"
-					? stored.features.receiptOcr
-					: DEFAULT_CONFIG.features.receiptOcr,
-		} as AiConfig["features"],
 	};
 }
 
@@ -87,17 +96,9 @@ function writeConfig(config: AiConfig): void {
 }
 
 /**
- * Returns the in-memory settings, decrypting the API key with the active
- * JWT subject. Returns the defaults (with empty apiKey) when:
- *   - we're not in the browser
- *   - there's no active session
- *   - there's no encrypted blob stored yet
- *   - decryption fails (corrupt blob, session mismatch)
- *
- * `apiKey` is "" in every "no key available" case so callers can simply
- * check `settings.apiKey.length > 0` to know whether AI features are
- * configured. The plaintext config (baseUrl, model, features) is always
- * returned regardless of key state.
+ * Returns the in-memory settings. The synchronous loader returns the
+ * plaintext config but an empty `apiKey` — decryption is async. Use
+ * `loadAiSettingsAsync` when you need the key (e.g. to make an LLM call).
  */
 export function loadAiSettings(): AiSettings {
 	purgeLegacySettings();
@@ -114,10 +115,6 @@ export function loadAiSettings(): AiSettings {
 		return { apiKey: "", ...config };
 	}
 
-	// Decrypt synchronously is impossible (Web Crypto is async), so the
-	// caller should use `loadAiSettingsAsync` when it needs the key. This
-	// sync version returns the plaintext fields only — useful for the page
-	// header that needs the toggle states without the key.
 	return { apiKey: "", ...config };
 }
 
@@ -164,7 +161,6 @@ export async function saveAiSettings(settings: AiSettings): Promise<void> {
 	const config: AiConfig = {
 		baseUrl: configLike.baseUrl,
 		model: configLike.model,
-		features: { ...configLike.features },
 	};
 	writeConfig(config);
 

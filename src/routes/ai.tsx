@@ -16,7 +16,9 @@
 
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
+	AlertTriangle,
 	Bot,
+	CheckCircle2,
 	Eye,
 	EyeOff,
 	KeyRound,
@@ -45,7 +47,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
 import { requireAuth } from "@/features/auth/presentation/routeGuards";
 import {
 	clearAiSettings,
@@ -54,11 +55,7 @@ import {
 	loadAiSettingsAsync,
 	saveAiSettings,
 } from "@/shared/ai/storage";
-import {
-	type AiSettings,
-	type ByoFeatureKey,
-	DEFAULT_SETTINGS,
-} from "@/shared/ai/types";
+import { type AiSettings, DEFAULT_SETTINGS } from "@/shared/ai/types";
 import { PageHeader } from "@/shared/ui/PageHeader";
 
 export const Route = createFileRoute("/ai")({
@@ -67,9 +64,7 @@ export const Route = createFileRoute("/ai")({
 });
 
 // Built-in features (served by Spendrift's server-side Gemini key) are
-// not user-configurable. This list is illustrative — the toggle is
-// decorative ("always on") and the description answers "what does this
-// do and which provider runs it".
+// not user-configurable.
 type BuiltInFeature = {
 	key: string;
 	label: string;
@@ -96,9 +91,9 @@ const BUILT_IN_FEATURES: BuiltInFeature[] = [
 	},
 ];
 
-// BYO features — toggled by the user's own key.
+// BYO features — gated by whether the user has configured an API key.
 type ByoFeature = {
-	key: ByoFeatureKey;
+	key: string;
 	label: string;
 	description: string;
 	icon: ElementType;
@@ -128,12 +123,9 @@ function AiSettingsPage() {
 	const [storageError, setStorageError] = useState<string | null>(null);
 	const [hasKey, setHasKey] = useState(false);
 
-	// Read on mount. Decryption is async, so we kick off the async loader
-	// and pull the non-secret parts synchronously first; once the key has
-	// been decrypted we update hasKey. `hasEncryptedBlob` keeps the UI in
-	// sync during the brief gap before decryption completes (and continues
-	// to reflect "key is saved" even if the active session can't decrypt —
-	// e.g. right after a token refresh).
+	// Read on mount. Decryption is async, so we surface the masked
+	// "key is saved" state immediately via hasEncryptedBlob() and update
+	// the form state once the async loader completes.
 	useEffect(() => {
 		setHasKey(hasEncryptedBlob());
 		const loaded = loadAiSettings();
@@ -176,7 +168,6 @@ function AiSettingsPage() {
 			apiKey: trimmedKey,
 			baseUrl: draft.baseUrl.trim(),
 			model: draft.model.trim(),
-			features: { ...draft.features },
 		};
 		try {
 			await saveAiSettings(cleaned);
@@ -203,13 +194,6 @@ function AiSettingsPage() {
 		setHasKey(false);
 		setShowKey(false);
 		toast.success("AI settings cleared.");
-	}
-
-	function setFeature(key: ByoFeatureKey, value: boolean) {
-		setDraft((d) => ({
-			...d,
-			features: { ...d.features, [key]: value },
-		}));
 	}
 
 	return (
@@ -245,34 +229,31 @@ function AiSettingsPage() {
 						{BUILT_IN_FEATURES.map((feature, i) => (
 							<div key={feature.key}>
 								{i > 0 ? <Separator /> : null}
-								<div className="flex items-start justify-between gap-4 py-3">
-									<div className="flex items-start gap-3">
-										<feature.icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-										<div className="flex flex-col gap-0.5">
-											<div className="flex items-center gap-2">
-												<span className="text-sm font-medium text-foreground">
-													{feature.label}
-												</span>
-												{feature.comingSoon ? (
-													<Badge variant="secondary" className="text-xs">
-														Coming soon
-													</Badge>
-												) : (
-													<Badge variant="outline" className="text-xs">
-														Built-in
-													</Badge>
-												)}
-											</div>
-											<span className="text-xs text-muted-foreground">
-												{feature.description}
+								<div className="flex items-start gap-3 py-3">
+									<feature.icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+									<div className="flex flex-col gap-0.5">
+										<div className="flex flex-wrap items-center gap-2">
+											<span className="text-sm font-medium text-foreground">
+												{feature.label}
 											</span>
+											{feature.comingSoon ? (
+												<Badge variant="secondary" className="text-xs">
+													Coming soon
+												</Badge>
+											) : (
+												<Badge
+													variant="outline"
+													className="gap-1 text-xs text-emerald-600 dark:text-emerald-400"
+												>
+													<CheckCircle2 className="size-3" />
+													Built-in
+												</Badge>
+											)}
 										</div>
+										<span className="text-xs text-muted-foreground">
+											{feature.description}
+										</span>
 									</div>
-									<Switch
-										checked={!feature.comingSoon}
-										disabled={Boolean(feature.comingSoon)}
-										aria-label={feature.label}
-									/>
 								</div>
 							</div>
 						))}
@@ -396,50 +377,15 @@ function AiSettingsPage() {
 					</CardContent>
 					<Separator />
 					<CardContent className="flex flex-col gap-1 pt-4">
-						{BYO_FEATURES.map((feature, i) => {
-							const disabled = !hasKey || Boolean(feature.comingSoon);
-							return (
-								<div key={feature.key}>
-									{i > 0 ? <Separator /> : null}
-									<div className="flex items-start justify-between gap-4 py-3">
-										<div className="flex items-start gap-3">
-											<feature.icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-											<div className="flex flex-col gap-0.5">
-												<div className="flex items-center gap-2">
-													<span className="text-sm font-medium text-foreground">
-														{feature.label}
-													</span>
-													{feature.comingSoon ? (
-														<Badge variant="secondary" className="text-xs">
-															Coming soon
-														</Badge>
-													) : (
-														<Badge variant="outline" className="text-xs">
-															Your key
-														</Badge>
-													)}
-												</div>
-												<span className="text-xs text-muted-foreground">
-													{feature.description}
-												</span>
-												{!hasKey && !feature.comingSoon ? (
-													<span className="mt-1 text-xs text-amber-600 dark:text-amber-400">
-														An API key is required.
-													</span>
-												) : null}
-											</div>
-										</div>
-										<Switch
-											checked={draft.features[feature.key]}
-											onCheckedChange={(v) => setFeature(feature.key, v)}
-											disabled={disabled}
-											aria-label={feature.label}
-										/>
-									</div>
-								</div>
-							);
-						})}
-						{hasKey ? null : (
+						{BYO_FEATURES.map((feature, i) => (
+							<ByoFeatureRow
+								key={feature.key}
+								feature={feature}
+								hasKey={hasKey}
+								showDivider={i > 0}
+							/>
+						))}
+						{hasKey ? (
 							<p className="mt-2 text-xs text-muted-foreground">
 								Open{" "}
 								<Link
@@ -448,9 +394,9 @@ function AiSettingsPage() {
 								>
 									Smart Report
 								</Link>{" "}
-								after saving your key.
+								to use your key.
 							</p>
-						)}
+						) : null}
 					</CardContent>
 					<CardFooter className="border-t pt-4 text-xs text-muted-foreground">
 						<SavedKeysPrivacyNote />
@@ -458,6 +404,75 @@ function AiSettingsPage() {
 				</Card>
 			</div>
 		</main>
+	);
+}
+
+function ByoFeatureRow({
+	feature,
+	hasKey,
+	showDivider,
+}: {
+	feature: ByoFeature;
+	hasKey: boolean;
+	showDivider: boolean;
+}) {
+	// Status is derived: a comingSoon feature always says "Coming soon";
+	// otherwise it is Ready when a key is configured and "Needs API key"
+	// when not. There is no user-toggle.
+	const Icon = feature.icon;
+	const status = feature.comingSoon
+		? {
+				label: "Coming soon",
+				variant: "secondary" as const,
+				icon: null,
+				className: "",
+				helperText: null,
+			}
+		: hasKey
+			? {
+					label: "Ready",
+					variant: "outline" as const,
+					icon: CheckCircle2,
+					className:
+						"gap-1 text-xs text-emerald-600 dark:text-emerald-400 border-emerald-500/30",
+					helperText: "Powered by your provider key.",
+				}
+			: {
+					label: "Needs API key",
+					variant: "outline" as const,
+					icon: AlertTriangle,
+					className:
+						"gap-1 text-xs text-amber-600 dark:text-amber-400 border-amber-500/30",
+					helperText: "Add an API key above to use this.",
+				};
+
+	const StatusIcon = status.icon;
+	return (
+		<div>
+			{showDivider ? <Separator /> : null}
+			<div className="flex items-start gap-3 py-3">
+				<Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+				<div className="flex flex-col gap-0.5">
+					<div className="flex flex-wrap items-center gap-2">
+						<span className="text-sm font-medium text-foreground">
+							{feature.label}
+						</span>
+						<Badge variant={status.variant} className={status.className}>
+							{StatusIcon ? <StatusIcon className="size-3" /> : null}
+							{status.label}
+						</Badge>
+					</div>
+					<span className="text-xs text-muted-foreground">
+						{feature.description}
+					</span>
+					{status.helperText ? (
+						<span className="mt-1 text-xs text-muted-foreground">
+							{status.helperText}
+						</span>
+					) : null}
+				</div>
+			</div>
+		</div>
 	);
 }
 

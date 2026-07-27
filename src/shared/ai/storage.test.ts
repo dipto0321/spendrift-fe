@@ -35,7 +35,6 @@ describe("ai/storage", () => {
 			apiKey: "sk-or-v1-very-secret",
 			baseUrl: "https://openrouter.ai/api/v1",
 			model: "anthropic/claude-sonnet-4-5",
-			features: { smartReport: true, receiptOcr: false },
 		});
 
 		// Plaintext config is readable synchronously and without a session.
@@ -44,7 +43,6 @@ describe("ai/storage", () => {
 		const configParsed = JSON.parse(configRaw as string);
 		expect(configParsed.baseUrl).toBe("https://openrouter.ai/api/v1");
 		expect(configParsed.model).toBe("anthropic/claude-sonnet-4-5");
-		expect(configParsed.features.smartReport).toBe(true);
 
 		// Encrypted blob: ciphertext does NOT contain the plaintext key.
 		const blobRaw = localStorage.getItem("spendrift.ai.v1");
@@ -61,7 +59,6 @@ describe("ai/storage", () => {
 			apiKey: "sk-test",
 			baseUrl: "https://api.anthropic.com",
 			model: "claude-sonnet-4-6",
-			features: { smartReport: false, receiptOcr: false },
 		});
 
 		await setSession(null);
@@ -76,7 +73,6 @@ describe("ai/storage", () => {
 			apiKey: "sk-test",
 			baseUrl: "https://api.anthropic.com",
 			model: "claude-sonnet-4-6",
-			features: { smartReport: false, receiptOcr: false },
 		});
 
 		// Simulate a token rotation: the JWT subject changes, so decryption
@@ -88,7 +84,7 @@ describe("ai/storage", () => {
 		expect(localStorage.getItem("spendrift.ai.v1")).toBeNull();
 	});
 
-	it("purgeLegacySettings removes the old plaintext key", () => {
+	it("purgeLegacySettings removes the pre-encryption plaintext key", () => {
 		localStorage.setItem(
 			"spendrift:ai-settings",
 			JSON.stringify({ apiKey: "sk-plaintext", baseUrl: "x", model: "y" }),
@@ -97,12 +93,40 @@ describe("ai/storage", () => {
 		expect(localStorage.getItem("spendrift:ai-settings")).toBeNull();
 	});
 
+	it("migrates a stored config that still carries the removed features field", () => {
+		// Simulate a config blob written by an older build of the FE.
+		localStorage.setItem(
+			"spendrift.ai.config",
+			JSON.stringify({
+				baseUrl: "https://api.anthropic.com",
+				model: "claude-sonnet-4-6",
+				features: { smartReport: true, receiptOcr: false },
+			}),
+		);
+
+		// purgeLegacySettings runs on the next load and rewrites the blob.
+		purgeLegacySettings();
+
+		const rewritten = JSON.parse(
+			localStorage.getItem("spendrift.ai.config") as string,
+		);
+		expect(rewritten).toEqual({
+			baseUrl: "https://api.anthropic.com",
+			model: "claude-sonnet-4-6",
+		});
+		expect(rewritten.features).toBeUndefined();
+
+		// And the loader reads the migrated shape cleanly.
+		const loaded = loadAiSettings();
+		expect(loaded.baseUrl).toBe("https://api.anthropic.com");
+		expect(loaded.model).toBe("claude-sonnet-4-6");
+	});
+
 	it("clearAiSettings removes all AI keys", async () => {
 		await saveAiSettings({
 			apiKey: "sk-test",
 			baseUrl: "https://api.anthropic.com",
 			model: "claude-sonnet-4-6",
-			features: { smartReport: false, receiptOcr: false },
 		});
 		localStorage.setItem("spendrift:ai-settings", "{}");
 		clearAiSettings();
@@ -116,7 +140,6 @@ describe("ai/storage", () => {
 			apiKey: "sk-first",
 			baseUrl: "https://api.anthropic.com",
 			model: "claude-sonnet-4-6",
-			features: { smartReport: false, receiptOcr: false },
 		});
 		const before = localStorage.getItem("spendrift.ai.v1");
 		expect(before).not.toBeNull();
@@ -125,7 +148,6 @@ describe("ai/storage", () => {
 			apiKey: "",
 			baseUrl: "https://api.anthropic.com",
 			model: "claude-sonnet-4-6",
-			features: { smartReport: false, receiptOcr: false },
 		});
 		// Empty key on Save = no change. The blob remains; use clearAiSettings
 		// to explicitly wipe.
@@ -137,13 +159,11 @@ describe("ai/storage", () => {
 			apiKey: "sk-or-v1-abc",
 			baseUrl: "https://openrouter.ai/api/v1",
 			model: "anthropic/claude-sonnet-4-5",
-			features: { smartReport: true, receiptOcr: false },
 		});
 		const sync = loadAiSettings();
 		// Sync loader can't decrypt; apiKey is empty but the metadata is there.
 		expect(sync.apiKey).toBe("");
 		expect(sync.baseUrl).toBe("https://openrouter.ai/api/v1");
-		expect(sync.features.smartReport).toBe(true);
 	});
 
 	it("hasEncryptedBlob is true after save and false after clearAiSettings", async () => {
@@ -152,7 +172,6 @@ describe("ai/storage", () => {
 			apiKey: "sk-or-v1-abc",
 			baseUrl: "https://openrouter.ai/api/v1",
 			model: "anthropic/claude-sonnet-4-5",
-			features: { smartReport: true, receiptOcr: false },
 		});
 		expect(hasEncryptedBlob()).toBe(true);
 		clearAiSettings();
