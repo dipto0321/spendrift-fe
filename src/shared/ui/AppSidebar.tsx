@@ -45,7 +45,12 @@ const NAV_ITEMS = [
 	{ to: "/budget", label: "Budget", icon: PiggyBank, exact: false },
 	{ to: "/reports", label: "Reports", icon: BarChart3, exact: true },
 	{ to: "/reports-ai", label: "Smart Report", icon: Sparkles, exact: false },
-	{ to: "/tax", label: "Tax Report", icon: FileSpreadsheet, exact: false },
+	{
+		to: "/tax-report",
+		label: "Tax Report",
+		icon: FileSpreadsheet,
+		exact: false,
+	},
 	{ to: "/settings", label: "Settings", icon: Settings2, exact: false },
 	{ to: "/ai", label: "AI Settings", icon: Bot, exact: false },
 ] as const;

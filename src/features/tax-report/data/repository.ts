@@ -13,7 +13,7 @@ function basePath(trackerId: string) {
 	return `/trackers/${trackerId}/tax-reports`;
 }
 
-export const taxRepository = {
+export const taxReportRepository = {
 	async list(trackerId: string): Promise<TaxReportSummary[]> {
 		const dtos = await apiFetch<TaxReportSummaryDto[]>(basePath(trackerId));
 		return dtos.map(mapTaxReportSummary);
@@ -26,7 +26,7 @@ export const taxRepository = {
 		return mapTaxReport(dto);
 	},
 
-	async createOrGet(trackerId: string, fiscalYear: string): Promise<TaxReport> {
+	async getOrCreate(trackerId: string, fiscalYear: string): Promise<TaxReport> {
 		const dto = await apiFetch<TaxReportResponseDto>(basePath(trackerId), {
 			method: "POST",
 			body: toCreateBody(fiscalYear),

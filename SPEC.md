@@ -18,7 +18,8 @@ tracker-based personal finance web app (Spendrift). ∀ tracker → own currency
 - observability: Sentry (`@sentry/tanstackstart-react`) + PostHog wired
 
 ## §I INTERFACES
-- ui routes: `/` dashboard, `/expenses`, `/budget`, `/reports`, `/profile`, `/settings`, `/ai` (blurred "coming soon" shield, V9), `/sign-in`, `/sign-up`
+- ui routes: `/` dashboard, `/expenses`, `/budget`, `/reports`, `/tax-report`, `/profile`, `/settings`, `/ai` (blurred "coming soon" shield, V9), `/sign-in`, `/sign-up`
+- api.tax (`/trackers/:id/tax-reports`): POST {fiscal_year} → get-or-create TaxReport; GET → list summaries; GET /:fiscal_year → existing report; PATCH /:fiscal_year {heads:[{head_code,amount}]} → manual override; POST /:fiscal_year/regenerate → force re-classify
 - api: `POST /auth/login` → tokens (skipAuth)
 - api: `POST /auth/register` → tokens (skipAuth)
 - api: `POST /auth/sign-out` {refresh_token} (best-effort)
@@ -61,6 +62,9 @@ V16: preferences (Budget alerts / Weekly summary / Round amounts) ! read via `us
 V17: money rendering ! threaded thru `useFormatCurrency()` so the `roundAmounts` preference applies app-wide; raw `formatCurrency()` only acceptable in tests / non-UI utilities
 V18: AI-parsed rows ! land in bulk review grid (`BulkExpenseForm`) → user edits/saves via `POST /trackers/:id/expenses`; ⊥ direct persistence from `/ai/parse-expenses`
 V19: global element selectors in `styles.css` ! live in `@layer base` — unlayered author CSS outranks Tailwind utilities ∴ breaks utility overrides (see B2)
+V20: tax report data access only via `features/tax-report/data/repository.ts` (`taxReportRepository`, `taxReportKeys`) and keyed by trackerId in path (V6)
+V21: tax head edits go only through `useUpdateTaxReportHeads` (optimistic + rollback) and validate `amount >= 0` via `domain/schema.ts`; totals recomputed by backend after PATCH; regenerate guarded by confirm dialog
+V22: fiscal-year options derived from Bangladesh income-year boundary Jul 1 → Jun 30 (YYYY-YY) via pure `buildFiscalYears` helper; amounts rendered via `MoneyText` (which wraps `useFormatCurrency`, V17)
 
 ## §T TASKS
 id|status|task|cites
@@ -86,6 +90,7 @@ T19|x|budget alerts banner: `BudgetAlertBanner` on `/` lists warning/exceeded ca
 T20|x|bulk expense entry: `BulkExpenseModal` grid (shared date + `useFieldArray` rows) + parallel `POST /expenses` (`Promise.allSettled`) w/ per-row failure retry|V10,V18
 T21|~|AI smart paste: FE shipped (`SmartPasteSection` → `useParseExpenses` → `expenseParseRepository`), BE `POST /ai/parse-expenses` (Gemini Flash proxy) pending|V18,I.ai-parse-expenses
 T22|x|catch-up recency: `CatchUpBanner` on dashboard (quiet line <2d, nudge ≥2d → `/expenses?bulk=1`); `getLastEntryDate` via `sort=date_desc&limit=1`|V1,I.expenses
+T23|x|tax report: `/tax-report` page, FY selector, editable 9 IT-10BB heads w/ category breakdown, copy + regenerate|V20,V21,V22,I.tax
 
 ## §B BUGS
 id|date|cause|fix

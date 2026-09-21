@@ -109,6 +109,12 @@ export function fiscalYearOptions(count = 7): string[] {
 	return out;
 }
 
+export type FiscalYearOption = { value: string; label: string };
+
+export function buildFiscalYears(count = 8): FiscalYearOption[] {
+	return fiscalYearOptions(count).map((value) => ({ value, label: value }));
+}
+
 export function fiscalYearLabel(fy: string): string {
 	const { startDate, endDate } = fiscalYearBounds(fy);
 	return `${fy} · ${startDate} → ${endDate}`;

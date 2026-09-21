@@ -1,9 +1,27 @@
-import { AlertTriangle, FileSpreadsheet, RefreshCw, Save } from "lucide-react";
+import {
+	AlertTriangle,
+	Copy,
+	FileSpreadsheet,
+	Info,
+	RefreshCw,
+	Save,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 import {
 	Select,
 	SelectContent,
@@ -11,153 +29,39 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
 import { useTracker } from "@/features/trackers/presentation/TrackerContext";
 import { ApiError } from "@/shared/api/client";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { MoneyText } from "@/shared/ui/MoneyText";
 import { PageHeader } from "@/shared/ui/PageHeader";
+import { buildTaxCopyText } from "../domain/copyText";
 import {
+	buildFiscalYears,
 	currentFiscalYear,
 	fiscalYearBounds,
 	fiscalYearLabel,
-	fiscalYearOptions,
-} from "../domain/services";
-import type { TaxHead, TaxHeadCode } from "../domain/types";
+} from "../domain/fiscalYears";
+import { headAmountSchema } from "../domain/schema";
+import type { TaxHeadCode } from "../domain/types";
+import { ReportSkeleton, TaxHeadList } from "./TaxHeadList";
 import {
-	useCreateTaxReport,
+	useGenerateTaxReport,
 	useRegenerateTaxReport,
 	useTaxReport,
 	useTaxReportList,
-	useUpdateTaxReport,
-} from "./useTaxReports";
+	useUpdateTaxReportHeads,
+} from "./useTaxReport";
 
-function ReportSkeleton() {
-	return (
-		<div className="space-y-4">
-			<Skeleton className="h-24 rounded-xl" />
-			<Skeleton className="h-96 rounded-xl" />
-		</div>
-	);
-}
-
-function HeadsTable({
-	heads,
-	currency,
-	draft,
-	onDraftChange,
-	editing,
-}: {
-	heads: TaxHead[];
-	currency: string;
-	draft: Record<string, string>;
-	onDraftChange: (code: TaxHeadCode, value: string) => void;
-	editing: boolean;
-}) {
-	return (
-		<Card>
-			<CardHeader className="pb-3">
-				<CardTitle className="text-base">IT-10BB heads (9)</CardTitle>
-				<p className="text-sm text-muted-foreground">
-					Amounts are summed from your expenses per category; the AI only maps
-					categories to heads. Edit any head to override the total.
-				</p>
-			</CardHeader>
-			<CardContent className="p-0">
-				<Table>
-					<TableHeader>
-						<TableRow>
-							<TableHead className="w-[36%]">Head</TableHead>
-							<TableHead className="text-right">Amount</TableHead>
-							<TableHead>Categories</TableHead>
-						</TableRow>
-					</TableHeader>
-					<TableBody>
-						{heads.map((h) => (
-							<TableRow key={h.headCode}>
-								<TableCell className="max-w-[320px] whitespace-normal align-top">
-									<p className="m-0 text-sm font-medium leading-none text-foreground">
-										{h.headName}
-									</p>
-									<p className="m-0 mt-1 text-xs leading-relaxed text-muted-foreground">
-										{h.description}
-									</p>
-									<Badge
-										variant="outline"
-										className="mt-2 font-mono text-[10px]"
-									>
-										{h.headCode}
-									</Badge>
-								</TableCell>
-								<TableCell className="text-right tabular-nums align-top">
-									{editing ? (
-										<Input
-											type="number"
-											inputMode="decimal"
-											min={0}
-											step="0.01"
-											value={draft[h.headCode] ?? String(h.amount)}
-											onChange={(e) =>
-												onDraftChange(h.headCode, e.target.value)
-											}
-											className="ml-auto h-9 w-32 text-right"
-											aria-label={`${h.headName} amount`}
-										/>
-									) : (
-										<MoneyText
-											amount={h.amount}
-											currency={currency}
-											className="text-sm font-semibold"
-										/>
-									)}
-								</TableCell>
-								<TableCell className="align-top">
-									{h.categoryAllocations.length === 0 ? (
-										<span className="text-xs text-muted-foreground">—</span>
-									) : (
-										<div className="flex flex-wrap gap-1.5">
-											{h.categoryAllocations.map((a) => (
-												<Badge
-													key={a.categoryName}
-													variant="secondary"
-													className="gap-1.5 font-normal"
-													title={`${a.categoryName}: ${a.amount}`}
-												>
-													<span>{a.categoryName}</span>
-													<span className="tabular-nums text-muted-foreground">
-														<MoneyText amount={a.amount} currency={currency} />
-													</span>
-												</Badge>
-											))}
-										</div>
-									)}
-								</TableCell>
-							</TableRow>
-						))}
-					</TableBody>
-				</Table>
-			</CardContent>
-		</Card>
-	);
-}
-
-export default function TaxPage() {
+export default function TaxReportPage() {
 	const { activeTracker } = useTracker();
 	const trackerId = activeTracker?.id;
-	const currency = activeTracker?.currency ?? "";
+	const currency = activeTracker?.currency ?? "BDT";
+	const isBdt = currency === "BDT";
 
 	const [fiscalYear, setFiscalYear] = useState<string>(() =>
 		currentFiscalYear(),
 	);
-	const options = useMemo(() => fiscalYearOptions(8), []);
+	const options = useMemo(() => buildFiscalYears(8), []);
 	const bounds = useMemo(() => fiscalYearBounds(fiscalYear), [fiscalYear]);
 
 	const { data: summaries } = useTaxReportList(trackerId);
@@ -168,45 +72,80 @@ export default function TaxPage() {
 		error: reportError,
 	} = useTaxReport(trackerId, fiscalYear);
 
-	const createMut = useCreateTaxReport(trackerId);
-	const updateMut = useUpdateTaxReport(trackerId);
+	const generateMut = useGenerateTaxReport(trackerId);
+	const updateMut = useUpdateTaxReportHeads(trackerId);
 	const regenMut = useRegenerateTaxReport(trackerId);
 
 	const is404 = reportError instanceof ApiError && reportError.status === 404;
 
 	const [editing, setEditing] = useState(false);
 	const [draft, setDraft] = useState<Record<string, string>>({});
+	const [errors, setErrors] = useState<Record<string, string>>({});
+	const [regenOpen, setRegenOpen] = useState(false);
 
 	useEffect(() => {
 		if (report) {
 			const next: Record<string, string> = {};
 			for (const h of report.heads) next[h.headCode] = String(h.amount);
 			setDraft(next);
+			setErrors({});
 			setEditing(false);
 		}
 	}, [report]);
 
 	function handleDraftChange(code: TaxHeadCode, value: string) {
 		setDraft((prev) => ({ ...prev, [code]: value }));
+		const parsed = headAmountSchema.safeParse(value);
+		setErrors((prev) => {
+			const next = { ...prev };
+			if (parsed.success) delete next[code];
+			else next[code] = "Enter an amount ≥ 0";
+			return next;
+		});
 	}
 
 	function handleSave() {
 		if (!report) return;
 		const heads = report.heads.map((h) => {
 			const raw = draft[h.headCode] ?? String(h.amount);
-			const n = Number(raw);
-			return {
-				headCode: h.headCode,
-				amount: Number.isFinite(n) && n >= 0 ? n : 0,
-			};
+			const parsed = headAmountSchema.safeParse(raw);
+			return { headCode: h.headCode, parsed };
 		});
-		updateMut.mutate({ fiscalYear: report.fiscalYear, heads });
-		setEditing(false);
+		const bad = heads.filter((h) => !h.parsed.success);
+		if (bad.length > 0) {
+			const next: Record<string, string> = {};
+			for (const b of bad) next[b.headCode] = "Enter an amount ≥ 0";
+			setErrors(next);
+			return;
+		}
+		setErrors({});
+		updateMut.mutate(
+			{
+				fiscalYear: report.fiscalYear,
+				heads: heads.map((h) => ({
+					headCode: h.headCode,
+					amount: h.parsed.success ? h.parsed.data : 0,
+				})),
+			},
+			{ onSuccess: () => setEditing(false) },
+		);
+	}
+
+	async function handleCopy() {
+		if (!report) return;
+		try {
+			await navigator.clipboard.writeText(
+				buildTaxCopyText(report.heads, report.fiscalYear),
+			);
+			toast.success("Copied");
+		} catch {
+			toast.error("Could not copy to clipboard");
+		}
 	}
 
 	const hasReport = Boolean(report);
 	const isBusy =
-		createMut.isPending ||
+		generateMut.isPending ||
 		updateMut.isPending ||
 		regenMut.isPending ||
 		reportFetching;
@@ -224,8 +163,8 @@ export default function TaxPage() {
 							</SelectTrigger>
 							<SelectContent>
 								{options.map((fy) => (
-									<SelectItem key={fy} value={fy}>
-										{fiscalYearLabel(fy)}
+									<SelectItem key={fy.value} value={fy.value}>
+										{fiscalYearLabel(fy.value)}
 									</SelectItem>
 								))}
 							</SelectContent>
@@ -236,7 +175,9 @@ export default function TaxPage() {
 									variant={editing ? "default" : "outline"}
 									size="sm"
 									onClick={() => (editing ? handleSave() : setEditing(true))}
-									disabled={isBusy}
+									disabled={
+										isBusy || (editing && Object.keys(errors).length > 0)
+									}
 								>
 									{editing ? (
 										<>
@@ -257,6 +198,7 @@ export default function TaxPage() {
 													next[h.headCode] = String(h.amount);
 												setDraft(next);
 											}
+											setErrors({});
 											setEditing(false);
 										}}
 									>
@@ -266,7 +208,25 @@ export default function TaxPage() {
 								<Button
 									variant="outline"
 									size="sm"
-									onClick={() => regenMut.mutate(fiscalYear)}
+									onClick={handleCopy}
+									disabled={isBusy}
+								>
+									<Copy className="size-4" />
+									Copy
+								</Button>
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={handleCopy}
+									disabled={isBusy}
+								>
+									<Copy className="size-4" />
+									Copy
+								</Button>
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={() => setRegenOpen(true)}
 									disabled={isBusy}
 									title="Re-aggregate from current expenses and re-classify categories"
 								>
@@ -277,7 +237,7 @@ export default function TaxPage() {
 						) : (
 							<Button
 								size="sm"
-								onClick={() => createMut.mutate(fiscalYear)}
+								onClick={() => generateMut.mutate(fiscalYear)}
 								disabled={isBusy}
 							>
 								<FileSpreadsheet className="size-4" />
@@ -287,6 +247,17 @@ export default function TaxPage() {
 					</div>
 				}
 			/>
+
+			{!isBdt ? (
+				<Alert>
+					<Info className="size-4" />
+					<AlertTitle>Non-BDT tracker</AlertTitle>
+					<AlertDescription>
+						IT-10BB applies to Bangladeshi tax residents. This tracker uses{" "}
+						{currency}.
+					</AlertDescription>
+				</Alert>
+			) : null}
 
 			{summaries && summaries.length > 0 ? (
 				<div className="flex flex-wrap items-center gap-2">
@@ -319,7 +290,7 @@ export default function TaxPage() {
 							description={`Income year ${bounds.startDate} → ${bounds.endDate}. Generate to aggregate this tracker's expenses (AI maps categories to the 9 IT-10BB heads).`}
 							action={
 								<Button
-									onClick={() => createMut.mutate(fiscalYear)}
+									onClick={() => generateMut.mutate(fiscalYear)}
 									disabled={isBusy}
 								>
 									<FileSpreadsheet className="size-4" />
@@ -372,15 +343,38 @@ export default function TaxPage() {
 						</CardContent>
 					</Card>
 
-					<HeadsTable
+					<TaxHeadList
 						heads={report.heads}
 						currency={report.currency}
 						draft={draft}
+						errors={errors}
 						onDraftChange={handleDraftChange}
 						editing={editing}
 					/>
 				</>
 			) : null}
+			<AlertDialog open={regenOpen} onOpenChange={setRegenOpen}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Regenerate {fiscalYear}?</AlertDialogTitle>
+						<AlertDialogDescription>
+							This re-aggregates expenses and re-runs AI classification,
+							replacing saved amounts including manual edits.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={() => {
+								setRegenOpen(false);
+								regenMut.mutate(fiscalYear);
+							}}
+						>
+							Regenerate
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</main>
 	);
 }

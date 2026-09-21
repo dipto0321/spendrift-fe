@@ -5,7 +5,7 @@ import {
 	fiscalYearFromDate,
 	fiscalYearOptions,
 	isValidFiscalYear,
-} from "./services";
+} from "./fiscalYears";
 
 describe("tax fiscal-year helpers", () => {
 	it("validates YYYY-YY with +1 year", () => {
