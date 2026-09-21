@@ -139,6 +139,7 @@ const PAGE_TITLES: Record<string, string> = {
 	"/budget": "Budget",
 	"/reports": "Reports",
 	"/reports-ai": "Smart Report",
+	"/tax-report": "Tax Report",
 	"/settings": "Settings",
 	"/profile": "Profile",
 	"/ai": "AI Settings",
@@ -209,7 +210,7 @@ function WorkspaceGate({ children }: Readonly<{ children: React.ReactNode }>) {
 		return auth.isAuthenticated ? (
 			<FullScreenMessage>Redirecting…</FullScreenMessage>
 		) : (
-			<>{children}</>
+			children
 		);
 	}
 
