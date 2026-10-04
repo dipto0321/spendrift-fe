@@ -1,8 +1,17 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+	useMutation,
+	useQueries,
+	useQuery,
+	useQueryClient,
+} from "@tanstack/react-query";
 import { toast } from "sonner";
 import { budgetKeys } from "../data/queryKeys";
 import { budgetRepository } from "../data/repository";
-import type { BudgetCreateInput, BudgetUpdateInput } from "../domain/types";
+import type {
+	BudgetCreateInput,
+	BudgetStatus,
+	BudgetUpdateInput,
+} from "../domain/types";
 
 // Query + mutation hooks for budgets.
 
@@ -25,6 +34,35 @@ export function useBudgetStatus(
 		queryFn: () =>
 			budgetRepository.getStatus(trackerId as string, budgetId as string),
 		enabled: Boolean(trackerId) && Boolean(budgetId),
+	});
+}
+
+// Server-computed statuses for many budgets in parallel. Used by the
+// "Previous budgets" list so each past month is summed from the full expense
+// history, not from the capped client-side expense page.
+export function usePreviousBudgetsStatus(
+	trackerId: string | undefined,
+	budgetIds: string[],
+) {
+	return useQueries({
+		queries: budgetIds.map((id) => ({
+			queryKey: budgetKeys.status(trackerId as string, id),
+			queryFn: () => budgetRepository.getStatus(trackerId as string, id),
+			enabled: Boolean(trackerId) && Boolean(id),
+		})),
+		combine: (results) => {
+			const statuses = new Map<string, BudgetStatus>();
+			for (let i = 0; i < budgetIds.length; i++) {
+				const data = results[i].data;
+				if (data) {
+					statuses.set(budgetIds[i], data);
+				}
+			}
+			return {
+				statuses,
+				isLoading: results.some((r) => r.isLoading),
+			};
+		},
 	});
 }
 

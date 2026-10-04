@@ -8,7 +8,6 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useExpenses } from "@/features/expenses/presentation/useExpenses";
 import { useFormatCurrency } from "@/features/preferences/presentation/useFormatCurrency";
 import { useTracker } from "@/features/trackers/presentation/TrackerContext";
 import { EmptyState } from "@/shared/ui/EmptyState";
@@ -16,17 +15,16 @@ import { MoneyText } from "@/shared/ui/MoneyText";
 import { useMonth } from "@/shared/ui/MonthContext";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { StatCard, StatCardSkeleton } from "@/shared/ui/StatCard";
-import { calculateBudgetStatus, getCurrentMonth } from "../domain/services";
+import { getCurrentMonth } from "../domain/services";
 import type { BudgetCreateInput, BudgetStatus } from "../domain/types";
 import { BudgetForm } from "./BudgetForm";
 import { BudgetStatusCard } from "./BudgetStatusCard";
-import { useCreateBudget, useUpdateBudget } from "./useBudgets";
+import {
+	useCreateBudget,
+	usePreviousBudgetsStatus,
+	useUpdateBudget,
+} from "./useBudgets";
 import { useCurrentBudgetStatus } from "./useCurrentBudgetStatus";
-
-// BE caps `limit` at 200. The "Previous budgets" list filters per-month, so
-// 200 rows of the most recent expenses covers months within the user's
-// practical recall window.
-const PREVIOUS_BUDGETS_EXPENSE_LIMIT = 200;
 
 const STAT_SKELETON_KEYS = ["spent", "needs", "wants"] as const;
 
@@ -47,13 +45,15 @@ function BudgetPage() {
 
 	const { budgets, currentBudget, status, needsWantsSplit, budgetsLoading } =
 		useCurrentBudgetStatus(trackerId, selectedMonth);
-	// Previous-budgets list filters expenses per month, so it needs a broader
-	// slice of recent expenses rather than the current-month subset above.
-	const { data: previousExpensesResult } = useExpenses(trackerId, {
-		page: 1,
-		pageSize: PREVIOUS_BUDGETS_EXPENSE_LIMIT,
-	});
-	const allExpenses = previousExpensesResult?.items ?? [];
+
+	const otherBudgets = budgets.filter((b) => b.month !== selectedMonth);
+	const {
+		statuses: previousBudgetStatuses,
+		isLoading: previousStatusesLoading,
+	} = usePreviousBudgetsStatus(
+		trackerId,
+		otherBudgets.map((b) => b.id),
+	);
 
 	const createMutation = useCreateBudget(trackerId);
 	const updateMutation = useUpdateBudget(trackerId);
@@ -72,7 +72,6 @@ function BudgetPage() {
 	}
 
 	const totalSpent = needsWantsSplit.needs + needsWantsSplit.wants;
-	const otherBudgets = budgets.filter((b) => b.month !== selectedMonth);
 
 	const selectedMonthLabel = new Date(`${selectedMonth}-01`).toLocaleDateString(
 		"en",
@@ -188,23 +187,32 @@ function BudgetPage() {
 						{otherBudgets
 							.sort((a, b) => b.month.localeCompare(a.month))
 							.map((budget) => {
-								const monthExpenses = allExpenses.filter((e) =>
-									e.date.startsWith(budget.month),
-								);
-								const prevStatus = calculateBudgetStatus(
-									budget.monthlyLimit,
-									budget.savingsTarget,
-									monthExpenses,
-								);
-								const label = prevStatus.isOverBudget
-									? "Over"
-									: `${formatCurrency(prevStatus.remaining, currency)} left`;
+								const prevStatus = previousBudgetStatuses.get(budget.id);
 								const monthLabel = new Date(
 									`${budget.month}-01`,
 								).toLocaleDateString("en", {
 									month: "short",
 									year: "numeric",
 								});
+
+								if (!prevStatus || previousStatusesLoading) {
+									return (
+										<div
+											key={budget.id}
+											className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/20 p-4"
+										>
+											<div className="space-y-2">
+												<Skeleton className="h-4 w-32" />
+												<Skeleton className="h-3 w-24" />
+											</div>
+											<Skeleton className="h-4 w-16" />
+										</div>
+									);
+								}
+
+								const label = prevStatus.isOverBudget
+									? "Over"
+									: `${formatCurrency(prevStatus.remaining, currency)} left`;
 								return (
 									<div
 										key={budget.id}
