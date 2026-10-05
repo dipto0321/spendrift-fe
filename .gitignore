@@ -14,6 +14,7 @@ todos.json
 .claude/
 .codex
 .kilo
+.commandcode/
 .env.development
 .env.production
 .env.test
