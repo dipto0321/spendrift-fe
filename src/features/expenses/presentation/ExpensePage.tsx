@@ -1,6 +1,16 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { ListPlus, Plus } from "lucide-react";
+import { ListPlus, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTracker } from "@/features/trackers/presentation/TrackerContext";
@@ -28,6 +38,7 @@ import { ExpenseToolbar } from "./ExpenseToolbar";
 import { useCategories } from "./useCategories";
 import {
 	useBulkCreateExpenses,
+	useBulkDeleteExpenses,
 	useBulkUpdateExpenseDates,
 	useCreateExpense,
 	useDeleteExpense,
@@ -64,6 +75,7 @@ export function ExpensePage() {
 	const [bulkOpen, setBulkOpen] = useState(false);
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 	const [bulkDateOpen, setBulkDateOpen] = useState(false);
+	const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 	const search = useSearch({ from: "/expenses" });
 	const navigate = useNavigate();
 	// The dashboard's catch-up nudge deep-links here with ?bulk=1: open the
@@ -102,6 +114,7 @@ export function ExpensePage() {
 	const deleteMutation = useDeleteExpense(trackerId);
 	const bulkCreateMutation = useBulkCreateExpenses(trackerId);
 	const bulkDateMutation = useBulkUpdateExpenseDates(trackerId);
+	const bulkDeleteMutation = useBulkDeleteExpenses(trackerId);
 
 	// Search is debounced via `debouncedFilter`, so the page query sees a
 	// stable filter set per search burst. The other filters apply
@@ -131,6 +144,13 @@ export function ExpensePage() {
 			(filter.categoryIds && filter.categoryIds.length > 0) ||
 			(filter.types && filter.types.length > 0),
 	);
+
+	// Selection is always a subset of the visible rows (cleared on filter/page
+	// change), so we can derive it here to gate bulk actions.
+	const selectedExpenses = sortedExpenses.filter((e) => selectedIds.has(e.id));
+	const allSameDate =
+		selectedExpenses.length > 0 &&
+		selectedExpenses.every((e) => e.date === selectedExpenses[0].date);
 
 	function handleSort(key: SortKey) {
 		setSort((s) =>
@@ -195,6 +215,16 @@ export function ExpensePage() {
 		const failedIds = new Set(result.failed.map((index) => ids[index]));
 		setSelectedIds(failedIds);
 		if (result.failed.length === 0) setBulkDateOpen(false);
+	}
+
+	async function handleBulkDelete() {
+		const ids = [...selectedIds];
+		const result = await bulkDeleteMutation.mutateAsync(ids);
+		// Failed rows stay selected for retry; full success clears selection
+		// and closes the confirmation dialog.
+		const failedIds = new Set(result.failed.map((index) => ids[index]));
+		setSelectedIds(failedIds);
+		if (result.failed.length === 0) setBulkDeleteOpen(false);
 	}
 
 	async function handleFormSubmit(data: ExpenseCreateInput) {
@@ -275,17 +305,40 @@ export function ExpensePage() {
 					)}
 
 					{selectedIds.size > 0 && (
-						<div className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 px-4 py-2.5">
+						<div className="flex flex-col gap-2 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between">
 							<span className="text-sm font-medium">
 								{selectedIds.size} selected
+								{!allSameDate && (
+									<span className="ml-2 font-normal text-muted-foreground">
+										— dates differ, bulk date change disabled
+									</span>
+								)}
 							</span>
 							<div className="flex items-center gap-2">
-								<Button size="sm" onClick={() => setBulkDateOpen(true)}>
+								<Button
+									size="sm"
+									onClick={() => setBulkDateOpen(true)}
+									disabled={!allSameDate}
+									title={
+										allSameDate
+											? undefined
+											: "Selected expenses have different dates"
+									}
+								>
 									Change date
 								</Button>
 								<Button
 									size="sm"
 									variant="outline"
+									className="text-destructive hover:text-destructive"
+									onClick={() => setBulkDeleteOpen(true)}
+								>
+									<Trash2 className="size-4" />
+									Delete
+								</Button>
+								<Button
+									size="sm"
+									variant="ghost"
 									onClick={() => setSelectedIds(new Set())}
 								>
 									Clear
@@ -350,6 +403,36 @@ export function ExpensePage() {
 					isSubmitting={bulkDateMutation.isPending}
 				/>
 			)}
+
+			<AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>
+							Delete {selectedIds.size}{" "}
+							{selectedIds.size === 1 ? "expense" : "expenses"}?
+						</AlertDialogTitle>
+						<AlertDialogDescription>
+							This permanently removes {selectedIds.size}{" "}
+							{selectedIds.size === 1 ? "expense" : "expenses"}. This action
+							cannot be undone.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel disabled={bulkDeleteMutation.isPending}>
+							Cancel
+						</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={handleBulkDelete}
+							disabled={bulkDeleteMutation.isPending}
+							className="bg-destructive text-white hover:bg-destructive/90"
+						>
+							{bulkDeleteMutation.isPending
+								? "Deleting…"
+								: `Delete ${selectedIds.size}`}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</main>
 	);
 }
