@@ -19,6 +19,7 @@ import type {
 	ExpenseCreateInput,
 	ExpenseFilter,
 } from "../domain/types";
+import { BulkDateEditModal } from "./BulkDateEditModal";
 import { BulkExpenseModal } from "./BulkExpenseModal";
 import { ExpenseModal } from "./ExpenseModal";
 import { ExpensePagination } from "./ExpensePagination";
@@ -27,6 +28,7 @@ import { ExpenseToolbar } from "./ExpenseToolbar";
 import { useCategories } from "./useCategories";
 import {
 	useBulkCreateExpenses,
+	useBulkUpdateExpenseDates,
 	useCreateExpense,
 	useDeleteExpense,
 	useExpenses,
@@ -60,6 +62,8 @@ export function ExpensePage() {
 		expense?: Expense;
 	}>({ open: false });
 	const [bulkOpen, setBulkOpen] = useState(false);
+	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+	const [bulkDateOpen, setBulkDateOpen] = useState(false);
 	const search = useSearch({ from: "/expenses" });
 	const navigate = useNavigate();
 	// The dashboard's catch-up nudge deep-links here with ?bulk=1: open the
@@ -97,6 +101,7 @@ export function ExpensePage() {
 	const updateMutation = useUpdateExpense(trackerId);
 	const deleteMutation = useDeleteExpense(trackerId);
 	const bulkCreateMutation = useBulkCreateExpenses(trackerId);
+	const bulkDateMutation = useBulkUpdateExpenseDates(trackerId);
 
 	// Search is debounced via `debouncedFilter`, so the page query sees a
 	// stable filter set per search burst. The other filters apply
@@ -152,10 +157,44 @@ export function ExpensePage() {
 		// user immediately sees the start of the new result set.
 		setFilter(next);
 		setPage(1);
+		setSelectedIds(new Set());
 	}
 
 	function clearFilter() {
 		handleFilterChange({ dateRange: getTodayRange() });
+	}
+
+	function toggleSelect(id: string) {
+		setSelectedIds((prev) => {
+			const next = new Set(prev);
+			if (next.has(id)) next.delete(id);
+			else next.add(id);
+			return next;
+		});
+	}
+
+	function toggleSelectAll() {
+		setSelectedIds((prev) => {
+			const allSelected =
+				sortedExpenses.length > 0 &&
+				sortedExpenses.every((e) => prev.has(e.id));
+			const next = new Set(prev);
+			for (const expense of sortedExpenses) {
+				if (allSelected) next.delete(expense.id);
+				else next.add(expense.id);
+			}
+			return next;
+		});
+	}
+
+	async function handleBulkDateSubmit(date: string) {
+		const ids = [...selectedIds];
+		const result = await bulkDateMutation.mutateAsync({ ids, date });
+		// Keep only the rows that failed selected so the user can retry them;
+		// fully successful batches close the modal and clear the selection.
+		const failedIds = new Set(result.failed.map((index) => ids[index]));
+		setSelectedIds(failedIds);
+		if (result.failed.length === 0) setBulkDateOpen(false);
 	}
 
 	async function handleFormSubmit(data: ExpenseCreateInput) {
@@ -235,12 +274,35 @@ export function ExpensePage() {
 						</div>
 					)}
 
+					{selectedIds.size > 0 && (
+						<div className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 px-4 py-2.5">
+							<span className="text-sm font-medium">
+								{selectedIds.size} selected
+							</span>
+							<div className="flex items-center gap-2">
+								<Button size="sm" onClick={() => setBulkDateOpen(true)}>
+									Change date
+								</Button>
+								<Button
+									size="sm"
+									variant="outline"
+									onClick={() => setSelectedIds(new Set())}
+								>
+									Clear
+								</Button>
+							</div>
+						</div>
+					)}
+
 					<ExpenseTable
 						expenses={sortedExpenses}
 						categories={categories}
 						currency={currency}
 						sort={sort}
 						onSort={handleSort}
+						selectedIds={selectedIds}
+						onToggleSelect={toggleSelect}
+						onToggleSelectAll={toggleSelectAll}
 						isLoading={expensesLoading}
 						isFiltered={isFiltered}
 						onEdit={openEditModal}
@@ -253,7 +315,10 @@ export function ExpensePage() {
 						page={page}
 						pageSize={PAGE_SIZE}
 						total={total}
-						onPageChange={setPage}
+						onPageChange={(next) => {
+							setPage(next);
+							setSelectedIds(new Set());
+						}}
 					/>
 				</CardContent>
 			</Card>
@@ -274,6 +339,15 @@ export function ExpensePage() {
 					onSubmit={handleBulkSubmit}
 					onClose={() => setBulkOpen(false)}
 					isSubmitting={bulkCreateMutation.isPending}
+				/>
+			)}
+
+			{bulkDateOpen && (
+				<BulkDateEditModal
+					count={selectedIds.size}
+					onSubmit={handleBulkDateSubmit}
+					onClose={() => setBulkDateOpen(false)}
+					isSubmitting={bulkDateMutation.isPending}
 				/>
 			)}
 		</main>

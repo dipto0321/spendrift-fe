@@ -10,6 +10,7 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -28,6 +29,8 @@ type ExpenseRowProps = {
 	readonly expense: Expense;
 	readonly category: Category | undefined;
 	readonly currency: string;
+	readonly selected: boolean;
+	readonly onToggleSelect: () => void;
 	readonly onEdit: (expense: Expense) => void;
 	readonly onDelete: (id: string) => void;
 };
@@ -36,6 +39,8 @@ export function ExpenseRow({
 	expense,
 	category,
 	currency,
+	selected,
+	onToggleSelect,
 	onEdit,
 	onDelete,
 }: ExpenseRowProps) {
@@ -49,6 +54,13 @@ export function ExpenseRow({
 				className="group cursor-pointer border-b border-border/50 last:border-none hover:bg-muted/30 transition-colors"
 				onClick={() => onEdit(expense)}
 			>
+				<TableCell className="w-10 px-3" onClick={(e) => e.stopPropagation()}>
+					<Checkbox
+						checked={selected}
+						onCheckedChange={() => onToggleSelect()}
+						aria-label={`Select ${expense.description || categoryName}`}
+					/>
+				</TableCell>
 				<TableCell className="whitespace-nowrap px-4 py-3 text-sm text-muted-foreground">
 					{formatDateShort(expense.date)}
 				</TableCell>

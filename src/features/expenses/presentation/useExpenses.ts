@@ -102,6 +102,48 @@ export function useUpdateExpense(trackerId: string | undefined) {
 	});
 }
 
+// Bulk date edit: fire one PATCH per selected id in parallel and report which
+// ids failed. Only `date` is ever sent — the caller's dialog exposes no other
+// field, so a multi-select can never mutate amount/category/type/description.
+export function useBulkUpdateExpenseDates(trackerId: string | undefined) {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: async ({
+			ids,
+			date,
+		}: {
+			ids: string[];
+			date: string;
+		}): Promise<BulkCreateResult> => {
+			const results = await Promise.allSettled(
+				ids.map((id) =>
+					expenseRepository.update(trackerId as string, id, { date }),
+				),
+			);
+			return partitionSettled(results);
+		},
+		onSuccess: ({ succeeded, failed }) => {
+			if (succeeded.length > 0) {
+				queryClient.invalidateQueries({
+					queryKey: expenseKeys.all(trackerId as string),
+				});
+			}
+			if (failed.length === 0) {
+				toast.success(
+					succeeded.length === 1
+						? "Expense date updated"
+						: `${succeeded.length} expense dates updated`,
+				);
+			} else {
+				toast.error(
+					`${failed.length} of ${failed.length + succeeded.length} expenses failed to update.`,
+				);
+			}
+		},
+		onError: () => toast.error("Could not update the dates. Please try again."),
+	});
+}
+
 export function useDeleteExpense(trackerId: string | undefined) {
 	const queryClient = useQueryClient();
 	return useMutation({
