@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+	mergeAiEnrichment,
 	parseStructuredLine,
 	parseStructuredText,
 	splitTopLevel,
+	toAiHintText,
 } from "./smartPaste";
+import type { ParsedExpense } from "./types";
 
 describe("splitTopLevel", () => {
 	it("splits on top-level + only", () => {
@@ -113,5 +116,61 @@ describe("parseStructuredText", () => {
 			"2026-10-05",
 		);
 		expect(result).toEqual({ kind: "invalid", line: 3 });
+	});
+});
+
+describe("toAiHintText", () => {
+	it("renders one 'description amount' line per row", () => {
+		const rows: ParsedExpense[] = [
+			{ description: "Fares", amount: 700, type: "need", date: "2026-10-05" },
+			{ description: "Snacks", amount: 90, type: "need", date: "2026-10-05" },
+		];
+		expect(toAiHintText(rows)).toBe("Fares 700\nSnacks 90");
+	});
+});
+
+describe("mergeAiEnrichment", () => {
+	const rows: ParsedExpense[] = [
+		{ description: "Fares", amount: 700, type: "need", date: "2026-10-05" },
+		{ description: "Snacks", amount: 90, type: "need", date: "2026-10-05" },
+	];
+
+	it("keeps deterministic amount/description/date and takes AI category/type", () => {
+		const aiRows: ParsedExpense[] = [
+			{
+				description: "fares",
+				amount: 999,
+				categoryId: "c1",
+				type: "need",
+				date: "2026-10-05",
+			},
+			{
+				description: "snacks",
+				amount: 1,
+				categoryId: "c2",
+				type: "want",
+				date: "2026-10-05",
+			},
+		];
+		expect(mergeAiEnrichment(rows, aiRows)).toEqual([
+			{
+				description: "Fares",
+				amount: 700,
+				categoryId: "c1",
+				type: "need",
+				date: "2026-10-05",
+			},
+			{
+				description: "Snacks",
+				amount: 90,
+				categoryId: "c2",
+				type: "want",
+				date: "2026-10-05",
+			},
+		]);
+	});
+
+	it("falls back to defaults when the AI response is shorter", () => {
+		expect(mergeAiEnrichment(rows, [])).toEqual(rows);
 	});
 });
