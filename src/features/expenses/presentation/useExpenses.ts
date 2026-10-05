@@ -144,6 +144,39 @@ export function useBulkUpdateExpenseDates(trackerId: string | undefined) {
 	});
 }
 
+// Bulk delete: fire one DELETE per selected id in parallel and report which
+// ids failed so the caller can keep them selected for retry.
+export function useBulkDeleteExpenses(trackerId: string | undefined) {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: async (ids: string[]): Promise<BulkCreateResult> => {
+			const results = await Promise.allSettled(
+				ids.map((id) => expenseRepository.delete(trackerId as string, id)),
+			);
+			return partitionSettled(results);
+		},
+		onSuccess: ({ succeeded, failed }) => {
+			if (succeeded.length > 0) {
+				queryClient.invalidateQueries({
+					queryKey: expenseKeys.all(trackerId as string),
+				});
+			}
+			if (failed.length === 0) {
+				toast.success(
+					succeeded.length === 1
+						? "Expense deleted"
+						: `${succeeded.length} expenses deleted`,
+				);
+			} else {
+				toast.error(
+					`${failed.length} of ${failed.length + succeeded.length} expenses failed to delete.`,
+				);
+			}
+		},
+		onError: () => toast.error("Could not delete expenses. Please try again."),
+	});
+}
+
 export function useDeleteExpense(trackerId: string | undefined) {
 	const queryClient = useQueryClient();
 	return useMutation({
