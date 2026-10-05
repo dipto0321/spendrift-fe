@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Trash2 } from "lucide-react";
-import { type KeyboardEvent, useState } from "react";
+import { type KeyboardEvent, useRef, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import {
@@ -66,6 +66,7 @@ export function BulkExpenseForm({
 		name: "rows",
 	});
 	const [failedCount, setFailedCount] = useState(0);
+	const savingRef = useRef(false);
 
 	const selectableCategories = categories.filter(
 		(c) => c.name !== "Uncategorized",
@@ -90,13 +91,21 @@ export function BulkExpenseForm({
 
 	// Untouched starter rows shouldn't block Save: prune them from the field
 	// array first so validation and failure indexes line up with what's visible.
-	function handleSaveClick() {
-		const rows = form.getValues("rows");
-		const keep = rows.filter((row) => !isBlankBulkRow(row));
-		if (keep.length !== rows.length) {
-			replace(keep.length > 0 ? keep : [emptyRow()]);
+	// The ref guards re-entry during the async validation window so a rapid
+	// double-click can't submit the same rows twice.
+	async function handleSaveClick() {
+		if (savingRef.current) return;
+		savingRef.current = true;
+		try {
+			const rows = form.getValues("rows");
+			const keep = rows.filter((row) => !isBlankBulkRow(row));
+			if (keep.length !== rows.length) {
+				replace(keep.length > 0 ? keep : [emptyRow()]);
+			}
+			await form.handleSubmit(submitRows)();
+		} finally {
+			savingRef.current = false;
 		}
-		void form.handleSubmit(submitRows)();
 	}
 
 	function handleRowKeyDown(
