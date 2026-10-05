@@ -1,5 +1,6 @@
 import { ArrowUpDown, Receipt, SearchX } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	Table,
@@ -25,7 +26,13 @@ type SortHeaderProps = {
 	readonly className?: string;
 };
 
-function SortHeader({ label, sortKey, sort, onSort, className }: SortHeaderProps) {
+function SortHeader({
+	label,
+	sortKey,
+	sort,
+	onSort,
+	className,
+}: SortHeaderProps) {
 	const active = sort.key === sortKey;
 	return (
 		<TableHead className={className}>
@@ -52,6 +59,9 @@ type ExpenseTableProps = {
 	readonly currency: string;
 	readonly sort: SortState;
 	readonly onSort: (key: SortKey) => void;
+	readonly selectedIds: Set<string>;
+	readonly onToggleSelect: (id: string) => void;
+	readonly onToggleSelectAll: () => void;
 	readonly onEdit: (expense: Expense) => void;
 	readonly onDelete: (id: string) => void;
 	readonly isLoading?: boolean;
@@ -66,6 +76,9 @@ export function ExpenseTable({
 	currency,
 	sort,
 	onSort,
+	selectedIds,
+	onToggleSelect,
+	onToggleSelectAll,
 	onEdit,
 	onDelete,
 	isLoading,
@@ -74,6 +87,8 @@ export function ExpenseTable({
 	onClearFilters,
 }: ExpenseTableProps) {
 	const categoryMap = buildCategoryMap(categories);
+	const allSelected =
+		expenses.length > 0 && expenses.every((e) => selectedIds.has(e.id));
 
 	if (isLoading) {
 		return (
@@ -126,7 +141,19 @@ export function ExpenseTable({
 			<Table>
 				<TableHeader>
 					<TableRow className="bg-muted/40 hover:bg-muted/40">
-						<SortHeader label="Date" sortKey="date" sort={sort} onSort={onSort} />
+						<TableHead className="w-10 px-3">
+							<Checkbox
+								checked={allSelected}
+								onCheckedChange={() => onToggleSelectAll()}
+								aria-label="Select all expenses"
+							/>
+						</TableHead>
+						<SortHeader
+							label="Date"
+							sortKey="date"
+							sort={sort}
+							onSort={onSort}
+						/>
 						<SortHeader
 							label="Title"
 							sortKey="description"
@@ -158,6 +185,8 @@ export function ExpenseTable({
 							expense={expense}
 							category={categoryMap.get(expense.categoryId)}
 							currency={currency}
+							selected={selectedIds.has(expense.id)}
+							onToggleSelect={() => onToggleSelect(expense.id)}
 							onEdit={onEdit}
 							onDelete={onDelete}
 						/>
