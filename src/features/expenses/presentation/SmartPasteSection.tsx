@@ -1,8 +1,10 @@
 import { ChevronDown, ChevronRight, Sparkles } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useTracker } from "@/features/trackers/presentation/TrackerContext";
+import { parseStructuredText } from "../domain/smartPaste";
 import type { ParsedExpense } from "../domain/types";
 import { useParseExpenses } from "./useExpenses";
 
@@ -21,6 +23,24 @@ export function SmartPasteSection({
 	const parseMutation = useParseExpenses(activeTracker?.id);
 
 	async function handleParse() {
+		const trimmed = text.trim();
+		if (trimmed === "") return;
+
+		// Excel-style "labels = math" lines are parsed locally (exact math, no
+		// AI). Free text still goes through the AI endpoint.
+		const structured = parseStructuredText(trimmed, defaultDate);
+		if (structured.kind === "ok") {
+			onParsed(structured.rows);
+			setText("");
+			return;
+		}
+		if (structured.kind === "invalid") {
+			toast.error(
+				`Could not parse line ${structured.line}. Check the math and that each item has a matching amount.`,
+			);
+			return;
+		}
+
 		try {
 			const parsed = await parseMutation.mutateAsync({ text, defaultDate });
 			onParsed(parsed);
@@ -58,7 +78,9 @@ export function SmartPasteSection({
 					<Textarea
 						value={text}
 						onChange={(e) => setText(e.target.value)}
-						placeholder={"coffee 120, bus 40, lunch 350 need\ngroceries 800"}
+						placeholder={
+							"Item 1 + Item 2 = 100 + 200\nGroceries = (50 + 50)\ncoffee 120, bus 40 need"
+						}
 						rows={3}
 						aria-label="Expenses text to parse"
 						disabled={parseMutation.isPending}
