@@ -1,6 +1,5 @@
 import { ChevronDown, ChevronRight, Sparkles } from "lucide-react";
-import { useState } from "react";
-import { toast } from "sonner";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useTracker } from "@/features/trackers/presentation/TrackerContext";
@@ -20,33 +19,39 @@ export function SmartPasteSection({
 	const { activeTracker } = useTracker();
 	const [open, setOpen] = useState(false);
 	const [text, setText] = useState("");
+	const [isParsing, setIsParsing] = useState(false);
+	const parsingRef = useRef(false);
 	const parseMutation = useParseExpenses(activeTracker?.id);
 
 	async function handleParse() {
+		// Re-entrancy guard: a rapid double-click must not double-parse (the
+		// structured path is synchronous, so the button never shows a pending
+		// state without this guard).
+		if (parsingRef.current) return;
 		const trimmed = text.trim();
 		if (trimmed === "") return;
 
-		// Excel-style "labels = math" lines are parsed locally (exact math, no
-		// AI). Free text still goes through the AI endpoint.
-		const structured = parseStructuredText(trimmed, defaultDate);
-		if (structured.kind === "ok") {
-			onParsed(structured.rows);
-			setText("");
-			return;
-		}
-		if (structured.kind === "invalid") {
-			toast.error(
-				`Could not parse line ${structured.line}. Check the math and that each item has a matching amount.`,
-			);
-			return;
-		}
-
+		parsingRef.current = true;
+		setIsParsing(true);
 		try {
+			// Excel-style "labels = math" lines are parsed locally (exact math,
+			// no AI). Anything that isn't cleanly structured falls back to the
+			// AI endpoint, exactly as before this feature.
+			const structured = parseStructuredText(trimmed, defaultDate);
+			if (structured.kind === "ok") {
+				onParsed(structured.rows);
+				setText("");
+				return;
+			}
+
 			const parsed = await parseMutation.mutateAsync({ text, defaultDate });
 			onParsed(parsed);
 			setText("");
 		} catch {
 			// Error toast comes from useParseExpenses; keep the text for retry.
+		} finally {
+			parsingRef.current = false;
+			setIsParsing(false);
 		}
 	}
 
@@ -90,9 +95,9 @@ export function SmartPasteSection({
 							type="button"
 							size="sm"
 							onClick={handleParse}
-							disabled={parseMutation.isPending || text.trim() === ""}
+							disabled={isParsing || text.trim() === ""}
 						>
-							{parseMutation.isPending ? "Parsing…" : "Parse into rows"}
+							{isParsing ? "Parsing…" : "Parse into rows"}
 						</Button>
 					</div>
 				</div>
