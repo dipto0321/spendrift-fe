@@ -3,7 +3,11 @@ import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useTracker } from "@/features/trackers/presentation/TrackerContext";
-import { parseStructuredText } from "../domain/smartPaste";
+import {
+	mergeAiEnrichment,
+	parseStructuredText,
+	toAiHintText,
+} from "../domain/smartPaste";
 import type { ParsedExpense } from "../domain/types";
 import { useParseExpenses } from "./useExpenses";
 
@@ -34,12 +38,23 @@ export function SmartPasteSection({
 		parsingRef.current = true;
 		setIsParsing(true);
 		try {
-			// Excel-style "labels = math" lines are parsed locally (exact math,
-			// no AI). Anything that isn't cleanly structured falls back to the
-			// AI endpoint, exactly as before this feature.
+			// Excel-style "labels = math" lines are parsed locally (exact math),
+			// then enriched with AI-inferred category/type. Anything that isn't
+			// cleanly structured falls back to the AI endpoint as before.
 			const structured = parseStructuredText(trimmed, defaultDate);
 			if (structured.kind === "ok") {
-				onParsed(structured.rows);
+				let rows = structured.rows;
+				try {
+					const aiRows = await parseMutation.mutateAsync({
+						text: toAiHintText(rows),
+						defaultDate,
+					});
+					rows = mergeAiEnrichment(rows, aiRows);
+				} catch {
+					// AI enrichment failed; keep the exact-math rows (blank
+					// category/type) rather than losing the parsed amounts.
+				}
+				onParsed(rows);
 				setText("");
 				return;
 			}

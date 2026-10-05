@@ -96,3 +96,28 @@ export function parseStructuredText(
 	}
 	return { kind: "ok", rows };
 }
+
+// Build a plain-text hint (one "description amount" per line) so the AI can
+// infer category/type for rows whose amounts were already resolved exactly.
+// The AI only contributes category/type — amounts stay deterministic.
+export function toAiHintText(rows: ParsedExpense[]): string {
+	return rows.map((row) => `${row.description} ${row.amount}`).join("\n");
+}
+
+// Enrich deterministic rows with AI-inferred category/type, matched by index.
+// The deterministic description, amount, and date are preserved; a missing or
+// shorter AI response just leaves the existing defaults (undefined category,
+// "need" type).
+export function mergeAiEnrichment(
+	rows: ParsedExpense[],
+	aiRows: ParsedExpense[],
+): ParsedExpense[] {
+	return rows.map((row, index) => {
+		const ai = aiRows[index];
+		return {
+			...row,
+			categoryId: ai?.categoryId ?? row.categoryId,
+			type: ai?.type ?? row.type,
+		};
+	});
+}
